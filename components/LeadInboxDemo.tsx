@@ -21,8 +21,8 @@ import {
 const initialForm: LeadInput = {
   name: "Studio Aurora",
   email: "hello@studioaurora.it",
-  projectType: "Brand website",
-  complexity: "Focused project",
+  projectType: "Confused request",
+  complexity: "Needs clarification",
   message:
     "We need a polished website refresh for a launch this month. The current site feels dated and we want a clear conversion path.",
 };
@@ -80,18 +80,17 @@ export default function LeadInboxDemo() {
           <div>
             <div className="flex items-center gap-2 text-sm font-medium text-cyan-200">
               <Inbox aria-hidden="true" className="h-4 w-4" />
-              Lead Inbox
+              Client Inbox
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white md:text-5xl">
-              Drop a lead. Watch the crew move.
+              Drop a messy client message. Watch the crew organize it.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              This is a local FlowCrew simulation. Send one inquiry and the
-              agents will qualify, draft, schedule, and log the complete handoff.
+              This is a local FlowCrew simulation. Paste one client conversation and the agents will clean, tag, evaluate, draft, and log the next action.
             </p>
           </div>
           <div className="rounded-full border border-violet-300/25 bg-violet-300/10 px-4 py-2 text-sm font-semibold text-violet-100">
-            Free Trial - 1 Lead
+            Free Trial - 1 Conversation
           </div>
         </div>
       </section>
@@ -106,7 +105,7 @@ export default function LeadInboxDemo() {
               <Mail aria-hidden="true" className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">New lead</h2>
+              <h2 className="text-xl font-semibold text-white">New conversation</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Everything stays in this browser session.
               </p>
@@ -121,7 +120,7 @@ export default function LeadInboxDemo() {
                 value={form.name}
                 onChange={(event) => updateForm("name", event.target.value)}
                 className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/55 focus:bg-white/[0.07]"
-                placeholder="Client or studio name"
+                placeholder="Client or source name"
               />
             </label>
             <label className="text-sm font-medium text-slate-300">
@@ -136,41 +135,41 @@ export default function LeadInboxDemo() {
               />
             </label>
             <label className="text-sm font-medium text-slate-300">
-              Project type
+              Conversation type
               <select
                 value={form.projectType}
                 onChange={(event) => updateForm("projectType", event.target.value)}
                 className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
               >
-                <option>Landing page</option>
-                <option>Brand website</option>
-                <option>Automation sprint</option>
-                <option>Launch funnel</option>
+                <option>WhatsApp request</option>
+                <option>Confused request</option>
+                <option>Event inquiry</option>
+                <option>Gmail request</option>
                 <option>Not sure yet</option>
               </select>
             </label>
             <label className="text-sm font-medium text-slate-300">
-              Scope complexity
+              Clarity level
               <select
                 value={form.complexity}
                 onChange={(event) => updateForm("complexity", event.target.value)}
                 className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
               >
-                <option>Lean starter scope</option>
-                <option>Focused project</option>
-                <option>Multi-part project</option>
-                <option>Complex delivery</option>
+                <option>Info incomplete</option>
+                <option>Needs clarification</option>
+                <option>Multiple topics</option>
+                <option>High urgency</option>
               </select>
             </label>
             <label className="text-sm font-medium text-slate-300 sm:col-span-2">
-              Message
+              Messy message
               <textarea
                 required
                 rows={5}
                 value={form.message}
                 onChange={(event) => updateForm("message", event.target.value)}
                 className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/55 focus:bg-white/[0.07]"
-                placeholder="Tell the crew what the client needs..."
+                placeholder="Paste the messy client message..."
               />
             </label>
           </div>
@@ -183,11 +182,11 @@ export default function LeadInboxDemo() {
             {isRunning ? (
               <>
                 <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
-                Crew is moving
+                Crew is reading
               </>
             ) : (
               <>
-                Send to Crew
+                Run the Crew
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </>
             )}
@@ -204,7 +203,7 @@ export default function LeadInboxDemo() {
                 Crew pulse
               </p>
               <h2 className="mt-1 text-xl font-semibold text-white">
-                Smart Brain is listening
+                Crew is sorting the chaos
               </h2>
             </div>
           </div>
@@ -238,8 +237,7 @@ export default function LeadInboxDemo() {
                 className="mt-0.5 h-5 w-5 shrink-0 text-lime-200"
               />
               <p className="text-sm leading-6 text-lime-50">
-                Try changing the scope complexity or message. The Jackie score
-                and Nora deliverables react locally.
+                Try changing the message. Jackie, Dex, Nora, and Milo react locally in this prototype.
               </p>
             </div>
           </div>
@@ -264,14 +262,14 @@ export default function LeadInboxDemo() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-              Recent inbox
+              Client inbox
             </p>
             <h2 className="mt-2 text-xl font-semibold text-white">
-              Leads already moving
+              Conversations already moving
             </h2>
           </div>
           <span className="w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-400">
-            Demo records
+            Demo conversations
           </span>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
