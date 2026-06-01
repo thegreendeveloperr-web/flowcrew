@@ -186,12 +186,12 @@ export default function Home() {
             Dashboard
           </Link>
         </nav>
-        <Link
-          href="/leads"
-          className="rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 sm:px-5"
-        >
-          Run demo
-        </Link>
+      <Link
+  href="/trial"
+  className="rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 sm:px-5"
+>
+  Try free lead
+</Link>
       </header>
 
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-5.5rem)] max-w-[1280px] items-center gap-10 px-5 pb-20 pt-8 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:pt-8">
@@ -212,16 +212,16 @@ export default function Home() {
             the follow-up, and Dex logs the flow. You keep the client momentum.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/leads"
-              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
-            >
-              Run your first lead
-              <ArrowRight
-                aria-hidden="true"
-                className="h-4 w-4 transition group-hover:translate-x-1"
-              />
-            </Link>
+           <Link
+  href="/trial"
+  className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
+>
+  Try 1 lead for free
+  <ArrowRight
+    aria-hidden="true"
+    className="h-4 w-4 transition group-hover:translate-x-1"
+  />
+</Link>
             <Link
               href="/dashboard"
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-6 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
@@ -528,11 +528,11 @@ export default function Home() {
             Drop one lead and watch FlowCrew turn it into scoring, proposal,
             follow-up, and flow memory.
           </p>
-          <Link
-            href="/leads"
-            className="group mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
-          >
-            Run your first lead
+         <Link
+  href="/trial"
+  className="group mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
+>
+  Try 1 lead for free
             <ArrowRight
               aria-hidden="true"
               className="h-4 w-4 transition group-hover:translate-x-1"
