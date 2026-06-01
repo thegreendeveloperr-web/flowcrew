@@ -1,11 +1,11 @@
 import {
   AlertTriangle,
   ArrowRight,
-  BadgeEuro,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
   Clock3,
+  FileText,
   PlayCircle,
   Sparkles,
   Target,
@@ -26,16 +26,16 @@ import {
 
 const missionFlow = [
   { label: "Jackie", value: "86 heat", detail: "Rank Studio Aurora" },
-  { label: "Nora", value: "700-1200 EUR", detail: "Shape proposal range" },
+  { label: "Nora", value: "focused", detail: "Shape scope and deliverables" },
   { label: "Milo", value: "48h", detail: "Protect the follow-up" },
   { label: "Dex", value: "synced", detail: "Log the handoff trace" },
 ];
 
 const missionCards = [
   {
-    label: "Revenue at risk",
-    value: "3,400 EUR",
-    caption: "Open deal value that needs a next step this week.",
+    label: "Priority leads",
+    value: "3 active",
+    caption: "Open opportunities that need a next step this week.",
     Icon: AlertTriangle,
     accent: "text-rose-200",
     surface: "border-rose-300/20 bg-rose-300/10",
@@ -255,13 +255,13 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <article className="glass-panel rounded-[1.5rem] p-5">
-              <BadgeEuro aria-hidden="true" className="h-6 w-6 text-violet-200" />
+              <FileText aria-hidden="true" className="h-6 w-6 text-violet-200" />
               <h2 className="mt-5 text-xl font-semibold text-white">
                 Proposals ready
               </h2>
               <p className="mt-3 text-sm leading-6 text-slate-400">
-                Nora has three polished ranges waiting for review, including a
-                700-1200 EUR scope for Studio Aurora.
+                Nora has three polished scopes waiting for review, including a
+                focused launch plan for Studio Aurora.
               </p>
               <div className="mt-5 rounded-2xl border border-violet-300/20 bg-violet-300/10 p-4 text-sm font-medium text-violet-100">
                 Nora is refining the offer language.

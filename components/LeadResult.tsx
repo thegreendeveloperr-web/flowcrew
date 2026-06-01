@@ -7,8 +7,11 @@ import {
   MailCheck,
   Radar,
   Workflow,
+  type LucideIcon,
 } from "lucide-react";
+import AgentAvatar from "@/components/AgentAvatar";
 import type { CrewResult } from "@/lib/mockAgents";
+import type { AgentId } from "@/lib/data";
 
 type LeadResultProps = {
   result: CrewResult;
@@ -17,6 +20,7 @@ type LeadResultProps = {
 export default function LeadResult({ result }: LeadResultProps) {
   const resultCards = [
     {
+      id: "jackie",
       agent: "Jackie",
       title: `${result.jackie.label} - ${result.jackie.score}/100`,
       body: result.jackie.analysis,
@@ -25,14 +29,16 @@ export default function LeadResult({ result }: LeadResultProps) {
       border: "border-cyan-300/20",
     },
     {
+      id: "nora",
       agent: "Nora",
-      title: `Proposal range: ${result.nora.proposalRange}`,
-      body: result.nora.proposal,
+      title: `Scope direction: ${result.nora.scopeDirection}`,
+      body: `${result.nora.proposal} Deliverables: ${result.nora.deliverables.join(", ")}.`,
       Icon: FileText,
       accent: "text-violet-200",
       border: "border-violet-300/20",
     },
     {
+      id: "milo",
       agent: "Milo",
       title: result.milo.followUp,
       body: result.milo.message,
@@ -41,6 +47,7 @@ export default function LeadResult({ result }: LeadResultProps) {
       border: "border-lime-300/20",
     },
     {
+      id: "dex",
       agent: "Dex",
       title: result.dex.log,
       body: result.dex.automation.join(" - "),
@@ -48,7 +55,15 @@ export default function LeadResult({ result }: LeadResultProps) {
       accent: "text-rose-200",
       border: "border-rose-300/20",
     },
-  ];
+  ] satisfies Array<{
+    id: AgentId;
+    agent: string;
+    title: string;
+    body: string;
+    Icon: LucideIcon;
+    accent: string;
+    border: string;
+  }>;
 
   const mockActions = [
     { label: "Copy reply", Icon: Copy },
@@ -88,8 +103,14 @@ export default function LeadResult({ result }: LeadResultProps) {
               className={`rounded-2xl border ${card.border} bg-white/[0.04] p-4`}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]">
-                  <Icon aria-hidden="true" className={`h-5 w-5 ${card.accent}`} />
+                <div className="relative">
+                  <AgentAvatar agentId={card.id} decorative size="sm" />
+                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-lg border border-white/15 bg-[#0B1020]/90">
+                    <Icon
+                      aria-hidden="true"
+                      className={`h-3 w-3 ${card.accent}`}
+                    />
+                  </span>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">

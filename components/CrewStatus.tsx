@@ -1,4 +1,5 @@
 import { Activity, RadioTower } from "lucide-react";
+import AgentAvatar from "@/components/AgentAvatar";
 import type { Agent } from "@/lib/data";
 
 type CrewStatusProps = {
@@ -8,7 +9,7 @@ type CrewStatusProps = {
 
 export default function CrewStatus({
   agents,
-  planLabel = "Pro - Smart Brain",
+  planLabel = "Free Trial - 1 Lead",
 }: CrewStatusProps) {
   return (
     <section className="glass-panel rounded-[1.5rem] p-5">
@@ -35,10 +36,7 @@ export default function CrewStatus({
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: agent.accent }}
-                />
+                <AgentAvatar agentId={agent.id} decorative size="sm" />
                 <span className="text-sm font-semibold text-white">{agent.name}</span>
               </div>
               <Activity aria-hidden="true" className="h-4 w-4 text-slate-500" />

@@ -2,7 +2,7 @@ export type LeadInput = {
   name: string;
   email: string;
   projectType: string;
-  budget: string;
+  complexity: string;
   message: string;
 };
 
@@ -13,7 +13,8 @@ export type JackieResult = {
 };
 
 export type NoraResult = {
-  proposalRange: string;
+  scopeDirection: string;
+  deliverables: string[];
   proposal: string;
 };
 
@@ -36,11 +37,11 @@ export type CrewResult = {
   dex: DexResult;
 };
 
-const budgetRanges: Record<string, string> = {
-  "Under 500 EUR": "350-500 EUR",
-  "500-1000 EUR": "700-1200 EUR",
-  "1000-2500 EUR": "1200-2500 EUR",
-  "2500 EUR+": "2500-4200 EUR",
+const complexityScores: Record<string, number> = {
+  "Lean starter scope": 5,
+  "Focused project": 10,
+  "Multi-part project": 15,
+  "Complex delivery": 18,
 };
 
 const projectMultipliers: Record<string, number> = {
@@ -55,28 +56,8 @@ function cleanLeadName(input: LeadInput) {
   return input.name.trim() || "New lead";
 }
 
-function normalizeBudget(budget: string) {
-  return budget
-    .replaceAll("€", "EUR")
-    .replaceAll("–", "-")
-    .replaceAll("—", "-")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function scoreBudget(budget: string) {
-  const normalizedBudget = normalizeBudget(budget);
-
-  if (normalizedBudget === "2500 EUR+") return 18;
-  if (normalizedBudget === "1000-2500 EUR") return 15;
-  if (normalizedBudget === "500-1000 EUR") return 10;
-  if (normalizedBudget === "Under 500 EUR") return 5;
-  return 8;
-}
-
-function getProposalRange(input: LeadInput) {
-  const normalizedBudget = normalizeBudget(input.budget);
-  return budgetRanges[normalizedBudget] ?? "700-1200 EUR";
+function scoreComplexity(complexity: string) {
+  return complexityScores[complexity] ?? 8;
 }
 
 export function runJackie(input: LeadInput): JackieResult {
@@ -91,7 +72,11 @@ export function runJackie(input: LeadInput): JackieResult {
     96,
     Math.max(
       52,
-      52 + scoreBudget(input.budget) + urgencyBoost + detailBoost + projectBoost,
+      52 +
+        scoreComplexity(input.complexity) +
+        urgencyBoost +
+        detailBoost +
+        projectBoost,
     ),
   );
   const label = score >= 82 ? "Hot lead" : score >= 70 ? "Warm lead" : "Needs nurture";
@@ -99,20 +84,25 @@ export function runJackie(input: LeadInput): JackieResult {
   return {
     score,
     label,
-    analysis: `${label}: ${score}/100. Jackie spotted project clarity, budget fit, urgency, and enough buying intent to decide the next move fast.`,
+    analysis: `${label}: ${score}/100. Jackie spotted project clarity, scope fit, urgency, and enough value signal to decide the next move fast.`,
   };
 }
 
 export function runNora(input: LeadInput, jackie: JackieResult): NoraResult {
-  const proposalRange = getProposalRange(input);
   const leadName = cleanLeadName(input);
+  const scopeDirection = input.complexity || "Focused project";
+  const deliverables =
+    jackie.score >= 82
+      ? ["Core outcome", "First milestone", "Approval step", "Kickoff call"]
+      : ["Clarifying question", "Lean starter scope", "Approval step"];
   const proposal =
     jackie.score >= 82
-      ? `Proposal range: ${proposalRange}. Nora would send ${leadName} a polished scope with a clear outcome, tight first milestone, and a confident kickoff call.`
-      : `Proposal range: ${proposalRange}. Nora would ask one elegant clarifying question, then send a lean starter scope.`;
+      ? `${scopeDirection}. Nora would send ${leadName} a polished scope with a clear outcome, tight first milestone, concrete deliverables, and a confident kickoff call.`
+      : `${scopeDirection}. Nora would ask one elegant clarifying question, then send a lean starter scope with a clear approval step.`;
 
   return {
-    proposalRange,
+    scopeDirection,
+    deliverables,
     proposal,
   };
 }
@@ -135,7 +125,7 @@ export function runDex(input: LeadInput): DexResult {
     automation: [
       `Lead captured: ${leadName}`,
       "Jackie heat score attached to inbox card",
-      "Nora proposal range staged for review",
+      "Nora scope and deliverables staged for review",
       "Milo follow-up timer armed",
       "Trace: Lead -> Jackie -> Nora -> Milo -> Dex",
     ],

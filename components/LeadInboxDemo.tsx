@@ -22,7 +22,7 @@ const initialForm: LeadInput = {
   name: "Studio Aurora",
   email: "hello@studioaurora.it",
   projectType: "Brand website",
-  budget: "500-1000 EUR",
+  complexity: "Focused project",
   message:
     "We need a polished website refresh for a launch this month. The current site feels dated and we want a clear conversion path.",
 };
@@ -91,7 +91,7 @@ export default function LeadInboxDemo() {
             </p>
           </div>
           <div className="rounded-full border border-violet-300/25 bg-violet-300/10 px-4 py-2 text-sm font-semibold text-violet-100">
-            Pro - Smart Brain
+            Free Trial - 1 Lead
           </div>
         </div>
       </section>
@@ -150,16 +150,16 @@ export default function LeadInboxDemo() {
               </select>
             </label>
             <label className="text-sm font-medium text-slate-300">
-              Budget
+              Scope complexity
               <select
-                value={form.budget}
-                onChange={(event) => updateForm("budget", event.target.value)}
+                value={form.complexity}
+                onChange={(event) => updateForm("complexity", event.target.value)}
                 className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
               >
-                <option>Under 500 EUR</option>
-                <option>500-1000 EUR</option>
-                <option>1000-2500 EUR</option>
-                <option>2500 EUR+</option>
+                <option>Lean starter scope</option>
+                <option>Focused project</option>
+                <option>Multi-part project</option>
+                <option>Complex delivery</option>
               </select>
             </label>
             <label className="text-sm font-medium text-slate-300 sm:col-span-2">
@@ -238,8 +238,8 @@ export default function LeadInboxDemo() {
                 className="mt-0.5 h-5 w-5 shrink-0 text-lime-200"
               />
               <p className="text-sm leading-6 text-lime-50">
-                Try changing the budget or message. The Jackie score and Nora
-                proposal range react locally.
+                Try changing the scope complexity or message. The Jackie score
+                and Nora deliverables react locally.
               </p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function LeadInboxDemo() {
               </div>
               <p className="mt-2 text-sm text-slate-400">{lead.projectType}</p>
               <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
-                {lead.status} - {lead.budget}
+                {lead.status} - {lead.scope}
               </p>
             </article>
           ))}

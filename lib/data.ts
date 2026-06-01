@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  BadgeEuro,
   Bot,
   BrainCircuit,
   FileText,
@@ -31,7 +30,6 @@ export type Agent = {
 
 export type Plan = {
   name: string;
-  price: string;
   brain: "Core Brain" | "Smart Brain" | "Elite Brain";
   description: string;
   features: string[];
@@ -51,7 +49,7 @@ export type DemoLead = {
   id: string;
   name: string;
   projectType: string;
-  budget: string;
+  scope: string;
   score: number;
   status: "Hot" | "Warm" | "Pending";
 };
@@ -68,7 +66,7 @@ export const agents: Agent[] = [
     Icon: Radar,
     metric: "86/100",
     metricLabel: "deal heat",
-    microCopy: "Jackie is ranking fit, urgency, and money signal.",
+    microCopy: "Jackie is ranking fit, urgency, and value signal.",
     description:
       "Cuts through vague requests, spots buying intent, and tells you which lead deserves same-day attention.",
   },
@@ -100,7 +98,7 @@ export const agents: Agent[] = [
     metricLabel: "drafts ready",
     microCopy: "Nora is shaping a clean, client-ready scope.",
     description:
-      "Turns messy asks into polished proposal ranges, elegant next steps, and language clients can trust.",
+      "Turns messy asks into polished scopes, concrete deliverables, and language clients can trust.",
   },
   {
     id: "dex",
@@ -122,48 +120,36 @@ export const agents: Agent[] = [
 export const plans: Plan[] = [
   {
     name: "Starter",
-    price: "19 EUR",
     brain: "Core Brain",
-    description: "A lightweight crew for solo operators testing the workflow.",
-    features: [
-      "Jackie Core",
-      "Milo Core",
-      "80 AI actions/month",
-      "Manual lead entry",
-      "Copy-ready replies",
-    ],
-    cta: "Start Core",
+    description: "For solo operators testing FlowCrew.",
+    features: ["Core Brain", "Manual lead entry", "Simple replies"],
+    cta: "Start with one free lead",
   },
   {
     name: "Pro",
-    price: "49 EUR",
     brain: "Smart Brain",
-    description: "The full crew with sharper scoring, proposals, and follow-up.",
+    description: "For freelancers and small teams that want the full Crew.",
     highlighted: true,
     features: [
-      "Jackie Smart",
-      "Milo Smart",
+      "Smart Brain",
       "Nora proposal studio",
       "Dex flow logging",
-      "350 AI actions/month",
-      "Brand tone guidance",
+      "Brand tone",
     ],
-    cta: "Upgrade to Smart",
+    cta: "Unlock Smart Crew",
   },
   {
     name: "Crew+",
-    price: "99 EUR",
     brain: "Elite Brain",
-    description: "A premium brain for deeper reasoning and custom workflows.",
+    description:
+      "For teams that need memory, automations, and deeper reasoning.",
     features: [
       "Elite Brain",
-      "Custom automations",
       "Business memory",
-      "1000 AI actions/month",
+      "Custom automations",
       "Weekly deal report",
-      "Priority setup",
     ],
-    cta: "Go Elite",
+    cta: "Request Crew+",
   },
 ];
 
@@ -179,14 +165,14 @@ export const activities: Activity[] = [
     id: "act-2",
     agent: "jackie",
     title: "Hot lead detected",
-    message: "Studio Aurora scored 86/100 after urgency and budget scan.",
+    message: "Studio Aurora scored 86/100 after urgency and value scan.",
     time: "9 min ago",
   },
   {
     id: "act-3",
     agent: "nora",
     title: "Proposal drafted",
-    message: "Website refresh range prepared at 700-1200 EUR.",
+    message: "Website refresh scope prepared with a focused launch plan.",
     time: "18 min ago",
   },
   {
@@ -203,7 +189,7 @@ export const demoLeads: DemoLead[] = [
     id: "lead-1",
     name: "Studio Aurora",
     projectType: "Brand website",
-    budget: "700-1200 EUR",
+    scope: "Focused project",
     score: 86,
     status: "Hot",
   },
@@ -211,7 +197,7 @@ export const demoLeads: DemoLead[] = [
     id: "lead-2",
     name: "Northline Coffee",
     projectType: "Launch funnel",
-    budget: "1200-2500 EUR",
+    scope: "Multi-part project",
     score: 78,
     status: "Warm",
   },
@@ -219,7 +205,7 @@ export const demoLeads: DemoLead[] = [
     id: "lead-3",
     name: "Marta UX Lab",
     projectType: "Automation sprint",
-    budget: "500-900 EUR",
+    scope: "Lean starter scope",
     score: 71,
     status: "Pending",
   },
@@ -237,7 +223,7 @@ export const dashboardStats = [
     label: "Proposals ready",
     value: "3",
     caption: "Nora has drafts waiting",
-    Icon: BadgeEuro,
+    Icon: FileText,
     accent: "#9D6CFF",
   },
   {
@@ -251,7 +237,7 @@ export const dashboardStats = [
 
 export const missionChecklist = [
   "Rank Studio Aurora and confirm the buying signal",
-  "Shape one Pro-tier proposal range before lunch",
+  "Shape one Pro-tier scope and deliverables plan before lunch",
   "Send two reliable follow-ups within the next 48 hours",
   "Keep Dex logging every handoff in the flow memory",
 ];

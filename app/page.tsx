@@ -1,553 +1,501 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Bot,
-  Brain,
-  CalendarCheck2,
   CheckCircle2,
   ClipboardCheck,
   FileText,
-  Flame,
+  MailCheck,
   Radar,
-  ShieldCheck,
   Sparkles,
   Workflow,
   Zap,
 } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
 import PricingCard from "@/components/PricingCard";
-import { agents, plans } from "@/lib/data";
+import { useLanguage } from "@/components/LanguageProvider";
+import AgentAvatar from "@/components/AgentAvatar";
+import { agents, plans, type AgentId, type Plan } from "@/lib/data";
 
-const marketingAgents = agents.map((agent) => {
-  const marketing = {
-    jackie: {
-      role: "Lead Intelligence",
-      tagline: "Cuts through vague requests and flags the deal worth chasing.",
-      status: "3 hot leads ranked",
-      mood: "Sharp",
-      cardBackground:
-        "linear-gradient(135deg, rgba(217, 70, 239, 0.24), rgba(244, 63, 94, 0.1) 52%, rgba(255, 255, 255, 0.035))",
-      accent: "rgba(217, 70, 239, 0.42)",
-    },
-    milo: {
-      role: "Follow-up Control",
-      tagline: "Keeps every promise on time without sounding robotic.",
-      status: "2 follow-ups protected",
-      mood: "Reliable",
-      cardBackground:
-        "linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(34, 211, 238, 0.1) 52%, rgba(255, 255, 255, 0.035))",
-      accent: "rgba(34, 211, 238, 0.42)",
-    },
-    nora: {
-      role: "Proposal Studio",
-      tagline: "Turns messy asks into polished, client-ready scope.",
-      status: "1 proposal refined",
-      mood: "Elegant",
-      cardBackground:
-        "linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(99, 102, 241, 0.1) 52%, rgba(255, 255, 255, 0.035))",
-      accent: "rgba(139, 92, 246, 0.45)",
-    },
-    dex: {
-      role: "Flow Engineer",
-      tagline: "Wires the handoff layer so every move is logged.",
-      status: "4 flows synced",
-      mood: "Technical",
-      cardBackground:
-        "linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(132, 204, 22, 0.1) 52%, rgba(255, 255, 255, 0.035))",
-      accent: "rgba(16, 185, 129, 0.42)",
-    },
-  }[agent.id];
-
-  return { ...agent, ...marketing };
-});
-
-const liveActivity = [
-  "Jackie scored Studio Aurora as HOT - 86/100",
-  "Nora shaped a 700-1200 EUR proposal",
-  "Milo scheduled a soft follow-up in 48h",
-  "Dex logged Lead -> Jackie -> Nora -> Milo",
-];
-
-const howItWorks = [
+const agentStyles: Record<
+  AgentId,
   {
-    step: "1",
-    title: "Drop a lead",
-    description: "Paste the inquiry, budget, project type, and raw client context.",
-    Icon: ClipboardCheck,
-    accent: "text-cyan-200",
-    glow: "linear-gradient(180deg, rgba(103, 232, 249, 0.2), transparent)",
-  },
-  {
-    step: "2",
-    title: "Jackie scores it",
-    description: "Sharp lead intelligence ranks urgency, fit, and deal heat.",
+    Icon: typeof Radar;
+    accent: string;
+    glow: string;
+  }
+> = {
+  jackie: {
     Icon: Radar,
-    accent: "text-fuchsia-200",
-    glow: "linear-gradient(180deg, rgba(240, 171, 252, 0.2), transparent)",
+    accent: "text-cyan-100",
+    glow: "shadow-cyan-500/15",
   },
-  {
-    step: "3",
-    title: "Nora drafts the proposal",
-    description: "Elegant scope, premium range, and client-ready next steps.",
+  nora: {
     Icon: FileText,
-    accent: "text-violet-200",
-    glow: "linear-gradient(180deg, rgba(196, 181, 253, 0.2), transparent)",
+    accent: "text-fuchsia-100",
+    glow: "shadow-fuchsia-500/15",
   },
-  {
-    step: "4",
-    title: "Milo schedules follow-up",
-    description: "Reliable timing keeps the opportunity warm without pressure.",
-    Icon: CalendarCheck2,
-    accent: "text-lime-200",
-    glow: "linear-gradient(180deg, rgba(190, 242, 100, 0.18), transparent)",
+  milo: {
+    Icon: MailCheck,
+    accent: "text-violet-100",
+    glow: "shadow-violet-500/15",
   },
-  {
-    step: "5",
-    title: "Dex logs the flow",
-    description: "Technical handoff memory turns the run into a repeatable system.",
+  dex: {
     Icon: Workflow,
-    accent: "text-rose-200",
-    glow: "linear-gradient(180deg, rgba(253, 164, 175, 0.18), transparent)",
+    accent: "text-rose-100",
+    glow: "shadow-rose-500/15",
   },
+};
+
+const flowVisuals = [
+  { Icon: ClipboardCheck, color: "text-emerald-200" },
+  { Icon: Radar, color: "text-cyan-200" },
+  { Icon: FileText, color: "text-fuchsia-200" },
+  { Icon: MailCheck, color: "text-violet-200" },
+  { Icon: Workflow, color: "text-rose-200" },
 ];
 
-const brainShowcase = [
-  {
-    label: "Core Brain",
-    plan: "Starter",
-    Icon: Bot,
-    headline: "Answers the request.",
-    response:
-      "Flags the lead as warm, suggests a simple reply, and gives a basic 700-1200 EUR range.",
-    bullets: ["Base scoring", "Simple reply", "Manual next step"],
-    border: "border-white/10",
-  },
-  {
-    label: "Smart Brain",
-    plan: "Pro",
-    Icon: Brain,
-    headline: "Finds the deal angle.",
-    response:
-      "Spots the launch urgency, scores Studio Aurora as hot, drafts a structured proposal, and queues a 48h follow-up.",
-    bullets: ["Deal heat", "Proposal logic", "Follow-up timing"],
-    border: "border-fuchsia-300/30",
-    featured: true,
-  },
-  {
-    label: "Elite Brain",
-    plan: "Crew+",
-    Icon: ShieldCheck,
-    headline: "Builds the operating loop.",
-    response:
-      "Adds premium positioning, identifies revenue risk, remembers business context, and asks Dex to log a reusable flow.",
-    bullets: ["Business memory", "Risk analysis", "Custom flow trace"],
-    border: "border-cyan-300/25",
-  },
+const flowAgentIds: Array<AgentId | null> = [
+  null,
+  "jackie",
+  "nora",
+  "milo",
+  "dex",
 ];
+
+const orchestratedAgents: AgentId[] = ["jackie", "nora", "milo", "dex"];
+
+const howIcons = [ClipboardCheck, Zap, CheckCircle2];
+
+type LandingCopy = ReturnType<typeof useLanguage>["copy"]["landing"];
+
+function localizePlans(copy: ReturnType<typeof useLanguage>["copy"]): Plan[] {
+  return plans.map((plan, index) => {
+    const localizedPlan =
+      copy.landing.pricingPlans[index] ?? copy.landing.pricingPlans[0];
+
+    return {
+      ...plan,
+      description: localizedPlan.description,
+      features: [...localizedPlan.features],
+      cta: localizedPlan.cta,
+    };
+  });
+}
 
 export default function Home() {
+  const { copy } = useLanguage();
+  const localizedPlans = localizePlans(copy);
+
   return (
-    <main className="flow-bg relative min-h-screen overflow-hidden">
-      <div className="flow-grid pointer-events-none absolute inset-0" />
-      <div className="pointer-events-none absolute left-1/2 top-[-12rem] h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-fuchsia-600/18 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-10rem] right-[-6rem] h-[30rem] w-[30rem] rounded-full bg-cyan-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute left-[-8rem] top-1/3 h-[26rem] w-[26rem] rounded-full bg-violet-600/10 blur-3xl" />
+    <main className="min-h-screen overflow-hidden bg-[#060710] text-white">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-[-10%] top-[-10%] h-[28rem] w-[28rem] rounded-full bg-cyan-500/20 blur-[120px]" />
+        <div className="absolute right-[-12%] top-[16%] h-[32rem] w-[32rem] rounded-full bg-fuchsia-500/16 blur-[130px]" />
+        <div className="absolute bottom-[-18%] left-[35%] h-[30rem] w-[30rem] rounded-full bg-violet-500/12 blur-[120px]" />
+      </div>
 
-      <header className="relative z-10 mx-auto flex max-w-[1280px] items-center justify-between px-5 py-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-3" aria-label="FlowCrew">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-fuchsia-100 shadow-2xl shadow-fuchsia-500/20 backdrop-blur">
-            <Bot aria-hidden="true" className="h-5 w-5" />
-          </span>
-          <span>
-            <span className="block text-lg font-black tracking-tight text-white">
-              FlowCrew
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#060710]/72 backdrop-blur-2xl">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+          <Link className="group flex items-center gap-3" href="/">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10 shadow-[0_0_34px_rgba(34,211,238,0.16)]">
+              <Bot aria-hidden="true" className="h-5 w-5 text-cyan-100" />
             </span>
-            <span className="block text-xs text-white/45">
-              AI agents for daily ops
+            <span>
+              <span className="block text-lg font-black tracking-tight">
+                FlowCrew
+              </span>
+              <span className="block text-[10px] font-bold uppercase tracking-[0.26em] text-cyan-100/55">
+                AI Automation Hub
+              </span>
             </span>
-          </span>
-        </Link>
-        <nav className="hidden items-center gap-7 text-sm font-medium text-white/55 md:flex">
-          <a href="#how" className="transition hover:text-white">
-            How it works
-          </a>
-          <a href="#brains" className="transition hover:text-white">
-            Brains
-          </a>
-          <a href="#agents" className="transition hover:text-white">
-            Agents
-          </a>
-          <a href="#pricing" className="transition hover:text-white">
-            Pricing
-          </a>
-          <Link href="/dashboard" className="transition hover:text-white">
-            Dashboard
           </Link>
-        </nav>
-      <Link
-  href="/trial"
-  className="rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15 sm:px-5"
->
-  Try free lead
-</Link>
-      </header>
 
-      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-5.5rem)] max-w-[1280px] items-center gap-10 px-5 pb-20 pt-8 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:pt-8">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-        >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-4 py-2 text-sm font-semibold text-fuchsia-50 shadow-2xl shadow-fuchsia-500/10">
-            <Flame aria-hidden="true" className="h-4 w-4" />
-            Stop building workflows. Start hiring agents.
-          </div>
-          <h1 className="premium-display max-w-[720px] text-white">
-            Turn every inbound lead into a clean sales motion.
-          </h1>
-          <p className="mt-6 max-w-[640px] text-lg font-medium leading-8 text-white/72">
-            Jackie qualifies the lead, Nora shapes the proposal, Milo protects
-            the follow-up, and Dex logs the flow. You keep the client momentum.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-           <Link
-  href="/trial"
-  className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
->
-  Try 1 lead for free
-  <ArrowRight
-    aria-hidden="true"
-    className="h-4 w-4 transition group-hover:translate-x-1"
-  />
-</Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-6 py-4 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-            >
-              Open dashboard
+          <div className="hidden items-center gap-7 text-sm font-bold text-white/62 md:flex">
+            <a className="transition hover:text-white" href="#how-it-works">
+              {copy.nav.how}
+            </a>
+            <a className="transition hover:text-white" href="#agents">
+              {copy.nav.agents}
+            </a>
+            <a className="transition hover:text-white" href="#pricing">
+              {copy.nav.pricing}
+            </a>
+            <Link className="transition hover:text-white" href="/dashboard">
+              {copy.nav.dashboard}
             </Link>
           </div>
-          <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/50">
-            {["Lead Inbox AI", "Smart Proposals", "Free Trial - 1 Lead"].map(
-              (item) => (
-                <span
-                  key={item}
-                  className="rounded-full border border-white/10 px-3 py-1"
-                >
-                  {item}
-                </span>
-              ),
-            )}
-          </div>
-        </motion.div>
 
-        <motion.div
-          id="demo"
-          initial={{ opacity: 0, y: 30, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="premium-demo-panel rounded-[2rem] p-4"
-        >
-          <div className="rounded-[1.5rem] border border-white/10 bg-[#0b0b18]/92 p-5 sm:p-6">
-            <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageSelector />
+            <Link
+              className="hidden rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/15 sm:inline-flex"
+              href="/trial"
+            >
+              {copy.nav.trial}
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-28 lg:pt-24">
+        <div>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-100/80">
+            <Sparkles aria-hidden="true" className="h-4 w-4" />
+            {copy.landing.eyebrow}
+          </div>
+
+          <h1 className="max-w-4xl text-5xl font-black tracking-[-0.07em] text-white sm:text-6xl lg:text-7xl">
+            {copy.landing.headline}
+          </h1>
+
+          <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+            {copy.landing.subheadline}
+          </p>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <Link
+              className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-cyan-300 px-6 py-4 text-base font-black text-slate-950 shadow-[0_0_44px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 hover:bg-white"
+              href="/trial"
+            >
+              {copy.landing.primaryCta}
+              <ArrowRight
+                aria-hidden="true"
+                className="h-5 w-5 transition group-hover:translate-x-1"
+              />
+            </Link>
+            <a
+              className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055] px-6 py-4 text-base font-black text-white transition hover:bg-white/10"
+              href="#how-it-works"
+            >
+              {copy.landing.secondaryCta}
+            </a>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute -inset-4 rounded-[2.8rem] bg-gradient-to-br from-cyan-300/14 via-fuchsia-400/10 to-violet-500/12 blur-2xl" />
+          <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-6">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
               <div>
-                <p className="text-sm text-white/45">Crew Status</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight text-white">
-                  Your Crew is online
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-100/65">
+                  {copy.landing.flowLabel}
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
+                  {copy.landing.flowTitle}
                 </h2>
               </div>
-              <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-bold text-emerald-200">
-                LIVE
+              <div className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-xs font-black text-emerald-100">
+                Live
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {marketingAgents.map((agent) => {
-                const Icon = agent.Icon;
+            <div className="mt-6 space-y-3">
+              {copy.landing.flowSteps.map((step, index) => {
+                const visual = flowVisuals[index] ?? flowVisuals[0];
+                const Icon = visual.Icon;
+                const flowAgentId = flowAgentIds[index];
 
                 return (
-                  <div
-                    key={agent.id}
-                    className="premium-agent-tile rounded-3xl border border-white/10 p-4"
-                    style={{ background: agent.cardBackground }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/12"
-                          style={{ boxShadow: `0 0 34px ${agent.accent}` }}
-                        >
-                          <Icon aria-hidden="true" className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="font-black text-white">{agent.name}</p>
-                          <p className="text-xs text-white/50">{agent.role}</p>
-                        </div>
+                  <div className="relative" key={step}>
+                    <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0B1020]/72 p-4 transition hover:border-cyan-200/25 hover:bg-[#11172A]/78">
+                      {flowAgentId ? (
+                        <AgentAvatar agentId={flowAgentId} decorative size="sm" />
+                      ) : (
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
+                          <Icon
+                            aria-hidden="true"
+                            className={`h-5 w-5 ${visual.color}`}
+                          />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/38">
+                          Step {index + 1}
+                        </p>
+                        <p className="mt-1 text-base font-black text-white">
+                          {step}
+                        </p>
                       </div>
-                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
                     </div>
-                    <p className="mt-4 text-sm text-white/65">{agent.status}</p>
-                    <p className="mt-1 text-xs text-white/35">
-                      Mode: {agent.mood}
-                    </p>
+                    {index < copy.landing.flowSteps.length - 1 ? (
+                      <div className="ml-10 h-4 w-px bg-gradient-to-b from-cyan-200/40 to-transparent" />
+                    ) : null}
                   </div>
                 );
               })}
             </div>
-
-            <div className="mt-5 rounded-3xl border border-white/10 bg-black/30 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-bold text-white/70">
-                <Zap aria-hidden="true" className="h-4 w-4 text-fuchsia-200" />
-                Live activity
-              </div>
-              <div className="space-y-2 font-mono text-xs text-white/55">
-                {liveActivity.map((item, index) => (
-                  <div key={item} className="flex gap-2">
-                    <span className="text-fuchsia-200">0{index + 1}</span>
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      <section id="how" className="relative z-10 mx-auto max-w-[1280px] px-5 py-24 sm:px-8">
-        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-cyan-200">
-              How it works
-            </p>
-            <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl">
-              One lead goes in. A full sales motion comes out.
-            </h2>
-          </div>
-          <p className="max-w-md text-sm leading-7 text-white/55">
-            The demo stays local, but the product story feels like a premium AI
-            crew you can understand in ten seconds.
+      <CrewOrchestrationSection copy={copy.landing} />
+
+      <section
+        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
+        id="how-it-works"
+      >
+        <div className="max-w-3xl">
+          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
+            {copy.landing.howEyebrow}
+          </p>
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+            {copy.landing.howTitle}
+          </h2>
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            {copy.landing.howBody}
           </p>
         </div>
 
-        <div className="mt-12 grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-          {howItWorks.map((step) => {
-            const Icon = step.Icon;
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {copy.landing.howSteps.map((step, index) => {
+            const Icon = howIcons[index] ?? howIcons[0];
 
             return (
-              <motion.article
+              <article
+                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/10 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-200/25"
                 key={step.title}
-                whileHover={{ y: -6 }}
-                className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.055] p-5 backdrop-blur"
               >
-                <div className="absolute inset-x-0 top-0 h-24" style={{ background: step.glow }} />
-                <div className="relative">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-black text-white/35">
-                      STEP {step.step}
-                    </span>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
-                      <Icon aria-hidden="true" className={`h-5 w-5 ${step.accent}`} />
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-200/10">
+                  <Icon aria-hidden="true" className="h-5 w-5 text-cyan-100" />
+                </div>
+                <h3 className="text-xl font-black text-white">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {step.body}
+                </p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section
+        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
+        id="agents"
+      >
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div className="max-w-3xl">
+            <p className="text-sm font-black uppercase tracking-[0.24em] text-fuchsia-100/62">
+              {copy.landing.agentsEyebrow}
+            </p>
+            <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+              {copy.landing.agentsTitle}
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-slate-300">
+              {copy.landing.agentsBody}
+            </p>
+          </div>
+          <Link
+            className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055] px-5 py-3 font-black text-white transition hover:bg-white/10"
+            href="/trial"
+          >
+            {copy.landing.primaryCta}
+          </Link>
+        </div>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {agents.map((agent) => {
+            const style = agentStyles[agent.id];
+            const AgentIcon = style.Icon;
+            const agentCopy = copy.landing.agentCards[agent.id];
+
+            return (
+              <article
+                className={`group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-2xl ${style.glow} backdrop-blur transition hover:-translate-y-1 hover:border-white/20`}
+                key={agent.id}
+              >
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div className="relative">
+                    <AgentAvatar
+                      agentId={agent.id}
+                      label={`${agent.name} AI portrait`}
+                      size="lg"
+                    />
+                    <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-[#0B1020]/90 backdrop-blur">
+                      <AgentIcon
+                        aria-hidden="true"
+                        className={`h-4 w-4 ${style.accent}`}
+                      />
                     </span>
                   </div>
-                  <h3 className="mt-8 text-xl font-black tracking-tight text-white">
-                    {step.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-white/55">
-                    {step.description}
+                  <span className="rounded-full border border-emerald-200/15 bg-emerald-200/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/80">
+                    {agent.status}
+                  </span>
+                </div>
+                <p className="text-2xl font-black text-white">{agent.name}</p>
+                <p className={`mt-2 text-sm font-black ${style.accent}`}>
+                  {agentCopy.role}
+                </p>
+                <p className="mt-5 min-h-20 text-sm leading-6 text-slate-300">
+                  {agentCopy.tagline}
+                </p>
+                <div className="mt-6 rounded-2xl border border-white/10 bg-[#0B1020]/72 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-white/35">
+                    Output
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white/75">
+                    {agent.microCopy}
                   </p>
                 </div>
-              </motion.article>
+              </article>
             );
           })}
         </div>
       </section>
 
-      <section id="brains" className="relative z-10 mx-auto max-w-[1280px] px-5 py-20 sm:px-8">
-        <div className="rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] p-6 backdrop-blur md:p-12">
-          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr]">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm text-white/70">
-                <Brain aria-hidden="true" className="h-4 w-4 text-cyan-200" />
-                Same lead, smarter brain
-              </div>
-              <h2 className="text-4xl font-black tracking-[-0.04em] text-white md:text-5xl">
-                The same request gets sharper at every tier.
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-white/60">
-                FlowCrew is easier to sell when buyers can feel the difference:
-                Core answers, Smart reasons, Elite builds the operating loop.
-              </p>
-
-              <div className="mt-8 rounded-[1.8rem] border border-cyan-300/20 bg-cyan-300/10 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-100/70">
-                  Same client request
-                </p>
-                <p className="mt-4 text-xl font-black text-white">
-                  Studio Aurora needs a polished website refresh before launch.
-                </p>
-                <div className="mt-5 grid gap-2 text-sm text-white/60 sm:grid-cols-3">
-                  <span className="rounded-2xl bg-black/20 px-3 py-2">
-                    Budget: 500-1000 EUR
-                  </span>
-                  <span className="rounded-2xl bg-black/20 px-3 py-2">
-                    Timeline: this month
-                  </span>
-                  <span className="rounded-2xl bg-black/20 px-3 py-2">
-                    Goal: conversion path
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-4">
-              {brainShowcase.map((tier) => {
-                const Icon = tier.Icon;
-
-                return (
-                  <article
-                    key={tier.label}
-                    className={`rounded-[1.8rem] border ${tier.border} ${
-                      tier.featured
-                        ? "bg-fuchsia-300/10 shadow-2xl shadow-fuchsia-500/10"
-                        : "bg-black/20"
-                    } p-5`}
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07]">
-                          <Icon aria-hidden="true" className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/35">
-                            {tier.plan}
-                          </p>
-                          <h3 className="text-2xl font-black text-white">
-                            {tier.label}
-                          </h3>
-                        </div>
-                      </div>
-                      {tier.featured ? (
-                        <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">
-                          SELLER FAVORITE
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-5 text-lg font-bold text-white">
-                      {tier.headline}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-white/58">
-                      {tier.response}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {tier.bullets.map((bullet) => (
-                        <span
-                          key={bullet}
-                          className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-semibold text-white/60"
-                        >
-                          {bullet}
-                        </span>
-                      ))}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="agents" className="relative z-10 mx-auto max-w-[1280px] px-5 py-20 sm:px-8">
+      <section
+        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
+        id="pricing"
+      >
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-fuchsia-200">
-            Meet the Crew
+          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
+            {copy.landing.pricingEyebrow}
           </p>
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl">
-            Four agents. One clean revenue workflow.
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+            {copy.landing.pricingTitle}
           </h2>
-        </div>
-        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {marketingAgents.map((agent) => {
-            const Icon = agent.Icon;
-
-            return (
-              <motion.article
-                key={agent.id}
-                whileHover={{ y: -6 }}
-                className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition"
-              >
-                <div
-                  className="mb-6 flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-white/10"
-                  style={{ background: agent.cardBackground }}
-                >
-                  <Icon aria-hidden="true" className="h-6 w-6" />
-                </div>
-                <h3 className="text-2xl font-black text-white">{agent.name}</h3>
-                <p className="mt-1 text-sm font-semibold text-fuchsia-100/80">
-                  {agent.role}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-white/55">
-                  {agent.tagline}
-                </p>
-              </motion.article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section id="pricing" className="relative z-10 mx-auto max-w-[1280px] px-5 py-20 sm:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-cyan-200">
-            Pricing
-          </p>
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.04em] text-white md:text-5xl">
-            Upgrade your Crew brain.
-          </h2>
-          <p className="mt-4 text-white/55">
-            Start lightweight. Upgrade when you want deeper reasoning and cleaner
-            automation.
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            {copy.landing.pricingBody}
           </p>
         </div>
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <PricingCard key={plan.name} plan={plan} />
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {localizedPlans.map((plan) => (
+            <PricingCard
+              bestValueLabel={copy.landing.bestValue}
+              depthLabel={copy.landing.pricingDepth}
+              key={plan.name}
+              plan={plan}
+            />
           ))}
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-5xl px-5 py-24 text-center sm:px-8">
-        <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.06] p-7 backdrop-blur md:p-16">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-300/10 text-fuchsia-100">
-            <Sparkles aria-hidden="true" className="h-5 w-5" />
-          </div>
-          <h2 className="mt-6 text-4xl font-black tracking-[-0.05em] text-white md:text-6xl">
-            Your Crew is ready.
+      <section className="relative z-10 mx-auto max-w-7xl px-5 pb-20 pt-12 sm:px-8">
+        <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-cyan-300/14 via-fuchsia-400/10 to-violet-500/14 p-8 text-center shadow-2xl shadow-black/25 backdrop-blur sm:p-12">
+          <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+            {copy.landing.finalTitle}
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-white/60">
-            Drop one lead and watch FlowCrew turn it into scoring, proposal,
-            follow-up, and flow memory.
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+            {copy.landing.finalBody}
           </p>
-         <Link
-  href="/trial"
-  className="group mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 font-black text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.02]"
->
-  Try 1 lead for free
-            <ArrowRight
-              aria-hidden="true"
-              className="h-4 w-4 transition group-hover:translate-x-1"
-            />
+          <Link
+            className="mt-8 inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-100"
+            href="/trial"
+          >
+            {copy.landing.primaryCta}
+            <ArrowRight aria-hidden="true" className="h-5 w-5" />
           </Link>
         </div>
       </section>
 
-      <footer className="relative z-10 mx-auto flex max-w-[1280px] flex-col gap-3 border-t border-white/10 px-5 py-6 text-sm text-white/40 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <span>FlowCrew - AI agents for daily ops</span>
-        <span className="flex items-center gap-2">
-          <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-emerald-200" />
-          v0 demo, local-first
-        </span>
+      <footer className="relative z-10 border-t border-white/10 px-5 py-8 text-center text-sm text-white/45 sm:px-8">
+        {copy.landing.footer}
       </footer>
     </main>
+  );
+}
+
+function CrewOrchestrationSection({ copy }: { copy: LandingCopy }) {
+  return (
+    <section
+      className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
+      id="orchestration"
+    >
+      <div className="grid gap-8 rounded-[2.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div>
+          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
+            {copy.orchestrationEyebrow}
+          </p>
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
+            {copy.orchestrationTitle}
+          </h2>
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            {copy.orchestrationBody}
+          </p>
+
+          <div className="mt-7 grid gap-3">
+            {copy.orchestrationItems.map((item) => (
+              <div
+                className="rounded-3xl border border-white/10 bg-[#0B1020]/70 p-4"
+                key={item.title}
+              >
+                <div className="flex gap-3">
+                  <CheckCircle2
+                    aria-hidden="true"
+                    className="mt-1 h-4 w-4 shrink-0 text-cyan-100"
+                  />
+                  <div>
+                    <p className="font-black text-white">{item.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      {item.body}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-[2rem] border border-cyan-200/15 bg-[#090D1A]/86 p-5 sm:p-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.16),transparent_32%),radial-gradient(circle_at_72%_72%,rgba(217,70,239,0.14),transparent_38%)]" />
+
+          <div className="relative">
+            <div className="mx-auto max-w-sm rounded-[2rem] border border-white/12 bg-white/[0.07] p-5 text-center shadow-2xl shadow-cyan-500/10">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10">
+                <Workflow aria-hidden="true" className="h-6 w-6 text-cyan-100" />
+              </div>
+              <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-100/65">
+                {copy.orchestrationCenterLabel}
+              </p>
+              <h3 className="mt-2 text-2xl font-black text-white">
+                {copy.orchestrationCenterTitle}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                {copy.orchestrationCenterBody}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {orchestratedAgents.map((agentId, index) => {
+                const agentCopy = copy.agentCards[agentId];
+                const name = agentId[0].toUpperCase() + agentId.slice(1);
+
+                return (
+                  <div
+                    className="flex items-center gap-3 rounded-3xl border border-white/10 bg-[#0B1020]/76 p-3"
+                    key={agentId}
+                  >
+                    <AgentAvatar agentId={agentId} decorative size="sm" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-white/38">
+                        {copy.orchestrationPassLabel} {index + 1}
+                      </p>
+                      <p className="font-black text-white">{name}</p>
+                      <p className="truncate text-xs font-semibold text-slate-400">
+                        {agentCopy.role}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-3xl border border-emerald-200/15 bg-emerald-200/10 px-4 py-3 text-sm font-black text-emerald-100">
+              {copy.orchestrationOutcome.map((item, index) => (
+                <span className="inline-flex items-center gap-2" key={item}>
+                  <span>{item}</span>
+                  {index < copy.orchestrationOutcome.length - 1 ? (
+                    <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                  ) : null}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

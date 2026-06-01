@@ -58,7 +58,7 @@ export default function Sidebar() {
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-200">
           Current plan
         </p>
-        <p className="mt-2 text-lg font-semibold text-white">Pro - Smart Brain</p>
+        <p className="mt-2 text-lg font-semibold text-white">Free Trial - 1 Lead</p>
         <p className="mt-2 text-sm leading-6 text-slate-400">
           Jackie, Nora, Milo and Dex are unlocked for the demo flow.
         </p>
