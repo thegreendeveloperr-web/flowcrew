@@ -230,7 +230,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/50">
-            {["Lead Inbox AI", "Smart Proposals", "Premium Brain Levels"].map(
+            {["Lead Inbox AI", "Smart Proposals", "Free Trial - 1 Lead"].map(
               (item) => (
                 <span
                   key={item}
