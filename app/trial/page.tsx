@@ -13,51 +13,19 @@ import {
   Tags,
   Workflow,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import AgentAvatar from "@/components/AgentAvatar";
 import LanguageSelector from "@/components/LanguageSelector";
-import { useLanguage, type Language } from "@/components/LanguageProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { AgentId } from "@/lib/data";
+import {
+  conversationSourceValues,
+  type ConversationAnalysis,
+  type ConversationInput,
+  type ConversationSource,
+} from "@/lib/flowcrew-types";
 
-const trialStorageKey = "flowcrew:trial:one-conversation:v1";
-const sourceValues = ["whatsapp", "gmail", "instagram", "phone", "other"] as const;
-
-type SourceValue = (typeof sourceValues)[number];
-
-type ConversationForm = {
-  clientName: string;
-  sourceType: SourceValue;
-  messyMessage: string;
-  businessType: string;
-  goal: string;
-};
-
-type ConversationResult = {
-  jackie: {
-    cleanSummary: string;
-    keyFacts: string[];
-    missingInfo: string[];
-    detectedTopics: string[];
-    suggestedAgent: string;
-  };
-  dex: {
-    tags: string[];
-    priority: string;
-    category: string;
-    crmNote: string;
-    nextSteps: string[];
-  };
-  nora: {
-    status: string;
-    profitabilitySignal: string;
-    riskLevel: string;
-    why: string;
-    questions: string[];
-  };
-  milo: {
-    replies: Record<string, string>;
-  };
-};
+type ConversationForm = Omit<ConversationInput, "language">;
 
 const initialForm: ConversationForm = {
   clientName: "",
@@ -69,184 +37,12 @@ const initialForm: ConversationForm = {
 };
 
 const previewAgentIds: AgentId[] = ["jackie", "dex", "nora", "milo"];
-
-function getSourceLabel(options: readonly string[], value: SourceValue) {
-  return options[sourceValues.indexOf(value)] ?? options[0] ?? "WhatsApp";
-}
-
-function isConversationForm(value: unknown): value is ConversationForm {
-  if (!value || typeof value !== "object") return false;
-  const data = value as Partial<ConversationForm>;
-
-  return (
-    typeof data.clientName === "string" &&
-    typeof data.messyMessage === "string" &&
-    typeof data.businessType === "string" &&
-    typeof data.goal === "string" &&
-    typeof data.sourceType === "string" &&
-    sourceValues.includes(data.sourceType as SourceValue)
-  );
-}
-
-function readStoredForm() {
-  const stored = window.localStorage.getItem(trialStorageKey);
-  if (!stored) return null;
-
-  try {
-    const parsed = JSON.parse(stored) as unknown;
-    if (isConversationForm(parsed)) return parsed;
-  } catch {
-    window.localStorage.removeItem(trialStorageKey);
-  }
-
-  window.localStorage.removeItem(trialStorageKey);
-  return null;
-}
-
-function hasAny(text: string, words: string[]) {
-  const lower = text.toLowerCase();
-  return words.some((word) => lower.includes(word));
-}
-
-function buildConversationResult(
-  input: ConversationForm,
-  language: Language,
-  sourceLabel: string,
-): ConversationResult {
-  const message = input.messyMessage.trim();
-  const lower = message.toLowerCase();
-  const client = input.clientName.trim() || (language === "it" ? "cliente" : "client");
-  const hasEvent = hasAny(lower, ["evento", "event", "biglietti", "tickets", "serata"]);
-  const hasBudget = hasAny(lower, ["budget", "€", "euro", "k", "prezzo", "price"]);
-  const hasUrgency = hasAny(lower, ["veloce", "urgente", "fine mese", "subito", "asap", "today"]);
-  const hasMarketing = hasAny(lower, ["post", "mail", "email", "promuovere", "promo", "ads", "social"]);
-
-  if (language === "it") {
-    return {
-      jackie: {
-        cleanSummary: `${client} ha inviato da ${sourceLabel} una richiesta non ancora strutturata. Il bisogno principale sembra: ${hasEvent ? "promuovere un evento e vendere più biglietti" : "capire come procedere con una richiesta commerciale"}. Il messaggio contiene più aree operative, quindi va separato prima di rispondere.`,
-        keyFacts: [
-          hasEvent ? "La richiesta riguarda un possibile evento o iniziativa commerciale." : "La richiesta contiene un interesse commerciale, ma il tipo di progetto non è ancora preciso.",
-          hasMarketing ? "Sono citati materiali/azioni di marketing come post, email o promozione." : "Non sono ancora chiari canali e materiali richiesti.",
-          hasUrgency ? "C'è un segnale di urgenza o scadenza ravvicinata." : "La tempistica non è abbastanza chiara.",
-        ],
-        missingInfo: [
-          hasBudget ? "Budget citato, ma da confermare con cifra precisa." : "Budget preciso.",
-          "Obiettivo misurabile: vendite, contatti, prenotazioni o visibilità.",
-          "Deliverable richiesti e priorità tra sito, email, social, evento o automazione.",
-        ],
-        detectedTopics: [
-          hasEvent ? "Evento" : "Richiesta cliente",
-          hasMarketing ? "Marketing" : "Strategia da chiarire",
-          hasUrgency ? "Urgenza" : "Tempistiche da chiarire",
-        ],
-        suggestedAgent: hasEvent
-          ? "Vediamo cosa ha da dire Nora: sembra che la conversazione stia diventando una valutazione di opportunità/evento."
-          : "Dex può taggare la richiesta, poi Nora può valutare se vale la pena procedere.",
-      },
-      dex: {
-        tags: [
-          hasEvent ? "Evento" : "Nuovo cliente",
-          hasUrgency ? "Urgente" : "Da pianificare",
-          hasBudget ? "Budget citato" : "Budget mancante",
-          "Da chiarire",
-          "Follow-up",
-        ],
-        priority: hasUrgency ? "Alta" : "Media",
-        category: hasEvent ? "Richiesta evento / promozione" : "Conversazione cliente da qualificare",
-        crmNote: `${client} da ${sourceLabel}: richiesta da ordinare prima della risposta. Jackie ha rilevato argomenti multipli e informazioni mancanti. Prossima azione: inviare domanda di chiarimento mirata prima di fare promesse o preventivi.`,
-        nextSteps: [
-          "Chiedere budget, scadenza reale e obiettivo principale.",
-          "Separare cosa è obbligatorio da cosa è opzionale.",
-          "Decidere se serve una call breve o una risposta scritta con domande.",
-        ],
-      },
-      nora: {
-        status: hasEvent ? "Da chiarire" : "Informazioni insufficienti",
-        profitabilitySignal: hasBudget && hasUrgency ? "Potenzialmente profittevole" : "Possibile, ma non ancora dimostrato",
-        riskLevel: hasUrgency && !hasBudget ? "Medio-alto" : "Medio",
-        why: hasEvent
-          ? "L'evento può essere interessante, ma senza budget, tempi, obiettivo e deliverable è rischioso accettare subito. Potrebbe diventare profittevole se il cliente ha urgenza reale e budget coerente."
-          : "La richiesta mostra interesse, ma è ancora troppo generica per stimare valore, fattibilità o priorità.",
-        questions: [
-          "Qual è il risultato principale che vuoi ottenere?",
-          "Che budget hai previsto per questa attività?",
-          "Qual è la scadenza reale e quali materiali sono indispensabili?",
-        ],
-      },
-      milo: {
-        replies: {
-          Professional: `Ciao, grazie per il contesto. Ho capito che c'è una richiesta legata a ${hasEvent ? "un evento/promozione" : "un progetto da definire"}, ma prima di darti una risposta precisa mi servono tre dettagli: obiettivo principale, budget indicativo e scadenza reale. Così posso dirti se è fattibile e proporti il percorso più sensato.`,
-          Friendly: `Ciao! Grazie per avermi scritto. Ho capito l'idea generale, però ci sono alcune cose da chiarire per evitare di proporti qualcosa a caso. Mi dici budget, scadenza e cosa vuoi ottenere come risultato principale?`,
-          Short: `Ciao! Mi servono budget, scadenza reale e obiettivo principale. Poi ti dico subito se è fattibile e come procedere.`,
-          "Firm but polite": `Ciao, posso aiutarti, però prima di confermare disponibilità o tempi ho bisogno di budget, scadenza reale e priorità. Senza questi dettagli rischiamo di impostare male il lavoro.`,
-        },
-      },
-    };
-  }
-
-  return {
-    jackie: {
-      cleanSummary: `${client} sent an unstructured request from ${sourceLabel}. The main need seems to be ${hasEvent ? "promoting an event and selling more tickets" : "understanding how to move forward with a client request"}. The message mixes multiple work areas, so it needs to be separated before replying.`,
-      keyFacts: [
-        hasEvent ? "The request is related to an event or commercial initiative." : "The request has commercial intent, but the project type is not precise yet.",
-        hasMarketing ? "Marketing actions like posts, email, or promotion are mentioned." : "Channels and required materials are not clear yet.",
-        hasUrgency ? "There is an urgency or near-deadline signal." : "Timing is not clear enough.",
-      ],
-      missingInfo: [
-        hasBudget ? "Budget is mentioned, but the exact amount must be confirmed." : "Exact budget.",
-        "Measurable goal: sales, bookings, leads, or visibility.",
-        "Required deliverables and priority across site, email, social, event, or automation.",
-      ],
-      detectedTopics: [
-        hasEvent ? "Event" : "Client request",
-        hasMarketing ? "Marketing" : "Strategy to clarify",
-        hasUrgency ? "Urgency" : "Timeline to clarify",
-      ],
-      suggestedAgent: hasEvent
-        ? "Let’s see what Nora thinks: this conversation is turning into an event/opportunity evaluation."
-        : "Dex can tag the request, then Nora can evaluate whether it is worth pursuing.",
-    },
-    dex: {
-      tags: [
-        hasEvent ? "Event" : "New client",
-        hasUrgency ? "Urgent" : "To schedule",
-        hasBudget ? "Budget mentioned" : "Missing budget",
-        "Needs clarification",
-        "Follow-up",
-      ],
-      priority: hasUrgency ? "High" : "Medium",
-      category: hasEvent ? "Event / promotion request" : "Client conversation to qualify",
-      crmNote: `${client} from ${sourceLabel}: request needs cleanup before replying. Jackie detected multiple topics and missing information. Next action: send a focused clarification question before promising scope or price.`,
-      nextSteps: [
-        "Ask for budget, real deadline, and primary goal.",
-        "Separate required work from optional work.",
-        "Decide if this needs a short call or a written clarification reply.",
-      ],
-    },
-    nora: {
-      status: hasEvent ? "Needs clarification" : "Not enough information",
-      profitabilitySignal: hasBudget && hasUrgency ? "Potentially profitable" : "Possible, but not proven yet",
-      riskLevel: hasUrgency && !hasBudget ? "Medium-high" : "Medium",
-      why: hasEvent
-        ? "The event could be interesting, but without budget, timing, goal, and deliverables it is risky to accept immediately. It can become profitable if the client has real urgency and a coherent budget."
-        : "The request shows interest, but it is still too generic to estimate value, feasibility, or priority.",
-      questions: [
-        "What is the main result you want from this?",
-        "What budget have you planned for this activity?",
-        "What is the real deadline and which materials are essential?",
-      ],
-    },
-    milo: {
-      replies: {
-        Professional: `Hi, thanks for the context. I understand this is related to ${hasEvent ? "an event/promotion" : "a project that still needs definition"}, but before I give you a precise answer I need three details: the main goal, indicative budget, and real deadline. Then I can tell you if it is feasible and suggest the best next step.`,
-        Friendly: `Hi! Thanks for sending this over. I understand the general idea, but I would like to clarify a few things before suggesting anything random. Could you send me the budget, deadline, and main result you want to achieve?`,
-        Short: `Hi! I need the budget, real deadline, and main goal. Then I can quickly tell you if it is feasible and how to proceed.`,
-        "Firm but polite": `Hi, I can help, but before confirming availability or timing I need the budget, real deadline, and priorities. Without those details, we risk setting up the work incorrectly.`,
-      },
-    },
-  };
-}
+const replyKeys = [
+  "professional",
+  "friendly",
+  "short",
+  "firmButPolite",
+] as const;
 
 function FieldLabel({ children }: { children: string }) {
   return <span className="text-sm font-black text-slate-200">{children}</span>;
@@ -273,45 +69,74 @@ function ListBlock({ title, items }: { title: string; items: string[] }) {
 export default function TrialPage() {
   const { copy, language } = useLanguage();
   const [form, setForm] = useState<ConversationForm>(initialForm);
-  const [submittedForm, setSubmittedForm] = useState<ConversationForm | null>(null);
+  const [result, setResult] = useState<ConversationAnalysis | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [selectedTone, setSelectedTone] = useState(0);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [isEditingReply, setIsEditingReply] = useState(false);
+  const [replyStatus, setReplyStatus] = useState("");
 
-  useEffect(() => {
-    const storedForm = readStoredForm();
-    if (storedForm) window.setTimeout(() => setSubmittedForm(storedForm), 0);
-  }, []);
-
-  const submittedSourceLabel = getSourceLabel(
-    copy.trial.sourceOptions,
-    submittedForm?.sourceType ?? "whatsapp",
-  );
-
-  const result = useMemo(
-    () =>
-      submittedForm
-        ? buildConversationResult(submittedForm, language, submittedSourceLabel)
-        : null,
-    [language, submittedForm, submittedSourceLabel],
-  );
-
-  const tone = copy.trial.tones[selectedTone] ?? copy.trial.tones[0];
-  const replyToneKey = language === "it" ? ["Professional", "Friendly", "Short", "Firm but polite"][selectedTone] : tone;
-  const selectedReply = result?.milo.replies[replyToneKey] ?? "";
+  const selectedReply = result?.milo.replies[replyKeys[selectedTone]] ?? "";
 
   function updateForm<K extends keyof ConversationForm>(key: K, value: ConversationForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  async function runCrew() {
+    setIsRunning(true);
+    setErrorMessage("");
+    setReplyStatus("");
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...form, language }),
+      });
+      const data = (await response.json()) as {
+        analysis?: ConversationAnalysis;
+        error?: string;
+      };
+
+      if (!response.ok || !data.analysis) {
+        throw new Error(data.error || copy.trial.analysisError);
+      }
+
+      setResult(data.analysis);
+      setSelectedTone(0);
+      setReplyDraft(data.analysis.milo.replies.professional);
+      setIsEditingReply(false);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : copy.trial.analysisError,
+      );
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsRunning(true);
+    void runCrew();
+  }
 
-    window.setTimeout(() => {
-      window.localStorage.setItem(trialStorageKey, JSON.stringify(form));
-      setSubmittedForm(form);
-      setIsRunning(false);
-    }, 850);
+  function selectTone(index: number) {
+    setSelectedTone(index);
+    setReplyDraft(result?.milo.replies[replyKeys[index]] ?? "");
+    setReplyStatus("");
+    setIsEditingReply(false);
+  }
+
+  async function copyReply() {
+    try {
+      await window.navigator.clipboard.writeText(replyDraft || selectedReply);
+      setReplyStatus(copy.trial.replyCopied);
+    } catch {
+      setReplyStatus(copy.trial.copyError);
+    }
   }
 
   return (
@@ -402,7 +227,7 @@ export default function TrialPage() {
               </p>
             </div>
             <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-xs font-black text-emerald-100">
-              {submittedForm ? copy.trial.used : copy.trial.ready}
+              {result ? copy.trial.used : copy.trial.ready}
             </span>
           </div>
 
@@ -421,10 +246,12 @@ export default function TrialPage() {
                 <FieldLabel>{copy.trial.fields.sourceType}</FieldLabel>
                 <select
                   value={form.sourceType}
-                  onChange={(event) => updateForm("sourceType", event.target.value as SourceValue)}
+                  onChange={(event) =>
+                    updateForm("sourceType", event.target.value as ConversationSource)
+                  }
                   className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
                 >
-                  {sourceValues.map((source, index) => (
+                  {conversationSourceValues.map((source, index) => (
                     <option key={source} value={source}>
                       {copy.trial.sourceOptions[index]}
                     </option>
@@ -485,6 +312,14 @@ export default function TrialPage() {
             </button>
 
             <p className="text-xs font-semibold text-slate-500">{copy.trial.localOnly}</p>
+            {errorMessage ? (
+              <p
+                className="rounded-2xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm font-semibold text-rose-100"
+                role="alert"
+              >
+                {errorMessage}
+              </p>
+            ) : null}
           </form>
         </div>
       </section>
@@ -601,7 +436,7 @@ export default function TrialPage() {
                     <button
                       type="button"
                       key={toneOption}
-                      onClick={() => setSelectedTone(index)}
+                      onClick={() => selectTone(index)}
                       className={`rounded-full px-3 py-2 text-xs font-black transition ${
                         selectedTone === index
                           ? "bg-white text-slate-950"
@@ -617,22 +452,50 @@ export default function TrialPage() {
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-white/38">
                   {copy.trial.suggestedReply}
                 </p>
-                <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-200">{selectedReply}</p>
+                {isEditingReply ? (
+                  <textarea
+                    className="mt-3 min-h-40 w-full resize-y rounded-2xl border border-white/10 bg-black/20 p-3 text-sm leading-7 text-slate-200 outline-none focus:border-violet-200/50"
+                    value={replyDraft}
+                    onChange={(event) => setReplyDraft(event.target.value)}
+                  />
+                ) : (
+                  <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-200">
+                    {replyDraft || selectedReply}
+                  </p>
+                )}
               </div>
               <p className="mt-5 rounded-2xl border border-violet-200/20 bg-violet-200/10 p-4 text-sm font-black text-violet-50">
                 {copy.trial.miloConfirm}
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <button className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950" type="button">
+                <button
+                  className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-950"
+                  onClick={() => void copyReply()}
+                  type="button"
+                >
                   {copy.trial.useReply}
                 </button>
-                <button className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black text-white" type="button">
+                <button
+                  className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black text-white disabled:cursor-wait disabled:opacity-70"
+                  disabled={isRunning}
+                  onClick={() => void runCrew()}
+                  type="button"
+                >
                   {copy.trial.regenerate}
                 </button>
-                <button className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black text-white" type="button">
+                <button
+                  className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black text-white"
+                  onClick={() => setIsEditingReply((current) => !current)}
+                  type="button"
+                >
                   {copy.trial.edit}
                 </button>
               </div>
+              {replyStatus ? (
+                <p className="mt-3 text-sm font-semibold text-violet-100" role="status">
+                  {replyStatus}
+                </p>
+              ) : null}
             </article>
           </div>
 

@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FlowCrew
 
-## Getting Started
+FlowCrew is a Next.js prototype for organizing messy client conversations with
+a Gemini-powered AI crew:
 
-First, run the development server:
+- Jackie cleans and structures the raw message.
+- Dex adds tags, priority, and CRM-style next steps.
+- Nora evaluates opportunity and risk.
+- Milo drafts replies for human approval.
+
+## Local Setup
+
+Create `.env.local` from `.env.example` and add a server-side Gemini API key:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+GEMINI_API_KEY=your_google_ai_studio_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The optional `GEMINI_MODEL` variable overrides the default
+`gemini-2.5-flash` model.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Install dependencies and start the app:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000).
 
-To learn more about Next.js, take a look at the following resources:
+On managed Windows machines, Node may need the system certificate store for
+outbound HTTPS calls:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```powershell
+$env:NODE_OPTIONS="--use-system-ca"
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## AI Routes
 
-## Deploy on Vercel
+- `POST /api/analyze` returns structured Crew output for one client
+  conversation.
+- `POST /api/chat` powers the read-only FlowCrew Bot demo inbox assistant.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The Gemini key is read only in server-side route handlers. It is never exposed
+to browser code.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Checks
+
+```bash
+npm run lint
+npm run build
+```

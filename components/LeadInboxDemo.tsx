@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -12,11 +12,19 @@ import {
 } from "lucide-react";
 import LeadResult from "@/components/LeadResult";
 import { demoLeads } from "@/lib/data";
-import {
-  sendLeadToCrew,
-  type CrewResult,
-  type LeadInput,
-} from "@/lib/mockAgents";
+import type {
+  ConversationAnalysis,
+  ConversationSource,
+  LeadAnalysisResult,
+} from "@/lib/flowcrew-types";
+
+export type LeadInput = {
+  name: string;
+  email: string;
+  projectType: string;
+  complexity: string;
+  message: string;
+};
 
 const initialForm: LeadInput = {
   name: "Studio Aurora",
@@ -36,10 +44,10 @@ const crewPulse = [
 
 export default function LeadInboxDemo() {
   const [form, setForm] = useState<LeadInput>(initialForm);
-  const [result, setResult] = useState<CrewResult | null>(null);
+  const [result, setResult] = useState<LeadAnalysisResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [pulseIndex, setPulseIndex] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -51,26 +59,62 @@ export default function LeadInboxDemo() {
     return () => clearInterval(pulseTimer);
   }, [isRunning]);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
   function updateForm<K extends keyof LeadInput>(key: K, value: LeadInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsRunning(true);
     setPulseIndex(0);
     setResult(null);
+    setErrorMessage("");
 
-    timerRef.current = setTimeout(() => {
-      setResult(sendLeadToCrew(form));
+    try {
+      const sourceType: ConversationSource = form.projectType
+        .toLowerCase()
+        .includes("gmail")
+        ? "gmail"
+        : form.projectType.toLowerCase().includes("whatsapp")
+          ? "whatsapp"
+          : "other";
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientName: form.name,
+          sourceType,
+          messyMessage: form.message,
+          businessType: form.projectType,
+          goal: form.complexity,
+          language: "en",
+        }),
+      });
+      const data = (await response.json()) as {
+        analysis?: ConversationAnalysis;
+        error?: string;
+      };
+
+      if (!response.ok || !data.analysis) {
+        throw new Error(data.error || "Gemini could not analyze this conversation.");
+      }
+
+      setResult({
+        leadName: form.name.trim() || "New client",
+        generatedAt: "Just now",
+        analysis: data.analysis,
+      });
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Gemini could not analyze this conversation.",
+      );
+    } finally {
       setIsRunning(false);
-    }, 1350);
+    }
   }
 
   return (
@@ -86,7 +130,7 @@ export default function LeadInboxDemo() {
               Drop a messy client message. Watch the crew organize it.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              This is a local FlowCrew simulation. Paste one client conversation and the agents will clean, tag, evaluate, draft, and log the next action.
+              Paste one client conversation. Gemini powers the Crew analysis while the API key stays safely on the server.
             </p>
           </div>
           <div className="rounded-full border border-violet-300/25 bg-violet-300/10 px-4 py-2 text-sm font-semibold text-violet-100">
@@ -107,7 +151,7 @@ export default function LeadInboxDemo() {
             <div>
               <h2 className="text-xl font-semibold text-white">New conversation</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Everything stays in this browser session.
+                The prototype analyzes this message with Gemini and does not save it.
               </p>
             </div>
           </div>
@@ -191,6 +235,14 @@ export default function LeadInboxDemo() {
               </>
             )}
           </button>
+          {errorMessage ? (
+            <p
+              className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm font-semibold text-rose-100"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          ) : null}
         </form>
 
         <aside className="glass-panel rounded-[1.6rem] p-5">
@@ -237,7 +289,7 @@ export default function LeadInboxDemo() {
                 className="mt-0.5 h-5 w-5 shrink-0 text-lime-200"
               />
               <p className="text-sm leading-6 text-lime-50">
-                Try changing the message. Jackie, Dex, Nora, and Milo react locally in this prototype.
+                Try changing the message. Jackie, Dex, Nora, and Milo now react to a real Gemini analysis.
               </p>
             </div>
           </div>
@@ -247,7 +299,7 @@ export default function LeadInboxDemo() {
       <AnimatePresence mode="wait">
         {result ? (
           <motion.div
-            key={`${result.leadName}-${result.jackie.score}`}
+            key={`${result.leadName}-${result.generatedAt}`}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

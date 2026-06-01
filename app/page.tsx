@@ -1,5 +1,6 @@
 "use client";
 
+import { FlowCrewChat } from "@/components/FlowCrewChat";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -202,7 +203,11 @@ export default function Home() {
                   <div className="relative" key={step}>
                     <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0B1020]/72 p-4 transition hover:border-cyan-200/25 hover:bg-[#11172A]/78">
                       {flowAgentId ? (
-                        <AgentAvatar agentId={flowAgentId} decorative size="sm" />
+                        <AgentAvatar
+                          agentId={flowAgentId}
+                          decorative
+                          size="sm"
+                        />
                       ) : (
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
                           <Icon
@@ -373,6 +378,8 @@ export default function Home() {
         </div>
       </section>
 
+      <FlowCrewChat />
+
       <section className="relative z-10 mx-auto max-w-7xl px-5 pb-20 pt-12 sm:px-8">
         <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-cyan-300/14 via-fuchsia-400/10 to-violet-500/14 p-8 text-center shadow-2xl shadow-black/25 backdrop-blur sm:p-12">
           <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
@@ -445,7 +452,10 @@ function CrewOrchestrationSection({ copy }: { copy: LandingCopy }) {
           <div className="relative">
             <div className="mx-auto max-w-sm rounded-[2rem] border border-white/12 bg-white/[0.07] p-5 text-center shadow-2xl shadow-cyan-500/10">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10">
-                <Workflow aria-hidden="true" className="h-6 w-6 text-cyan-100" />
+                <Workflow
+                  aria-hidden="true"
+                  className="h-6 w-6 text-cyan-100"
+                />
               </div>
               <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-100/65">
                 {copy.orchestrationCenterLabel}

@@ -1,7 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import {
   Bot,
   CheckCircle2,
-  ClipboardCheck,
   Copy,
   FileText,
   MailCheck,
@@ -10,20 +12,22 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
-import type { CrewResult } from "@/lib/mockAgents";
 import type { AgentId } from "@/lib/data";
+import type { LeadAnalysisResult } from "@/lib/flowcrew-types";
 
 type LeadResultProps = {
-  result: CrewResult;
+  result: LeadAnalysisResult;
 };
 
 export default function LeadResult({ result }: LeadResultProps) {
+  const [copyStatus, setCopyStatus] = useState("");
+  const { analysis } = result;
   const resultCards = [
     {
       id: "jackie",
       agent: "Jackie",
-      title: `${result.jackie.label} - ${result.jackie.score}/100`,
-      body: result.jackie.analysis,
+      title: "Conversation cleaned",
+      body: `${analysis.jackie.cleanSummary} Key facts: ${analysis.jackie.keyFacts.join(" - ")}.`,
       Icon: Radar,
       accent: "text-cyan-200",
       border: "border-cyan-300/20",
@@ -31,8 +35,8 @@ export default function LeadResult({ result }: LeadResultProps) {
     {
       id: "nora",
       agent: "Nora",
-      title: `Scope direction: ${result.nora.scopeDirection}`,
-      body: `${result.nora.proposal} Deliverables: ${result.nora.deliverables.join(", ")}.`,
+      title: `${analysis.nora.status} - Risk: ${analysis.nora.riskLevel}`,
+      body: analysis.nora.why,
       Icon: FileText,
       accent: "text-violet-200",
       border: "border-violet-300/20",
@@ -40,8 +44,8 @@ export default function LeadResult({ result }: LeadResultProps) {
     {
       id: "milo",
       agent: "Milo",
-      title: result.milo.followUp,
-      body: result.milo.message,
+      title: "Professional reply ready",
+      body: analysis.milo.replies.professional,
       Icon: MailCheck,
       accent: "text-lime-200",
       border: "border-lime-300/20",
@@ -49,8 +53,8 @@ export default function LeadResult({ result }: LeadResultProps) {
     {
       id: "dex",
       agent: "Dex",
-      title: result.dex.log,
-      body: result.dex.automation.join(" - "),
+      title: `${analysis.dex.priority} priority - ${analysis.dex.category}`,
+      body: `${analysis.dex.crmNote} Tags: ${analysis.dex.tags.join(", ")}.`,
       Icon: Workflow,
       accent: "text-rose-200",
       border: "border-rose-300/20",
@@ -65,11 +69,19 @@ export default function LeadResult({ result }: LeadResultProps) {
     border: string;
   }>;
 
-  const mockActions = [
-    { label: "Copy reply", Icon: Copy },
-    { label: "Copy proposal", Icon: FileText },
-    { label: "Mark as followed-up", Icon: ClipboardCheck },
+  const copyActions = [
+    { label: "Copy reply", value: analysis.milo.replies.professional, Icon: Copy },
+    { label: "Copy CRM note", value: analysis.dex.crmNote, Icon: FileText },
   ];
+
+  async function copyText(label: string, value: string) {
+    try {
+      await window.navigator.clipboard.writeText(value);
+      setCopyStatus(`${label} copied.`);
+    } catch {
+      setCopyStatus("Could not copy. Select the text and copy it manually.");
+    }
+  }
 
   return (
     <section className="glass-panel rounded-[1.6rem] p-5">
@@ -81,7 +93,7 @@ export default function LeadResult({ result }: LeadResultProps) {
               Crew result generated
             </span>
             <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-100">
-              This is a demo run
+              Gemini analysis
             </span>
           </div>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
@@ -127,16 +139,16 @@ export default function LeadResult({ result }: LeadResultProps) {
 
       <div className="mt-5 flex flex-col gap-3 border-t border-white/10 pt-5 lg:flex-row lg:items-center lg:justify-between">
         <p className="text-sm leading-6 text-slate-400">
-          Mock actions only. Nothing is sent, charged, saved, or connected to a
-          backend.
+          Review the generated content before sending anything to the client.
         </p>
         <div className="flex flex-wrap gap-2">
-          {mockActions.map((action) => {
+          {copyActions.map((action) => {
             const Icon = action.Icon;
 
             return (
               <button
                 key={action.label}
+                onClick={() => void copyText(action.label, action.value)}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white transition hover:border-cyan-300/35 hover:bg-cyan-300/10"
               >
@@ -150,7 +162,7 @@ export default function LeadResult({ result }: LeadResultProps) {
 
       <div className="mt-4 flex items-center gap-2 text-xs font-medium text-lime-100/80">
         <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-        Demo result ready to copy into the next human step.
+        {copyStatus || "Gemini result ready for the next human step."}
       </div>
     </section>
   );
