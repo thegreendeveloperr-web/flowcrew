@@ -61,7 +61,7 @@ function UserMessage({ children }: { children: React.ReactNode }) {
 
 export default function ChatPage() {
   return (
-    <main className="min-h-screen bg-[#f6f8fc] text-slate-950">
+    <main className="min-h-screen bg-[#f6f8fc] text-slate-950" id="main-content" tabIndex={-1}>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-[-12%] top-[-14%] h-[30rem] w-[30rem] rounded-full bg-indigo-400/18 blur-[120px]" />
         <div className="absolute right-[-12%] top-[6%] h-[32rem] w-[32rem] rounded-full bg-cyan-300/16 blur-[130px]" />

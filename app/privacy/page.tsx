@@ -3,7 +3,7 @@ import { ArrowLeft, Mail } from "lucide-react";
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#f7f9fc] px-5 py-8 text-slate-950 sm:px-8">
+    <main className="min-h-screen bg-[#f7f9fc] px-5 py-8 text-slate-950 sm:px-8" id="main-content" tabIndex={-1}>
       <div className="mx-auto max-w-3xl">
         <Link className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5" href="/">
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />

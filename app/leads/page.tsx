@@ -167,10 +167,13 @@ function SelectedLead({ lead }: { lead?: StoredLead }) {
 function LeadRow({ lead, isSelected }: { lead: StoredLead; isSelected: boolean }) {
   const score = scoreLead(lead);
   const tags = lead.tags ?? [];
+  const displayName = getLeadDisplayName(lead);
+  const selectionLabel = isSelected ? `Selected lead: ${displayName}` : `Select lead: ${displayName}`;
 
   return (
     <Link
-      aria-current={isSelected ? "true" : undefined}
+      aria-current={isSelected ? "page" : undefined}
+      aria-label={`${selectionLabel}. ${lead.request ?? "Client request"}. Score ${score}%.`}
       className={`block rounded-[1.65rem] border bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition hover:border-blue-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.09)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 ${isSelected ? "border-blue-300 ring-2 ring-blue-100" : "border-slate-100"}`}
       href={{ pathname: "/leads", query: { lead: lead.id } }}
     >
@@ -178,7 +181,7 @@ function LeadRow({ lead, isSelected }: { lead: StoredLead; isSelected: boolean }
         <AgentAvatar agentId={ownerToAgent(lead.owner_agent)} decorative size="md" />
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-black text-slate-950">{getLeadDisplayName(lead)}</h3>
+            <h3 className="font-black text-slate-950">{displayName}</h3>
             <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.urgency ?? "New"}</span>
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black capitalize text-slate-600">{lead.source}</span>
           </div>

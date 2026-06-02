@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -85,7 +85,9 @@ export default function TrialPage() {
     return ["Quote", "Urgency", "Next step"];
   }, [analysis]);
 
-  async function generateLead() {
+  async function generateLead(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     if (!message.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -120,7 +122,7 @@ export default function TrialPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6f8fc] text-slate-950">
+    <main className="relative min-h-screen overflow-hidden bg-[#f6f8fc] text-slate-950" id="main-content" tabIndex={-1}>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-[-14%] top-[-18%] h-[34rem] w-[34rem] rounded-full bg-indigo-300/24 blur-[130px]" />
         <div className="absolute right-[-14%] top-[3%] h-[34rem] w-[34rem] rounded-full bg-cyan-200/26 blur-[130px]" />
@@ -161,7 +163,11 @@ export default function TrialPage() {
             </div>
           </div>
 
-          <div className="rounded-[2.35rem] border border-slate-200 bg-white/86 p-4 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:p-6">
+          <form
+            aria-busy={isLoading}
+            className="rounded-[2.35rem] border border-slate-200 bg-white/86 p-4 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:p-6"
+            onSubmit={generateLead}
+          >
             <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Live ingest</p>
@@ -176,6 +182,9 @@ export default function TrialPage() {
               <label className="block text-sm font-black text-slate-700">
                 Client name
                 <input
+                  autoComplete="name"
+                  name="clientName"
+                  type="text"
                   value={clientName}
                   onChange={(event) => setClientName(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -185,6 +194,8 @@ export default function TrialPage() {
               <label className="block text-sm font-black text-slate-700">
                 Source
                 <select
+                  autoComplete="off"
+                  name="sourceType"
                   value={sourceType}
                   onChange={(event) => setSourceType(event.target.value as ConversationSource)}
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -200,6 +211,9 @@ export default function TrialPage() {
               <label className="block text-sm font-black text-slate-700">
                 Business context
                 <input
+                  autoComplete="organization"
+                  name="businessType"
+                  type="text"
                   value={businessType}
                   onChange={(event) => setBusinessType(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -209,6 +223,9 @@ export default function TrialPage() {
               <label className="block text-sm font-black text-slate-700">
                 Goal
                 <input
+                  autoComplete="off"
+                  name="goal"
+                  type="text"
                   value={goal}
                   onChange={(event) => setGoal(event.target.value)}
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -217,7 +234,7 @@ export default function TrialPage() {
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-blue-100 bg-blue-50/65 p-4">
-              <p className="text-sm font-bold leading-6 text-blue-950">
+              <p className="text-sm font-bold leading-6 text-blue-950" id="client-conversation-help">
                 Paste a messy client message. FlowCrew will return a summary, urgency level, tags, next action, and a reply draft.
               </p>
               <ul className="mt-3 flex flex-wrap gap-2">
@@ -238,7 +255,10 @@ export default function TrialPage() {
               </button>
             </div>
             <textarea
+              aria-describedby="client-conversation-help"
               id="client-conversation"
+              name="messyMessage"
+              autoComplete="off"
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               placeholder={sample}
@@ -247,8 +267,7 @@ export default function TrialPage() {
             />
 
             <button
-              type="button"
-              onClick={generateLead}
+              type="submit"
               disabled={isLoading || !message.trim()}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
@@ -283,15 +302,15 @@ export default function TrialPage() {
             ) : null}
 
             {error ? (
-              <div className="mt-4 flex gap-3 rounded-3xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold leading-6 text-rose-800">
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+              <div className="mt-4 flex gap-3 rounded-3xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold leading-6 text-rose-800" role="alert">
+                <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
                 {error}
               </div>
             ) : null}
 
             {lead ? (
-              <div className="mt-4 flex items-center gap-2 rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
-                <Database className="h-5 w-5" />
+              <div aria-live="polite" className="mt-4 flex items-center gap-2 rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-800" role="status">
+                <Database aria-hidden="true" className="h-5 w-5" />
                 Saved in Supabase as lead <span className="font-mono text-xs">{lead.id.slice(0, 8)}</span>
               </div>
             ) : null}
@@ -325,7 +344,7 @@ export default function TrialPage() {
                 </div>
               </ResultCard>
             </div>
-          </div>
+          </form>
         </section>
       </div>
     </main>

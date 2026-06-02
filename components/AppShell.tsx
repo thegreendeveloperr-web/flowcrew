@@ -15,7 +15,9 @@ export default function AppShell({ children }: AppShellProps) {
 
       <div className="relative mx-auto flex w-full max-w-[1520px] flex-col gap-5 p-3 sm:p-5 lg:flex-row">
         <Sidebar />
-        <main className="min-w-0 flex-1 pb-8 lg:py-1">{children}</main>
+        <main className="min-w-0 flex-1 pb-8 lg:py-1" id="main-content" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );

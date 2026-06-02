@@ -107,7 +107,7 @@ const trialOutputs = ["Summary", "Priority", "Tags", "Next action", "Reply draft
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f7f9fc] text-slate-950">
+    <main className="min-h-screen overflow-hidden bg-[#f7f9fc] text-slate-950" id="main-content" tabIndex={-1}>
       <div className="pointer-events-none fixed inset-0">
         <div className="absolute left-[-12%] top-[-14%] h-[32rem] w-[32rem] rounded-full bg-indigo-400/20 blur-[130px]" />
         <div className="absolute right-[-14%] top-[5%] h-[34rem] w-[34rem] rounded-full bg-cyan-300/18 blur-[130px]" />

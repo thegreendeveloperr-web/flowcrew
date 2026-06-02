@@ -16,6 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full bg-[#f7f9fc] text-slate-950">
+        <a className="skip-link" href="#main-content">
+          Skip to main content
+        </a>
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
