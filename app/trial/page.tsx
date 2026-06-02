@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Database,
+  LoaderCircle,
   MessageSquareText,
   Sparkles,
   Tags,
@@ -27,6 +28,15 @@ const agents: Array<{ id: AgentId; name: string; role: string; detail: string }>
 ];
 
 const sample = `Ciao, volevo capire quanto costa fare un sito per il mio studio. Ho scritto anche via mail e ti ho mandato il logo. Mi servirebbe abbastanza presto, forse anche una pagina prenotazioni collegata al calendario. Possiamo sentirci domani?`;
+
+const loadingSteps = [
+  "Jackie is analyzing the message",
+  "Milo is adding tags and priority",
+  "Nora is drafting the reply",
+  "Dex is creating follow-up actions",
+];
+
+const resultPreview = ["Summary", "Priority", "Tags", "Next action", "Reply draft"];
 
 type IngestResponse = {
   analysis: ConversationAnalysis;
@@ -47,7 +57,7 @@ export default function TrialPage() {
   const [sourceType, setSourceType] = useState<ConversationSource>("whatsapp");
   const [businessType, setBusinessType] = useState("Web agency / local service business");
   const [goal, setGoal] = useState("Create a clean lead brief, priority, next action and premium reply.");
-  const [message, setMessage] = useState(sample);
+  const [message, setMessage] = useState("");
   const [result, setResult] = useState<IngestResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -192,15 +202,35 @@ export default function TrialPage() {
               </label>
             </div>
 
-            <label className="mt-3 block text-sm font-black text-slate-700">
-              Client conversation
-              <textarea
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                rows={8}
-                className="mt-2 w-full resize-none rounded-[1.35rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
-              />
-            </label>
+            <div className="mt-4 rounded-[1.35rem] border border-blue-100 bg-blue-50/65 p-4">
+              <p className="text-sm font-bold leading-6 text-blue-950">
+                Paste a messy client message. FlowCrew will return a summary, urgency level, tags, next action, and a reply draft.
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {resultPreview.map((item) => (
+                  <li className="rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100" key={item}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <label className="block text-sm font-black text-slate-700" htmlFor="client-conversation">
+                Client conversation
+              </label>
+              <button className="text-xs font-black text-blue-700 transition hover:text-blue-950" onClick={() => setMessage(sample)} type="button">
+                Use example
+              </button>
+            </div>
+            <textarea
+              id="client-conversation"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder={sample}
+              rows={8}
+              className="mt-2 w-full resize-none rounded-[1.35rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+            />
 
             <button
               type="button"
@@ -208,8 +238,35 @@ export default function TrialPage() {
               disabled={isLoading || !message.trim()}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              {isLoading ? "Analyzing and saving..." : "Generate and save lead"} <Sparkles className="h-4 w-4" />
+              {isLoading ? (
+                <>
+                  <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Building your client brief...
+                </>
+              ) : (
+                <>
+                  Generate and save lead
+                  <Sparkles aria-hidden="true" className="h-4 w-4" />
+                </>
+              )}
             </button>
+
+            {isLoading ? (
+              <div aria-live="polite" className="mt-4 rounded-[1.35rem] border border-blue-100 bg-blue-50/75 p-4" role="status">
+                <div className="flex items-center gap-2 text-sm font-black text-blue-900">
+                  <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Your Crew is working through the conversation
+                </div>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {loadingSteps.map((step) => (
+                    <li className="flex items-center gap-2 text-xs font-bold text-blue-800/80" key={step}>
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="mt-4 flex gap-3 rounded-3xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold leading-6 text-rose-800">

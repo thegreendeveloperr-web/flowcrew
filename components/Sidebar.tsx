@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ClipboardList, Home, Inbox, MessageSquareText, PlugZap, Sparkles, WandSparkles } from "lucide-react";
+import { BarChart3, ClipboardList, ExternalLink, Home, Inbox, MessageSquareText, PlugZap, Sparkles, WandSparkles } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Landing", Icon: Home },
   { href: "/trial", label: "Trial", Icon: WandSparkles },
-  { href: "/chat", label: "AI Dialogue", Icon: MessageSquareText },
+  { href: "/chat", label: "Live Demo", Icon: MessageSquareText, separatePage: true },
   { href: "/dashboard", label: "Dashboard", Icon: BarChart3 },
   { href: "/import", label: "Import", Icon: ClipboardList },
   { href: "/leads", label: "Leads", Icon: Inbox },
@@ -59,6 +59,7 @@ export default function Sidebar() {
             >
               <Icon aria-hidden="true" className="h-4 w-4" />
               <span>{item.label}</span>
+              {item.separatePage ? <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" /> : null}
             </Link>
           );
         })}

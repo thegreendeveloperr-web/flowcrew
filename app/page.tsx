@@ -1,10 +1,17 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  BriefcaseBusiness,
+  CheckCircle2,
   ClipboardCheck,
+  ExternalLink,
+  ListTodo,
+  LockKeyhole,
   MailCheck,
-  MessageSquareText,
+  MessagesSquare,
   Sparkles,
+  Tags,
+  UsersRound,
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -53,10 +60,55 @@ const crew: Array<{
 ];
 
 const flowSteps = [
-  { icon: MessageSquareText, title: "Paste messy client messages", body: "WhatsApp, Gmail, Instagram DMs, notes or raw copied context." },
-  { icon: ClipboardCheck, title: "Get a clean lead brief", body: "Facts, missing info, intent, priority and next action in one view." },
-  { icon: MailCheck, title: "Approve a premium reply", body: "Nora writes it. You approve it. FlowCrew never feels out of control." },
+  { icon: ClipboardCheck, title: "Jackie analyzes the message", body: "Paste WhatsApp texts, emails or notes. Jackie turns the scattered context into a readable summary." },
+  { icon: Tags, title: "Milo adds tags and priority", body: "Milo identifies intent, urgency and the signals that help you decide what needs attention first." },
+  { icon: MailCheck, title: "Nora drafts the reply", body: "Nora prepares a polished response you can review, edit and send when it sounds right." },
+  { icon: ListTodo, title: "Dex creates follow-up actions", body: "Dex captures the next action, reminders and practical follow-up so the lead keeps moving." },
 ];
+
+const socialProofCards = [
+  {
+    icon: MessagesSquare,
+    title: "Freelancers who receive requests across WhatsApp and email",
+    body: "Useful when the project brief arrives in fragments and the next step is easy to miss.",
+  },
+  {
+    icon: UsersRound,
+    title: "Small agencies managing scattered client messages",
+    body: "A practical way to turn copied conversations into a shared, readable handoff.",
+  },
+  {
+    icon: BriefcaseBusiness,
+    title: "Consultants who need fast summaries and replies",
+    body: "Designed for the moment when a clear response matters more than another inbox tab.",
+  },
+];
+
+const earlyAccessPlans = [
+  {
+    name: "Free Trial",
+    status: "Available now",
+    description: "Analyze 1 lead for free and see the complete FlowCrew output before deciding what comes next.",
+    features: ["1 lead analysis", "Summary and priority", "Tags, next action and reply draft"],
+    cta: "Analyze one lead",
+    href: "/trial",
+    highlighted: true,
+  },
+  {
+    name: "Pro",
+    status: "Coming soon",
+    description: "For professionals who manage many client conversations and need a dependable daily workflow.",
+    features: ["More conversations", "Full Crew workflow", "Built for independent professionals"],
+  },
+  {
+    name: "Team",
+    status: "Coming soon",
+    description: "For small teams and agencies that need a clearer handoff across client requests.",
+    features: ["Shared workflow", "Team-ready organization", "Designed for small agencies"],
+  },
+];
+
+const trialOutputs = ["Summary", "Priority", "Tags", "Next action", "Reply draft"];
 
 export default function Home() {
   return (
@@ -69,7 +121,7 @@ export default function Home() {
 
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/72 backdrop-blur-2xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link className="flex items-center gap-3" href="/">
+          <Link className="flex min-w-0 items-center gap-3" href="/">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-500 text-lg font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.28)]">
               F
             </span>
@@ -82,8 +134,11 @@ export default function Home() {
           <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white/80 p-1.5 text-sm font-bold text-slate-500 shadow-sm md:flex">
             <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#workflow">Workflow</a>
             <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#agents">Agents</a>
-            <Link className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="/chat">AI Dialogue</Link>
-            <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#trial">Trial</a>
+            <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#pricing">Pricing</a>
+            <Link className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="/chat">
+              Live Demo
+              <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -91,7 +146,7 @@ export default function Home() {
             <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:inline-flex" href="/chat">
               Open app
             </Link>
-            <Link className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5" href="/trial">
+            <Link className="hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 sm:inline-flex" href="/trial">
               Try free
             </Link>
           </div>
@@ -99,7 +154,7 @@ export default function Home() {
       </header>
 
       <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-16 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:pb-24 lg:pt-24">
-        <div>
+        <div className="min-w-0">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-blue-700 shadow-sm">
             <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.13)]" />
             AI client operations, redesigned
@@ -113,27 +168,35 @@ export default function Home() {
             FlowCrew organizes WhatsApp, Gmail and scattered client conversations into clean summaries, smart priorities, tags and ready-to-send replies.
           </p>
 
+          <div className="mt-6 flex max-w-2xl gap-3 rounded-2xl border border-blue-100 bg-white/72 p-4 text-sm leading-6 text-slate-600 shadow-sm backdrop-blur">
+            <LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+            <p>
+              FlowCrew works by pasting messy client messages into the demo. No direct access to your WhatsApp, Gmail, or private accounts is required for the free trial.
+            </p>
+          </div>
+
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-6 py-4 text-base font-black text-white shadow-[0_18px_44px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5" href="/trial">
               Try one lead free
               <ArrowRight aria-hidden="true" className="h-5 w-5 transition group-hover:translate-x-1" />
             </Link>
-            <Link className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-black text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/chat">
-              View AI dialogue
+            <Link className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-black text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/chat">
+              Open live demo
+              <ExternalLink aria-hidden="true" className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="mt-8 flex items-center gap-4 text-sm font-semibold text-slate-500">
+          <div className="mt-8 flex min-w-0 items-center gap-4 text-sm font-semibold text-slate-500">
             <div className="flex -space-x-2">
               {crew.map((agent) => (
                 <AgentAvatar agentId={agent.id} decorative key={agent.id} size="sm" className="ring-4 ring-white" />
               ))}
             </div>
-            <span>Jackie, Milo, Nora and Dex work like a real AI crew.</span>
+            <span className="min-w-0">Jackie, Milo, Nora and Dex work like a real AI crew.</span>
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative hidden lg:block">
           <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-cyan-400/10 blur-2xl" />
           <div className="relative overflow-hidden rounded-[2.4rem] border border-slate-200 bg-white/88 shadow-[0_28px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-5 py-4">
@@ -211,6 +274,31 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-12 sm:px-8">
+        <div className="rounded-[2.35rem] border border-slate-200 bg-white/76 p-6 shadow-[0_18px_55px_rgba(15,23,42,0.07)] backdrop-blur sm:p-8">
+          <div className="max-w-3xl">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">Who it is for</p>
+            <h2 className="mt-3 text-3xl font-black tracking-[-0.055em] text-slate-950 sm:text-4xl">Built for client-message chaos that already exists.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">FlowCrew is in early access. These are the everyday workflows the demo is designed to help with, without pretending there are customer stories or statistics we cannot verify yet.</p>
+          </div>
+
+          <div className="mt-7 grid gap-4 lg:grid-cols-3">
+            {socialProofCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <article className="rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm" key={card.title}>
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Icon aria-hidden="true" className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-black tracking-[-0.025em] text-slate-950">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.body}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section id="workflow" className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">How it works</p>
@@ -218,7 +306,7 @@ export default function Home() {
           <p className="mt-5 text-lg leading-8 text-slate-600">The product should show this instantly: one messy lead goes in, a clean business output comes out.</p>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {flowSteps.map((step) => {
             const Icon = step.icon;
             return (
@@ -292,6 +380,42 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">Pricing and early access</p>
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 sm:text-6xl">Start free. Decide later.</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-600">The trial is available now. Paid plans are still being shaped, so there are no invented prices or surprise billing steps.</p>
+        </div>
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {earlyAccessPlans.map((plan) => (
+            <article className={`flex h-full flex-col rounded-[2rem] border p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] ${plan.highlighted ? "border-blue-200 bg-blue-50/75" : "border-slate-200 bg-white/84"}`} key={plan.name}>
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-2xl font-black tracking-[-0.04em] text-slate-950">{plan.name}</h3>
+                <span className={`rounded-full px-3 py-1 text-xs font-black ${plan.highlighted ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>{plan.status}</span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">{plan.description}</p>
+              <ul className="mt-6 space-y-3">
+                {plan.features.map((feature) => (
+                  <li className="flex gap-3 text-sm font-bold text-slate-700" key={feature}>
+                    <CheckCircle2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              {plan.href ? (
+                <Link className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.22)] transition hover:-translate-y-0.5" href={plan.href}>
+                  {plan.cta}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </Link>
+              ) : (
+                <p className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-black text-slate-500">Early access details coming soon</p>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section id="trial" className="relative z-10 mx-auto max-w-7xl px-5 pb-24 pt-16 sm:px-8">
         <div className="grid gap-8 rounded-[2.5rem] border border-slate-200 bg-white/88 p-7 shadow-[0_28px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl lg:grid-cols-[0.9fr_1.1fr] lg:items-center sm:p-10">
           <div>
@@ -300,8 +424,17 @@ export default function Home() {
             <p className="mt-5 text-lg leading-8 text-slate-600">No complex setup. Paste a messy client conversation and FlowCrew turns it into a clear summary, tags, urgency and a suggested reply.</p>
           </div>
           <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-4 text-sm leading-6 text-slate-600">Paste a messy client message. FlowCrew will return a summary, urgency level, tags, next action, and a reply draft.</p>
             <label className="mb-3 block text-sm font-black text-slate-700" htmlFor="lead">Client conversation</label>
-            <textarea className="h-40 w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100" id="lead" defaultValue="Ciao, volevo un preventivo per un sito. Ho scritto anche via mail, mi serve abbastanza presto e vorrei capire se possiamo sentirci domani..." />
+            <textarea className="h-40 w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100" id="lead" placeholder="Ciao, volevo un preventivo per un sito per il mio studio. Ti ho mandato il logo via mail, mi servirebbe abbastanza presto e forse anche una pagina prenotazioni. Possiamo sentirci domani?" />
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {trialOutputs.map((output) => (
+                <li className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-blue-100" key={output}>
+                  <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+                  {output}
+                </li>
+              ))}
+            </ul>
             <Link className="mt-4 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.24)]" href="/trial">
               Generate client brief
               <Sparkles aria-hidden="true" className="h-5 w-5" />
@@ -310,8 +443,15 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-slate-200 px-5 py-8 text-center text-sm font-semibold text-slate-500 sm:px-8">
-        FlowCrew © 2026 · Premium AI workspace for client conversations
+      <footer className="relative z-10 border-t border-slate-200 px-5 py-8 text-sm font-semibold text-slate-500 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <p>FlowCrew © 2026 · Premium AI workspace for client conversations</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link className="transition hover:text-slate-950" href="/privacy">Privacy Policy</Link>
+            <Link className="transition hover:text-slate-950" href="/terms">Terms</Link>
+            <a className="transition hover:text-slate-950" href="mailto:hello@flowcrew.ai">hello@flowcrew.ai</a>
+          </div>
+        </div>
       </footer>
     </main>
   );
