@@ -1,4 +1,5 @@
 export const conversationSourceValues = [
+  "import",
   "whatsapp",
   "gmail",
   "instagram",

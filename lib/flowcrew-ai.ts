@@ -222,6 +222,23 @@ export function parseConversationInput(value: unknown): ConversationInput {
     throw new FlowCrewAIError("invalid_request", 400, "Richiesta non valida.");
   }
 
+  if (value.source === "import") {
+    return {
+      clientName: readString(value.sender, "Mittente", {
+        max: 120,
+        required: true,
+      }),
+      sourceType: "import",
+      messyMessage: readString(value.text, "Messaggio", {
+        max: 8_000,
+        required: true,
+      }),
+      businessType: "Imported multi-channel client conversation",
+      goal: "Organize the copied messages into one structured lead with a summary, urgency, tags, suggested reply and next action.",
+      language: "it",
+    };
+  }
+
   const sourceType = value.sourceType;
   const language = value.language;
 
