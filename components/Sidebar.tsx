@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Home, Inbox, MessageSquareText, Sparkles, WandSparkles } from "lucide-react";
+import { BarChart3, Home, Inbox, MessageSquareText, PlugZap, Sparkles, WandSparkles } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Landing", Icon: Home },
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/chat", label: "AI Dialogue", Icon: MessageSquareText },
   { href: "/dashboard", label: "Dashboard", Icon: BarChart3 },
   { href: "/leads", label: "Leads", Icon: Inbox },
+  { href: "/integrations", label: "Integrations", Icon: PlugZap },
 ];
 
 export default function Sidebar() {

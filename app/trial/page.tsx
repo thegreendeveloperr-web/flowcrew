@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   ClipboardList,
+  Database,
   MessageSquareText,
   Sparkles,
   Tags,
@@ -14,6 +16,8 @@ import {
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
 import type { AgentId } from "@/lib/data";
+import type { ConversationAnalysis, ConversationSource } from "@/lib/flowcrew-types";
+import type { StoredLead } from "@/lib/leads";
 
 const agents: Array<{ id: AgentId; name: string; role: string; detail: string }> = [
   { id: "jackie", name: "Jackie", role: "Organizer", detail: "Creates the clean brief" },
@@ -24,22 +28,72 @@ const agents: Array<{ id: AgentId; name: string; role: string; detail: string }>
 
 const sample = `Ciao, volevo capire quanto costa fare un sito per il mio studio. Ho scritto anche via mail e ti ho mandato il logo. Mi servirebbe abbastanza presto, forse anche una pagina prenotazioni collegata al calendario. Possiamo sentirci domani?`;
 
+type IngestResponse = {
+  analysis: ConversationAnalysis;
+  lead: StoredLead;
+};
+
+const sourceOptions: Array<{ value: ConversationSource; label: string }> = [
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "gmail", label: "Gmail" },
+  { value: "instagram", label: "Instagram" },
+  { value: "email", label: "Email" },
+  { value: "notes", label: "Manual notes" },
+  { value: "other", label: "Other" },
+];
+
 export default function TrialPage() {
+  const [clientName, setClientName] = useState("Marco Bianchi");
+  const [sourceType, setSourceType] = useState<ConversationSource>("whatsapp");
+  const [businessType, setBusinessType] = useState("Web agency / local service business");
+  const [goal, setGoal] = useState("Create a clean lead brief, priority, next action and premium reply.");
   const [message, setMessage] = useState(sample);
-  const [generated, setGenerated] = useState(false);
+  const [result, setResult] = useState<IngestResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const output = useMemo(() => {
-    const hasBooking = message.toLowerCase().includes("prenot");
-    const hasTomorrow = message.toLowerCase().includes("domani");
+  const generated = Boolean(result);
+  const analysis = result?.analysis;
+  const lead = result?.lead;
 
-    return {
-      client: "Marco Bianchi",
-      request: hasBooking ? "Sito professionale + pagina prenotazioni" : "Sito professionale",
-      priority: hasTomorrow ? "Alta · vuole una call domani" : "Media · serve chiarire tempi",
-      tags: ["Quote request", "High intent", hasBooking ? "Booking page" : "Website", hasTomorrow ? "Urgent" : "Needs clarity"],
-      next: hasTomorrow ? "Proporre call domani e chiedere budget, deadline ed esempi" : "Chiedere budget, deadline ed esempi visivi",
-    };
-  }, [message]);
+  const detectedTags = useMemo(() => {
+    if (analysis?.dex.tags.length) return analysis.dex.tags;
+    return ["Quote", "Urgency", "Next step"];
+  }, [analysis]);
+
+  async function generateLead() {
+    if (!message.trim() || isLoading) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/ingest-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName,
+          sourceType,
+          messyMessage: message,
+          businessType,
+          goal,
+          language: "it",
+        }),
+      });
+
+      const payload = (await response.json()) as IngestResponse | { error?: string };
+
+      if (!response.ok) {
+        throw new Error("error" in payload && payload.error ? payload.error : "Analisi non riuscita.");
+      }
+
+      setResult(payload as IngestResponse);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Errore sconosciuto.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f6f8fc] text-slate-950">
@@ -54,8 +108,8 @@ export default function TrialPage() {
           <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-black text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur-xl">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
-          <Link href="/chat" className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-[0_14px_34px_rgba(15,23,42,0.18)]">
-            Open dialogue <ArrowRight className="h-4 w-4" />
+          <Link href="/leads" className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-[0_14px_34px_rgba(15,23,42,0.18)]">
+            View saved leads <ArrowRight className="h-4 w-4" />
           </Link>
         </header>
 
@@ -63,13 +117,13 @@ export default function TrialPage() {
           <div className="self-center">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/82 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-700 shadow-[0_10px_25px_rgba(37,99,235,0.07)] backdrop-blur-xl">
               <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
-              Free trial · one lead
+              Real AI + Supabase lead save
             </div>
             <h1 className="max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.075em] text-slate-950 md:text-7xl">
-              Paste a messy lead. Watch FlowCrew organize it.
+              Paste a messy lead. FlowCrew saves the clean brief.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              This is the product moment: a client message goes in, Jackie, Milo, Nora and Dex turn it into a brief, tags, next action and a ready-to-send reply.
+              This page now uses Gemini on the server and writes the generated lead card to your Supabase <b>leads</b> table.
             </p>
 
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -86,7 +140,7 @@ export default function TrialPage() {
           <div className="rounded-[2.35rem] border border-slate-200 bg-white/86 p-4 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:p-6">
             <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Lead input</p>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Live ingest</p>
                 <h2 className="mt-1 text-2xl font-black tracking-[-0.05em]">Conversation analyzer</h2>
               </div>
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600">
@@ -94,7 +148,51 @@ export default function TrialPage() {
               </div>
             </div>
 
-            <label className="block text-sm font-black text-slate-700">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block text-sm font-black text-slate-700">
+                Client name
+                <input
+                  value={clientName}
+                  onChange={(event) => setClientName(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+
+              <label className="block text-sm font-black text-slate-700">
+                Source
+                <select
+                  value={sourceType}
+                  onChange={(event) => setSourceType(event.target.value as ConversationSource)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                >
+                  {sourceOptions.map((source) => (
+                    <option key={source.value} value={source.value}>{source.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <label className="block text-sm font-black text-slate-700">
+                Business context
+                <input
+                  value={businessType}
+                  onChange={(event) => setBusinessType(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+
+              <label className="block text-sm font-black text-slate-700">
+                Goal
+                <input
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+            </div>
+
+            <label className="mt-3 block text-sm font-black text-slate-700">
               Client conversation
               <textarea
                 value={message}
@@ -106,22 +204,37 @@ export default function TrialPage() {
 
             <button
               type="button"
-              onClick={() => setGenerated(true)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5"
+              onClick={generateLead}
+              disabled={isLoading || !message.trim()}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              Generate client brief <Sparkles className="h-4 w-4" />
+              {isLoading ? "Analyzing and saving..." : "Generate and save lead"} <Sparkles className="h-4 w-4" />
             </button>
+
+            {error ? (
+              <div className="mt-4 flex gap-3 rounded-3xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold leading-6 text-rose-800">
+                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                {error}
+              </div>
+            ) : null}
+
+            {lead ? (
+              <div className="mt-4 flex items-center gap-2 rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
+                <Database className="h-5 w-5" />
+                Saved in Supabase as lead <span className="font-mono text-xs">{lead.id.slice(0, 8)}</span>
+              </div>
+            ) : null}
 
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               <ResultCard icon={<ClipboardList className="h-5 w-5" />} title="Clean brief" active={generated}>
-                <OutputLine label="Client" value={generated ? output.client : "Waiting for input"} />
-                <OutputLine label="Request" value={generated ? output.request : "—"} />
-                <OutputLine label="Priority" value={generated ? output.priority : "—"} />
+                <OutputLine label="Client" value={lead?.sender_name ?? "Waiting for input"} />
+                <OutputLine label="Request" value={lead?.request ?? "—"} />
+                <OutputLine label="Priority" value={lead?.urgency ?? "—"} />
               </ResultCard>
 
               <ResultCard icon={<Tags className="h-5 w-5" />} title="Smart tags" active={generated}>
                 <div className="flex flex-wrap gap-2">
-                  {(generated ? output.tags : ["Quote", "Urgency", "Next step"]).map((tag) => (
+                  {detectedTags.map((tag) => (
                     <span key={tag} className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-blue-100">
                       {tag}
                     </span>
@@ -130,15 +243,13 @@ export default function TrialPage() {
               </ResultCard>
 
               <ResultCard icon={<CheckCircle2 className="h-5 w-5" />} title="Next action" active={generated} className="md:col-span-2">
-                <p className="text-sm leading-6 text-slate-600">{generated ? output.next : "Generate the brief to see the recommended next step."}</p>
+                <p className="text-sm leading-6 text-slate-600">{lead?.next_action ?? "Generate the brief to see the recommended next step."}</p>
               </ResultCard>
 
               <ResultCard icon={<MessageSquareText className="h-5 w-5" />} title="Premium reply" active={generated} className="md:col-span-2">
                 <div className="rounded-2xl bg-slate-950 p-4 text-white">
                   <p className="text-sm leading-6 text-slate-200">
-                    {generated
-                      ? "Ciao Marco, grazie per il contesto. Volentieri, fissiamo una call domani così analizziamo obiettivi, funzionalità di prenotazione e tempistiche. Prima della call, se puoi, mandami logo e qualche riferimento visivo: così posso darti una valutazione più precisa."
-                      : "La risposta comparirà qui dopo l’analisi del lead."}
+                    {lead?.suggested_reply ?? "La risposta comparirà qui dopo l’analisi del lead."}
                   </p>
                 </div>
               </ResultCard>
@@ -157,10 +268,10 @@ function ResultCard({
   children,
   className = "",
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   active: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (

@@ -11,14 +11,10 @@ import {
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
 import AppShell from "@/components/AppShell";
-import { activities, demoLeads } from "@/lib/data";
+import { activities } from "@/lib/data";
+import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
-const stats = [
-  { label: "Leads cleaned", value: "24", detail: "+8 this week", Icon: Sparkles },
-  { label: "Replies ready", value: "9", detail: "waiting approval", Icon: MessageSquareText },
-  { label: "Follow-ups", value: "6", detail: "next 48 hours", Icon: CalendarClock },
-  { label: "Time saved", value: "7.5h", detail: "estimated", Icon: Clock3 },
-];
+export const dynamic = "force-dynamic";
 
 const workflow = [
   ["Jackie", "Cleaned the client context", "Done"],
@@ -29,7 +25,31 @@ const workflow = [
 
 const agentIds = ["jackie", "milo", "nora", "dex"] as const;
 
-export default function DashboardPage() {
+function urgentCount(leads: StoredLead[]) {
+  return leads.filter((lead) => {
+    const text = `${lead.urgency ?? ""} ${(lead.tags ?? []).join(" ")}`.toLowerCase();
+    return text.includes("alta") || text.includes("high") || text.includes("urgent");
+  }).length;
+}
+
+function replyCount(leads: StoredLead[]) {
+  return leads.filter((lead) => Boolean(lead.suggested_reply)).length;
+}
+
+function followUpCount(leads: StoredLead[]) {
+  return leads.filter((lead) => Boolean(lead.next_action || lead.follow_up)).length;
+}
+
+export default async function DashboardPage() {
+  const leads = await getStoredLeads(12);
+  const topLeads = leads.slice(0, 4);
+  const stats = [
+    { label: "Saved leads", value: String(leads.length), detail: "from Supabase", Icon: Sparkles },
+    { label: "Replies ready", value: String(replyCount(leads)), detail: "waiting approval", Icon: MessageSquareText },
+    { label: "Follow-ups", value: String(followUpCount(leads)), detail: "next actions found", Icon: CalendarClock },
+    { label: "Urgent leads", value: String(urgentCount(leads)), detail: "high priority", Icon: Clock3 },
+  ];
+
   return (
     <AppShell>
       <div className="space-y-5">
@@ -41,14 +61,14 @@ export default function DashboardPage() {
                 Live operations
               </div>
               <h1 className="max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.075em] text-slate-950 md:text-7xl">
-                Your client work, organized at a glance.
+                Your saved client work, organized at a glance.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                A premium dashboard for the real FlowCrew product: incoming leads, AI work, replies, tags and follow-ups in one clean workspace.
+                The dashboard now reads real lead cards from Supabase: incoming messages, AI summaries, replies, tags and next actions in one clean workspace.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/chat" className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)]">
-                  Open AI Dialogue
+                <Link href="/trial" className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)]">
+                  Import message
                 </Link>
                 <Link href="/leads" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
                   View leads
@@ -112,25 +132,38 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid gap-3">
-              {demoLeads.map((lead) => (
-                <article key={lead.id} className="grid gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-black text-slate-950">{lead.name}</h3>
-                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.status}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">{lead.projectType} · {lead.scope}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
-                      <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${lead.score}%` }} />
-                    </div>
-                    <b className="text-sm text-slate-950">{lead.score}</b>
-                  </div>
-                </article>
-              ))}
-            </div>
+            {topLeads.length ? (
+              <div className="grid gap-3">
+                {topLeads.map((lead) => {
+                  const score = scoreLead(lead);
+                  return (
+                    <article key={lead.id} className="grid gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-black text-slate-950">{getLeadDisplayName(lead)}</h3>
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.urgency ?? lead.status}</span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500">{lead.request ?? "Client request"} · {lead.source}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${score}%` }} />
+                        </div>
+                        <b className="text-sm text-slate-950">{score}</b>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center">
+                <h3 className="text-xl font-black tracking-[-0.04em] text-slate-950">No real leads yet</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Create one from the trial page and it will appear here.</p>
+                <Link href="/trial" className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white">
+                  Create lead <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
@@ -155,7 +188,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <h2 className="text-2xl font-black tracking-[-0.05em] text-slate-950">Recent activity</h2>
-              <p className="text-sm text-slate-500">What the crew did while you were away.</p>
+              <p className="text-sm text-slate-500">Mock activity for now. Database activity log comes next.</p>
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-2">

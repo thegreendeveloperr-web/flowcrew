@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, Filter, Inbox, MessageSquareText, Search, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Filter, Inbox, Search } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
 import { demoLeads, type AgentId } from "@/lib/data";
 
