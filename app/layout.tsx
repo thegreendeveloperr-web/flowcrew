@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import "./globals.css";
 
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full bg-[#f7f9fc] text-slate-950">
         <LanguageProvider>{children}</LanguageProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
