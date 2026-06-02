@@ -2,7 +2,8 @@ export const conversationSourceValues = [
   "whatsapp",
   "gmail",
   "instagram",
-  "phone",
+  "email",
+  "notes",
   "other",
 ] as const;
 
