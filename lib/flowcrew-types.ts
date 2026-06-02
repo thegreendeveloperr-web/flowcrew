@@ -32,17 +32,19 @@ export type ConversationAnalysis = {
     tags: string[];
     priority: string;
     category: string;
+    status: string;
     crmNote: string;
-    nextSteps: string[];
   };
   nora: {
-    status: string;
-    profitabilitySignal: string;
+    urgency: string;
+    leadQuality: string;
     riskLevel: string;
     why: string;
     questions: string[];
+    nextSteps: string[];
   };
   milo: {
+    followUp: string;
     replies: {
       professional: string;
       friendly: string;

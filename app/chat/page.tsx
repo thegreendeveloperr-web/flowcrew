@@ -5,23 +5,18 @@ import {
   Clock3,
   FileText,
   MessageSquareText,
-  Send,
   Sparkles,
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
+import { agentOrder, agentRoles } from "@/lib/agent-roles";
 import type { AgentId } from "@/lib/data";
 
-const agents: Array<{ id: AgentId; name: string; role: string; state: string }> = [
-  { id: "jackie", name: "Jackie", role: "Organizing messages", state: "Live" },
-  { id: "milo", name: "Milo", role: "Tagging priority", state: "Ready" },
-  { id: "nora", name: "Nora", role: "Drafting replies", state: "Live" },
-  { id: "dex", name: "Dex", role: "Finding next steps", state: "Ready" },
-];
+const agents = agentOrder.map((id) => ({ id, ...agentRoles[id] }));
 
 const recentLeads = [
   ["Marco · Website quote", "Urgent lead from WhatsApp, Gmail and Instagram."],
-  ["Studio Luma · Booking page", "Nora drafted a reply. Dex found a date."],
-  ["Andrea · Logo refresh", "Milo marked as medium priority."],
+  ["Studio Luma · Booking page", "Milo drafted a reply. Nora suggested the next action."],
+  ["Andrea · Logo refresh", "Dex marked the lead as medium priority."],
   ["Claudia · E-commerce", "Needs follow-up and budget clarification."],
 ];
 
@@ -83,9 +78,9 @@ export default function ChatPage() {
             </span>
           </Link>
 
-          <button className="mb-4 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-4 py-3 text-sm font-black text-white shadow-[0_16px_35px_rgba(37,99,235,0.24)]">
-            + New lead chat
-          </button>
+          <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-black text-blue-700">
+            Product walkthrough
+          </div>
 
           <p className="mb-2 mt-3 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Workspace</p>
           <div className="grid gap-2">
@@ -102,7 +97,7 @@ export default function ChatPage() {
             ))}
           </div>
 
-          <p className="mb-2 mt-6 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Recent leads</p>
+          <p className="mb-2 mt-6 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Sample leads</p>
           <div className="grid gap-2 overflow-auto pr-1">
             {recentLeads.map(([title, body], index) => (
               <div className={`rounded-2xl p-3 ${index === 0 ? "border border-slate-200 bg-white shadow-sm" : ""}`} key={title}>
@@ -113,15 +108,15 @@ export default function ChatPage() {
           </div>
 
           <div className="mt-auto rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="font-black tracking-[-0.025em]">Premium mode enabled</p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Cleaner briefs, stronger replies and deeper lead reasoning from the full crew.</p>
+            <p className="font-black tracking-[-0.025em]">Demo preview</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">A prerecorded walkthrough of how the Crew turns scattered messages into a lead brief.</p>
           </div>
         </aside>
 
         <section className="grid min-h-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-[2rem] border border-slate-200 bg-white/82 shadow-[0_18px_55px_rgba(15,23,42,0.09)] backdrop-blur-2xl">
           <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white/72 px-5 py-4 max-sm:flex-col max-sm:items-start">
             <div className="flex items-center gap-3">
-              <Link className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm" href="/">
+              <Link aria-label="Back to homepage" className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm" href="/">
                 <ArrowLeft aria-hidden="true" className="h-5 w-5" />
               </Link>
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-slate-950 to-slate-700 font-black text-white shadow-lg">
@@ -132,25 +127,22 @@ export default function ChatPage() {
                 <p className="text-sm font-semibold text-slate-500">AI dialogue with Jackie, Milo, Nora and Dex</p>
               </div>
             </div>
-            <div className="flex gap-2 max-sm:w-full">
-              <button className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm max-sm:flex-1">Export brief</button>
-              <button className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-4 py-2 text-sm font-black text-white shadow-[0_14px_30px_rgba(37,99,235,0.24)] max-sm:flex-1">Approve reply</button>
-            </div>
+            <span className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700">Demo preview</span>
           </header>
 
           <div className="overflow-auto p-5 sm:p-7">
             <div className="mx-auto mb-7 max-w-4xl rounded-[2rem] border border-slate-200 bg-white/88 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)]">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.14em] text-blue-700">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.13)]" />
-                FlowCrew dialogue mode
+                Product walkthrough
               </div>
-              <h2 className="text-4xl font-black tracking-[-0.06em] max-sm:text-3xl">Talk to your AI crew like ChatGPT.</h2>
+              <h2 className="text-4xl font-black tracking-[-0.06em] max-sm:text-3xl">See how your AI crew handles a lead.</h2>
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                Paste a messy client conversation, ask questions, request a reply or tell the crew what to prioritize. Each agent responds with its own role and responsibility.
+                This prerecorded product walkthrough shows how a messy conversation becomes a readable lead brief. Use the free trial when you want to analyze your own message.
               </p>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {["Summarize this lead and tell me what matters.", "Write a human reply I can send on WhatsApp.", "Find deadlines, urgency and next actions."].map((prompt) => (
-                  <button className="rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-bold leading-5 text-slate-700 shadow-sm" key={prompt}>{prompt}</button>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-bold leading-5 text-slate-700 shadow-sm" key={prompt}>{prompt}</div>
                 ))}
               </div>
             </div>
@@ -160,7 +152,7 @@ export default function ChatPage() {
                 Ciao, ho ricevuto messaggi da Marco su WhatsApp, Gmail e Instagram. Vuole un sito per il suo studio, forse una pagina prenotazioni, dice che gli serve presto e vorrebbe sentirci domani. Puoi organizzarmi tutto?
               </UserMessage>
 
-              <AiMessage agentId="jackie" name="Jackie" role="The Organizer">
+              <AiMessage agentId="jackie" name="Jackie" role="Conversation organizer">
                 <p className="text-sm leading-6 text-slate-600">Ho unificato i messaggi in una scheda unica. Il lead è chiaro: Marco vuole un sito professionale per il suo studio e sta valutando anche una pagina prenotazioni collegata al calendario.</p>
                 <div className="mt-3 grid gap-2">
                   {[
@@ -176,7 +168,7 @@ export default function ChatPage() {
                 </div>
               </AiMessage>
 
-              <AiMessage agentId="milo" name="Milo" role="The Classifier">
+              <AiMessage agentId="dex" name="Dex" role="Lead classifier">
                 <p className="text-sm leading-6 text-slate-600">Lo classificherei come lead ad alta intenzione. Non sta chiedendo solo “quanto costa”: ha già menzionato logo, urgenza, call e funzionalità extra.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {[
@@ -190,7 +182,7 @@ export default function ChatPage() {
                 </div>
               </AiMessage>
 
-              <AiMessage agentId="dex" name="Dex" role="The Follow-up Engine">
+              <AiMessage agentId="nora" name="Nora" role="Lead evaluator">
                 <p className="text-sm leading-6 text-slate-600">Prossima azione: fissare una call domani. Prima della call chiederei budget indicativo, deadline reale e due esempi di siti che gli piacciono.</p>
                 <div className="mt-3 grid gap-2">
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm"><b>Next action:</b> proporre call domani</div>
@@ -198,7 +190,7 @@ export default function ChatPage() {
                 </div>
               </AiMessage>
 
-              <AiMessage agentId="nora" name="Nora" role="The Communicator">
+              <AiMessage agentId="milo" name="Milo" role="Reply and follow-up assistant">
                 <p className="text-sm leading-6 text-slate-600">Ho preparato una risposta breve, umana e abbastanza premium. Non sembra automatica e porta Marco verso la call.</p>
                 <div className="mt-3 rounded-2xl bg-slate-950 p-4 text-white shadow-[0_16px_36px_rgba(15,23,42,0.16)]">
                   <p className="mb-2 text-xs font-black uppercase tracking-[0.13em] text-blue-200">Premium reply</p>
@@ -208,7 +200,7 @@ export default function ChatPage() {
 
               <UserMessage>Rendila un po’ più premium e meno “freelancer disperato”.</UserMessage>
 
-              <AiMessage agentId="nora" name="Nora" role="The Communicator">
+              <AiMessage agentId="milo" name="Milo" role="Reply and follow-up assistant">
                 <p className="text-sm leading-6 text-slate-600">Perfetto. Versione più sicura, pulita e professionale:</p>
                 <div className="mt-3 rounded-2xl bg-slate-950 p-4 text-white shadow-[0_16px_36px_rgba(15,23,42,0.16)]">
                   <p className="text-sm leading-6 text-slate-200">Ciao Marco, grazie per avermi mandato il contesto. Ti propongo di sentirci domani per definire obiettivi, funzionalità di prenotazione e tempistiche. Se riesci, inviami anche logo e un paio di riferimenti visivi: così arrivo alla call con una valutazione più precisa.</p>
@@ -218,18 +210,18 @@ export default function ChatPage() {
           </div>
 
           <footer className="border-t border-slate-200 bg-white/72 p-4">
-            <div className="mx-auto grid max-w-4xl grid-cols-[1fr_auto] items-end gap-3 rounded-[1.6rem] border border-slate-200 bg-white p-2 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-              <textarea className="min-h-14 resize-none rounded-[1.3rem] border-0 bg-transparent px-4 py-3 text-sm leading-6 text-slate-700 outline-none" defaultValue="Chiedi agli agenti di migliorare la risposta o creare un brief completo..." />
-              <button className="grid h-12 w-12 place-items-center rounded-[1.1rem] bg-gradient-to-br from-blue-600 to-indigo-500 text-white shadow-[0_14px_28px_rgba(37,99,235,0.24)]">
-                <Send aria-hidden="true" className="h-5 w-5" />
-              </button>
+            <div className="mx-auto flex max-w-4xl flex-col gap-3 rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold leading-6 text-slate-600">Walkthrough transcript only. Analyze your own client message in the free trial.</p>
+              <Link className="inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-4 py-2 text-sm font-black text-white shadow-[0_14px_28px_rgba(37,99,235,0.24)]" href="/trial">
+                Try one lead free
+              </Link>
             </div>
           </footer>
         </section>
 
         <aside className="overflow-auto rounded-[2rem] border border-slate-200 bg-white/82 p-4 shadow-[0_14px_40px_rgba(15,23,42,0.08)] backdrop-blur-2xl max-xl:col-span-2 max-md:col-span-1">
           <h2 className="text-2xl font-black tracking-[-0.055em]">Active AI crew</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">Each agent has a face, role and task in the conversation.</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">Each agent keeps one clear responsibility in this walkthrough.</p>
 
           <div className="mt-5 grid gap-3">
             {agents.map((agent) => (
@@ -237,9 +229,9 @@ export default function ChatPage() {
                 <AgentAvatar agentId={agent.id} decorative size="md" />
                 <div>
                   <p className="text-sm font-black tracking-[-0.02em]">{agent.name}</p>
-                  <p className="text-xs font-semibold text-slate-500">{agent.role}</p>
+                  <p className="text-xs font-semibold text-slate-500">{agent.title}</p>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700 ring-1 ring-emerald-100">{agent.state}</span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-black text-blue-700 ring-1 ring-blue-100">Preview</span>
               </div>
             ))}
           </div>

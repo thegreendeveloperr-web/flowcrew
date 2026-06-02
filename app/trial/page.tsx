@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -16,24 +16,26 @@ import {
   WandSparkles,
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
+import { agentOrder, agentRoles } from "@/lib/agent-roles";
 import type { AgentId } from "@/lib/data";
 import type { ConversationAnalysis, ConversationSource } from "@/lib/flowcrew-types";
 import type { StoredLead } from "@/lib/leads";
+import { trialDraftStorageKey } from "@/lib/trial-draft";
 
-const agents: Array<{ id: AgentId; name: string; role: string; detail: string }> = [
-  { id: "jackie", name: "Jackie", role: "Organizer", detail: "Creates the clean brief" },
-  { id: "milo", name: "Milo", role: "Classifier", detail: "Tags intent and urgency" },
-  { id: "nora", name: "Nora", role: "Communicator", detail: "Writes the reply" },
-  { id: "dex", name: "Dex", role: "Follow-up", detail: "Finds next actions" },
-];
+const agents: Array<{ id: AgentId; name: string; role: string; detail: string }> = agentOrder.map((id) => ({
+  id,
+  name: agentRoles[id].name,
+  role: agentRoles[id].title,
+  detail: agentRoles[id].workflowAction,
+}));
 
 const sample = `Ciao, volevo capire quanto costa fare un sito per il mio studio. Ho scritto anche via mail e ti ho mandato il logo. Mi servirebbe abbastanza presto, forse anche una pagina prenotazioni collegata al calendario. Possiamo sentirci domani?`;
 
 const loadingSteps = [
   "Jackie is analyzing the message",
-  "Milo is adding tags and priority",
-  "Nora is drafting the reply",
-  "Dex is creating follow-up actions",
+  "Dex is assigning tags, category, priority and status",
+  "Nora is evaluating urgency, quality, risk and next actions",
+  "Milo is preparing a reply and follow-up",
 ];
 
 const resultPreview = ["Summary", "Priority", "Tags", "Next action", "Reply draft"];
@@ -61,6 +63,18 @@ export default function TrialPage() {
   const [result, setResult] = useState<IngestResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const storedDraft = window.localStorage.getItem(trialDraftStorageKey);
+
+      if (storedDraft) {
+        window.setTimeout(() => setMessage(storedDraft), 0);
+      }
+    } catch {
+      // The trial remains usable when storage is unavailable.
+    }
+  }, []);
 
   const generated = Boolean(result);
   const analysis = result?.analysis;

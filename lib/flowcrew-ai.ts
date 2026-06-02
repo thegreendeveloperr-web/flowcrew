@@ -61,38 +61,41 @@ const conversationAnalysisSchema = {
     dex: {
       type: "object",
       additionalProperties: false,
-      required: ["tags", "priority", "category", "crmNote", "nextSteps"],
+      required: ["tags", "priority", "category", "status", "crmNote"],
       properties: {
         tags: { type: "array", maxItems: 6, items: { type: "string" } },
         priority: { type: "string" },
         category: { type: "string" },
+        status: { type: "string" },
         crmNote: { type: "string" },
-        nextSteps: { type: "array", maxItems: 4, items: { type: "string" } },
       },
     },
     nora: {
       type: "object",
       additionalProperties: false,
       required: [
-        "status",
-        "profitabilitySignal",
+        "urgency",
+        "leadQuality",
         "riskLevel",
         "why",
         "questions",
+        "nextSteps",
       ],
       properties: {
-        status: { type: "string" },
-        profitabilitySignal: { type: "string" },
+        urgency: { type: "string" },
+        leadQuality: { type: "string" },
         riskLevel: { type: "string" },
         why: { type: "string" },
         questions: { type: "array", maxItems: 4, items: { type: "string" } },
+        nextSteps: { type: "array", maxItems: 4, items: { type: "string" } },
       },
     },
     milo: {
       type: "object",
       additionalProperties: false,
-      required: ["replies"],
+      required: ["followUp", "replies"],
       properties: {
+        followUp: { type: "string" },
         replies: {
           type: "object",
           additionalProperties: false,
@@ -291,20 +294,19 @@ function parseConversationAnalysis(value: unknown): ConversationAnalysis {
       tags: readStringArray(dex.tags, "dex.tags"),
       priority: readAIString(dex.priority, "dex.priority"),
       category: readAIString(dex.category, "dex.category"),
+      status: readAIString(dex.status, "dex.status"),
       crmNote: readAIString(dex.crmNote, "dex.crmNote"),
-      nextSteps: readStringArray(dex.nextSteps, "dex.nextSteps"),
     },
     nora: {
-      status: readAIString(nora.status, "nora.status"),
-      profitabilitySignal: readAIString(
-        nora.profitabilitySignal,
-        "nora.profitabilitySignal",
-      ),
+      urgency: readAIString(nora.urgency, "nora.urgency"),
+      leadQuality: readAIString(nora.leadQuality, "nora.leadQuality"),
       riskLevel: readAIString(nora.riskLevel, "nora.riskLevel"),
       why: readAIString(nora.why, "nora.why"),
       questions: readStringArray(nora.questions, "nora.questions"),
+      nextSteps: readStringArray(nora.nextSteps, "nora.nextSteps"),
     },
     milo: {
+      followUp: readAIString(milo.followUp, "milo.followUp"),
       replies: {
         professional: readAIString(replies.professional, "milo.replies.professional"),
         friendly: readAIString(replies.friendly, "milo.replies.friendly"),
@@ -335,9 +337,9 @@ Rules:
 - Write every user-facing field in ${input.language === "it" ? "Italian" : "English"}.
 - Do not invent facts. When information is missing, say so clearly.
 - Jackie cleans and structures the conversation.
-- Dex adds tags, priority, category, CRM-style notes, and practical next steps.
-- Nora evaluates opportunity, profitability signal, risk, and clarification questions.
-- Milo drafts four replies: professional, friendly, short, and firm but polite.
+- Dex assigns tags, category, priority, lead status, and a CRM-style note.
+- Nora evaluates urgency, lead quality, risk, clarification questions, and practical next actions.
+- Milo drafts a concise follow-up and four replies: professional, friendly, short, and firm but polite.
 - Never claim that a message was sent, a task was created, or a CRM was updated.
 - Keep each list focused and concise. Return no more items than the schema allows.
 `,

@@ -10,8 +10,9 @@ import {
   TimerReset,
   Workflow,
 } from "lucide-react";
+import { agentRoles, type AgentId } from "@/lib/agent-roles";
 
-export type AgentId = "jackie" | "milo" | "nora" | "dex";
+export type { AgentId } from "@/lib/agent-roles";
 
 export type Agent = {
   id: AgentId;
@@ -57,8 +58,8 @@ export type DemoLead = {
 export const agents: Agent[] = [
   {
     id: "jackie",
-    name: "Jackie",
-    title: "Conversation cleaner",
+    name: agentRoles.jackie.name,
+    title: agentRoles.jackie.title,
     status: "working",
     brain: "Smart Brain",
     accent: "#51E5FF",
@@ -67,13 +68,12 @@ export const agents: Agent[] = [
     metric: "4 topics",
     metricLabel: "detected",
     microCopy: "Jackie is turning scattered messages into a clean client brief.",
-    description:
-      "Reads messy WhatsApp, Gmail, and chat fragments, then extracts facts, missing info, detected topics, and the next agent to consult.",
+    description: agentRoles.jackie.description,
   },
   {
     id: "milo",
-    name: "Milo",
-    title: "Reply assistant",
+    name: agentRoles.milo.name,
+    title: agentRoles.milo.title,
     status: "watching",
     brain: "Smart Brain",
     accent: "#A8FF78",
@@ -82,13 +82,12 @@ export const agents: Agent[] = [
     metric: "4 tones",
     metricLabel: "ready",
     microCopy: "Milo is drafting replies, but waits for your confirmation.",
-    description:
-      "Prepares professional, friendly, short, or firm replies and asks the user before anything is treated as ready to send.",
+    description: agentRoles.milo.description,
   },
   {
     id: "nora",
-    name: "Nora",
-    title: "Opportunity evaluator",
+    name: agentRoles.nora.name,
+    title: agentRoles.nora.title,
     status: "working",
     brain: "Smart Brain",
     accent: "#9D6CFF",
@@ -97,13 +96,12 @@ export const agents: Agent[] = [
     metric: "Needs clarity",
     metricLabel: "signal",
     microCopy: "Nora is checking if this request is profitable, unclear, or risky.",
-    description:
-      "Evaluates events, requests, and commercial opportunities to decide if they are profitable, unclear, unrealistic, or impossible with current info.",
+    description: agentRoles.nora.description,
   },
   {
     id: "dex",
-    name: "Dex",
-    title: "Tagging and workflow log",
+    name: agentRoles.dex.name,
+    title: agentRoles.dex.title,
     status: "online",
     brain: "Elite Brain",
     accent: "#FF8A9B",
@@ -112,8 +110,7 @@ export const agents: Agent[] = [
     metric: "8 tags",
     metricLabel: "applied",
     microCopy: "Dex is tagging, prioritizing, and writing the CRM-style handoff.",
-    description:
-      "Adds tags, categories, priority, CRM notes, and next steps so every conversation becomes an organized workflow.",
+    description: agentRoles.dex.description,
   },
 ];
 
@@ -224,7 +221,7 @@ export const dashboardStats = [
   {
     label: "Follow-ups pending",
     value: "7",
-    caption: "Dex tagged the next actions",
+    caption: "Nora evaluated the next actions",
     Icon: TimerReset,
     accent: "#A8FF78",
   },

@@ -35,7 +35,7 @@ export default function LeadResult({ result }: LeadResultProps) {
     {
       id: "nora",
       agent: "Nora",
-      title: `${analysis.nora.status} - Risk: ${analysis.nora.riskLevel}`,
+      title: `${analysis.dex.status} - Risk: ${analysis.nora.riskLevel}`,
       body: analysis.nora.why,
       Icon: FileText,
       accent: "text-violet-200",

@@ -32,8 +32,8 @@ export function analysisToLeadRow(input: ConversationInput, analysis: Conversati
     analysis.jackie.keyFacts.at(0) ||
     "Client request";
 
-  const nextAction = analysis.dex.nextSteps.at(0) || analysis.jackie.missingInfo.at(0) || "Review lead";
-  const followUp = compactText(analysis.dex.nextSteps.slice(1));
+  const nextAction = analysis.nora.nextSteps.at(0) || analysis.jackie.missingInfo.at(0) || "Review lead";
+  const followUp = analysis.milo.followUp || compactText(analysis.nora.nextSteps.slice(1));
 
   return {
     source: input.sourceType,
@@ -42,13 +42,13 @@ export function analysisToLeadRow(input: ConversationInput, analysis: Conversati
     raw_message: input.messyMessage,
     summary: analysis.jackie.cleanSummary,
     request: primaryRequest,
-    urgency: analysis.dex.priority,
+    urgency: analysis.nora.urgency || analysis.dex.priority,
     tags: analysis.dex.tags,
     suggested_reply: analysis.milo.replies.professional,
     next_action: nextAction,
     follow_up: followUp || analysis.nora.questions.at(0) || null,
     owner_agent: analysis.jackie.suggestedAgent || "Jackie",
-    status: analysis.nora.status || "new",
+    status: analysis.dex.status || "new",
   };
 }
 

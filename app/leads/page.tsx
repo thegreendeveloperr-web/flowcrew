@@ -22,9 +22,14 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export default async function LeadsPage() {
-  const leads = await getStoredLeads(40);
-  const selected = leads[0];
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lead?: string | string[] }>;
+}) {
+  const [leads, query] = await Promise.all([getStoredLeads(40), searchParams]);
+  const selectedId = typeof query.lead === "string" ? query.lead : undefined;
+  const selected = leads.find((lead) => lead.id === selectedId) ?? leads[0];
 
   return (
     <AppShell>
@@ -103,7 +108,7 @@ export default async function LeadsPage() {
             {leads.length ? (
               <div className="grid gap-3">
                 {leads.map((lead) => (
-                  <LeadRow key={lead.id} lead={lead} />
+                  <LeadRow isSelected={lead.id === selected?.id} key={lead.id} lead={lead} />
                 ))}
               </div>
             ) : (
@@ -159,12 +164,16 @@ function SelectedLead({ lead }: { lead?: StoredLead }) {
   );
 }
 
-function LeadRow({ lead }: { lead: StoredLead }) {
+function LeadRow({ lead, isSelected }: { lead: StoredLead; isSelected: boolean }) {
   const score = scoreLead(lead);
   const tags = lead.tags ?? [];
 
   return (
-    <article className="rounded-[1.65rem] border border-slate-100 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
+    <Link
+      aria-current={isSelected ? "true" : undefined}
+      className={`block rounded-[1.65rem] border bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition hover:border-blue-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.09)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 ${isSelected ? "border-blue-300 ring-2 ring-blue-100" : "border-slate-100"}`}
+      href={{ pathname: "/leads", query: { lead: lead.id } }}
+    >
       <div className="grid gap-4 md:grid-cols-[56px_1fr_auto] md:items-center">
         <AgentAvatar agentId={ownerToAgent(lead.owner_agent)} decorative size="md" />
         <div>
@@ -188,10 +197,10 @@ function LeadRow({ lead }: { lead: StoredLead }) {
             <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${score}%` }} />
           </div>
           <b className="text-sm text-slate-950">{score}</b>
-          <ArrowRight className="h-4 w-4 text-slate-400" />
+          <ArrowRight aria-hidden="true" className="h-4 w-4 text-slate-400" />
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 

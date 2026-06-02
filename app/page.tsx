@@ -9,12 +9,13 @@ import {
   LockKeyhole,
   MailCheck,
   MessagesSquare,
-  Sparkles,
   Tags,
   UsersRound,
 } from "lucide-react";
 import AgentAvatar from "@/components/AgentAvatar";
 import LanguageSelector from "@/components/LanguageSelector";
+import TrialDraftCard from "@/components/TrialDraftCard";
+import { agentOrder, agentRoles } from "@/lib/agent-roles";
 import type { AgentId } from "@/lib/data";
 
 const crew: Array<{
@@ -24,46 +25,40 @@ const crew: Array<{
   badge: string;
   copy: string;
   chips: string[];
-}> = [
-  {
-    id: "jackie",
-    name: "Jackie",
-    role: "The Organizer",
-    badge: "Clarity lead",
-    copy: "Turns scattered WhatsApp, Gmail and client notes into a structured, readable brief.",
-    chips: ["Precise", "Calm", "Reliable"],
-  },
-  {
-    id: "milo",
-    name: "Milo",
-    role: "The Classifier",
-    badge: "Signal analyst",
-    copy: "Reads intent, urgency and context, then assigns tags, priority and lead status.",
-    chips: ["Sharp", "Analytical", "Focused"],
-  },
-  {
-    id: "nora",
-    name: "Nora",
-    role: "The Communicator",
-    badge: "Comms specialist",
-    copy: "Drafts polished replies that sound human, confident and ready to send.",
-    chips: ["Warm", "Human", "Confident"],
-  },
-  {
-    id: "dex",
-    name: "Dex",
-    role: "The Follow-up Engine",
-    badge: "Ops closer",
-    copy: "Finds deadlines, reminders and next actions so no lead gets forgotten.",
-    chips: ["Fast", "Practical", "Decisive"],
-  },
-];
+}> = agentOrder.map((id) => {
+  const presentation = {
+    jackie: {
+      badge: "Clarity lead",
+      chips: ["Precise", "Calm", "Reliable"],
+    },
+    dex: {
+      badge: "Signal analyst",
+      chips: ["Sharp", "Analytical", "Focused"],
+    },
+    nora: {
+      badge: "Opportunity analyst",
+      chips: ["Careful", "Commercial", "Decisive"],
+    },
+    milo: {
+      badge: "Comms specialist",
+      chips: ["Warm", "Human", "Confident"],
+    },
+  } satisfies Record<AgentId, { badge: string; chips: string[] }>;
+
+  return {
+    id,
+    name: agentRoles[id].name,
+    role: agentRoles[id].title,
+    copy: agentRoles[id].description,
+    ...presentation[id],
+  };
+});
 
 const flowSteps = [
   { icon: ClipboardCheck, title: "Jackie analyzes the message", body: "Paste WhatsApp texts, emails or notes. Jackie turns the scattered context into a readable summary." },
-  { icon: Tags, title: "Milo adds tags and priority", body: "Milo identifies intent, urgency and the signals that help you decide what needs attention first." },
-  { icon: MailCheck, title: "Nora drafts the reply", body: "Nora prepares a polished response you can review, edit and send when it sounds right." },
-  { icon: ListTodo, title: "Dex creates follow-up actions", body: "Dex captures the next action, reminders and practical follow-up so the lead keeps moving." },
+  { icon: Tags, title: "Dex classifies the lead", body: "Dex assigns tags, category, priority and status so the lead is easy to manage." },
+  { icon: ListTodo, title: "Nora evaluates the opportunity", body: "Nora assesses urgency, lead quality, risk and the next actions worth taking." },
+  { icon: MailCheck, title: "Milo drafts the follow-up", body: "Milo prepares a polished reply and follow-up you can review before anything is sent." },
 ];
 
 const socialProofCards = [
@@ -136,7 +131,7 @@ export default function Home() {
             <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#agents">Agents</a>
             <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#pricing">Pricing</a>
             <Link className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="/chat">
-              Live Demo
+              Demo Preview
               <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -144,7 +139,7 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSelector />
             <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:inline-flex" href="/chat">
-              Open app
+              View walkthrough
             </Link>
             <Link className="hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 sm:inline-flex" href="/trial">
               Try free
@@ -181,7 +176,7 @@ export default function Home() {
               <ArrowRight aria-hidden="true" className="h-5 w-5 transition group-hover:translate-x-1" />
             </Link>
             <Link className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-black text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/chat">
-              Open live demo
+              View product walkthrough
               <ExternalLink aria-hidden="true" className="h-4 w-4" />
             </Link>
           </div>
@@ -423,23 +418,7 @@ export default function Home() {
             <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] sm:text-6xl">Paste one lead. See the magic.</h2>
             <p className="mt-5 text-lg leading-8 text-slate-600">No complex setup. Paste a messy client conversation and FlowCrew turns it into a clear summary, tags, urgency and a suggested reply.</p>
           </div>
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="mb-4 text-sm leading-6 text-slate-600">Paste a messy client message. FlowCrew will return a summary, urgency level, tags, next action, and a reply draft.</p>
-            <label className="mb-3 block text-sm font-black text-slate-700" htmlFor="lead">Client conversation</label>
-            <textarea className="h-40 w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100" id="lead" placeholder="Ciao, volevo un preventivo per un sito per il mio studio. Ti ho mandato il logo via mail, mi servirebbe abbastanza presto e forse anche una pagina prenotazioni. Possiamo sentirci domani?" />
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {trialOutputs.map((output) => (
-                <li className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-blue-100" key={output}>
-                  <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
-                  {output}
-                </li>
-              ))}
-            </ul>
-            <Link className="mt-4 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.24)]" href="/trial">
-              Generate client brief
-              <Sparkles aria-hidden="true" className="h-5 w-5" />
-            </Link>
-          </div>
+          <TrialDraftCard outputs={trialOutputs} />
         </div>
       </section>
 
