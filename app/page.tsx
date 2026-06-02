@@ -1,511 +1,318 @@
-"use client";
-
-import { FlowCrewChat } from "@/components/FlowCrewChat";
 import Link from "next/link";
 import {
   ArrowRight,
-  Bot,
-  CheckCircle2,
   ClipboardCheck,
-  FileText,
   MailCheck,
-  Radar,
+  MessageSquareText,
   Sparkles,
-  Workflow,
-  Zap,
 } from "lucide-react";
-import LanguageSelector from "@/components/LanguageSelector";
-import PricingCard from "@/components/PricingCard";
-import { useLanguage } from "@/components/LanguageProvider";
 import AgentAvatar from "@/components/AgentAvatar";
-import { agents, plans, type AgentId, type Plan } from "@/lib/data";
+import LanguageSelector from "@/components/LanguageSelector";
+import type { AgentId } from "@/lib/data";
 
-const agentStyles: Record<
-  AgentId,
+const crew: Array<{
+  id: AgentId;
+  name: string;
+  role: string;
+  badge: string;
+  copy: string;
+  chips: string[];
+}> = [
   {
-    Icon: typeof Radar;
-    accent: string;
-    glow: string;
-  }
-> = {
-  jackie: {
-    Icon: Radar,
-    accent: "text-cyan-100",
-    glow: "shadow-cyan-500/15",
+    id: "jackie",
+    name: "Jackie",
+    role: "The Organizer",
+    badge: "Clarity lead",
+    copy: "Turns scattered WhatsApp, Gmail and client notes into a structured, readable brief.",
+    chips: ["Precise", "Calm", "Reliable"],
   },
-  nora: {
-    Icon: FileText,
-    accent: "text-fuchsia-100",
-    glow: "shadow-fuchsia-500/15",
+  {
+    id: "milo",
+    name: "Milo",
+    role: "The Classifier",
+    badge: "Signal analyst",
+    copy: "Reads intent, urgency and context, then assigns tags, priority and lead status.",
+    chips: ["Sharp", "Analytical", "Focused"],
   },
-  milo: {
-    Icon: MailCheck,
-    accent: "text-violet-100",
-    glow: "shadow-violet-500/15",
+  {
+    id: "nora",
+    name: "Nora",
+    role: "The Communicator",
+    badge: "Comms specialist",
+    copy: "Drafts polished replies that sound human, confident and ready to send.",
+    chips: ["Warm", "Human", "Confident"],
   },
-  dex: {
-    Icon: Workflow,
-    accent: "text-rose-100",
-    glow: "shadow-rose-500/15",
+  {
+    id: "dex",
+    name: "Dex",
+    role: "The Follow-up Engine",
+    badge: "Ops closer",
+    copy: "Finds deadlines, reminders and next actions so no lead gets forgotten.",
+    chips: ["Fast", "Practical", "Decisive"],
   },
-};
-
-const flowVisuals = [
-  { Icon: ClipboardCheck, color: "text-emerald-200" },
-  { Icon: Radar, color: "text-cyan-200" },
-  { Icon: FileText, color: "text-fuchsia-200" },
-  { Icon: MailCheck, color: "text-violet-200" },
-  { Icon: Workflow, color: "text-rose-200" },
 ];
 
-const flowAgentIds: Array<AgentId | null> = [
-  null,
-  "jackie",
-  "nora",
-  "milo",
-  "dex",
+const flowSteps = [
+  { icon: MessageSquareText, title: "Paste messy client messages", body: "WhatsApp, Gmail, Instagram DMs, notes or raw copied context." },
+  { icon: ClipboardCheck, title: "Get a clean lead brief", body: "Facts, missing info, intent, priority and next action in one view." },
+  { icon: MailCheck, title: "Approve a premium reply", body: "Nora writes it. You approve it. FlowCrew never feels out of control." },
 ];
-
-const orchestratedAgents: AgentId[] = ["jackie", "nora", "milo", "dex"];
-
-const howIcons = [ClipboardCheck, Zap, CheckCircle2];
-
-type LandingCopy = ReturnType<typeof useLanguage>["copy"]["landing"];
-
-function localizePlans(copy: ReturnType<typeof useLanguage>["copy"]): Plan[] {
-  return plans.map((plan, index) => {
-    const localizedPlan =
-      copy.landing.pricingPlans[index] ?? copy.landing.pricingPlans[0];
-
-    return {
-      ...plan,
-      description: localizedPlan.description,
-      features: [...localizedPlan.features],
-      cta: localizedPlan.cta,
-    };
-  });
-}
 
 export default function Home() {
-  const { copy } = useLanguage();
-  const localizedPlans = localizePlans(copy);
-
   return (
-    <main className="min-h-screen overflow-hidden bg-[#060710] text-white">
+    <main className="min-h-screen overflow-hidden bg-[#f7f9fc] text-slate-950">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-10%] top-[-10%] h-[28rem] w-[28rem] rounded-full bg-cyan-500/20 blur-[120px]" />
-        <div className="absolute right-[-12%] top-[16%] h-[32rem] w-[32rem] rounded-full bg-fuchsia-500/16 blur-[130px]" />
-        <div className="absolute bottom-[-18%] left-[35%] h-[30rem] w-[30rem] rounded-full bg-violet-500/12 blur-[120px]" />
+        <div className="absolute left-[-12%] top-[-14%] h-[32rem] w-[32rem] rounded-full bg-indigo-400/20 blur-[130px]" />
+        <div className="absolute right-[-14%] top-[5%] h-[34rem] w-[34rem] rounded-full bg-cyan-300/18 blur-[130px]" />
+        <div className="absolute bottom-[-20%] left-[42%] h-[30rem] w-[30rem] rounded-full bg-violet-400/12 blur-[120px]" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#060710]/72 backdrop-blur-2xl">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/72 backdrop-blur-2xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <Link className="group flex items-center gap-3" href="/">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10 shadow-[0_0_34px_rgba(34,211,238,0.16)]">
-              <Bot aria-hidden="true" className="h-5 w-5 text-cyan-100" />
+          <Link className="flex items-center gap-3" href="/">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-500 text-lg font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.28)]">
+              F
             </span>
             <span>
-              <span className="block text-lg font-black tracking-tight">
-                FlowCrew
-              </span>
-              <span className="block text-[10px] font-bold uppercase tracking-[0.26em] text-cyan-100/55">
-                AI Automation Hub
-              </span>
+              <span className="block text-lg font-black tracking-[-0.04em]">FlowCrew</span>
+              <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">AI Client Workspace</span>
             </span>
           </Link>
 
-          <div className="hidden items-center gap-7 text-sm font-bold text-white/62 md:flex">
-            <a className="transition hover:text-white" href="#how-it-works">
-              {copy.nav.how}
-            </a>
-            <a className="transition hover:text-white" href="#agents">
-              {copy.nav.agents}
-            </a>
-            <a className="transition hover:text-white" href="#pricing">
-              {copy.nav.pricing}
-            </a>
-            <Link className="transition hover:text-white" href="/dashboard">
-              {copy.nav.dashboard}
-            </Link>
+          <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white/80 p-1.5 text-sm font-bold text-slate-500 shadow-sm md:flex">
+            <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#workflow">Workflow</a>
+            <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#agents">Agents</a>
+            <Link className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="/chat">AI Dialogue</Link>
+            <a className="rounded-full px-4 py-2 transition hover:bg-slate-100 hover:text-slate-950" href="#trial">Trial</a>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSelector />
-            <Link
-              className="hidden rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-black text-white transition hover:bg-white/15 sm:inline-flex"
-              href="/trial"
-            >
-              {copy.nav.trial}
+            <Link className="hidden rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:inline-flex" href="/chat">
+              Open app
+            </Link>
+            <Link className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-2.5 text-sm font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5" href="/trial">
+              Try free
             </Link>
           </div>
         </nav>
       </header>
 
-      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-28 lg:pt-24">
+      <section className="relative z-10 mx-auto grid max-w-7xl gap-12 px-5 pb-16 pt-16 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:pb-24 lg:pt-24">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-cyan-100/80">
-            <Sparkles aria-hidden="true" className="h-4 w-4" />
-            {copy.landing.eyebrow}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-blue-700 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.13)]" />
+            AI client operations, redesigned
           </div>
 
-          <h1 className="max-w-4xl text-5xl font-black tracking-[-0.07em] text-white sm:text-6xl lg:text-7xl">
-            {copy.landing.headline}
+          <h1 className="max-w-4xl text-5xl font-black tracking-[-0.075em] text-slate-950 sm:text-6xl lg:text-7xl xl:text-8xl">
+            Turn messy client messages into <span className="bg-gradient-to-br from-slate-950 via-blue-600 to-violet-500 bg-clip-text text-transparent">clear work.</span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-            {copy.landing.subheadline}
+          <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
+            FlowCrew organizes WhatsApp, Gmail and scattered client conversations into clean summaries, smart priorities, tags and ready-to-send replies.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link
-              className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-cyan-300 px-6 py-4 text-base font-black text-slate-950 shadow-[0_0_44px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 hover:bg-white"
-              href="/trial"
-            >
-              {copy.landing.primaryCta}
-              <ArrowRight
-                aria-hidden="true"
-                className="h-5 w-5 transition group-hover:translate-x-1"
-              />
+            <Link className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-6 py-4 text-base font-black text-white shadow-[0_18px_44px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5" href="/trial">
+              Try one lead free
+              <ArrowRight aria-hidden="true" className="h-5 w-5 transition group-hover:translate-x-1" />
             </Link>
-            <a
-              className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055] px-6 py-4 text-base font-black text-white transition hover:bg-white/10"
-              href="#how-it-works"
-            >
-              {copy.landing.secondaryCta}
-            </a>
+            <Link className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-black text-slate-950 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href="/chat">
+              View AI dialogue
+            </Link>
+          </div>
+
+          <div className="mt-8 flex items-center gap-4 text-sm font-semibold text-slate-500">
+            <div className="flex -space-x-2">
+              {crew.map((agent) => (
+                <AgentAvatar agentId={agent.id} decorative key={agent.id} size="sm" className="ring-4 ring-white" />
+              ))}
+            </div>
+            <span>Jackie, Milo, Nora and Dex work like a real AI crew.</span>
           </div>
         </div>
 
         <div className="relative">
-          <div className="absolute -inset-4 rounded-[2.8rem] bg-gradient-to-br from-cyan-300/14 via-fuchsia-400/10 to-violet-500/12 blur-2xl" />
-          <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/30 backdrop-blur-2xl sm:p-6">
-            <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-cyan-100/65">
-                  {copy.landing.flowLabel}
-                </p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-white">
-                  {copy.landing.flowTitle}
-                </h2>
+          <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-cyan-400/10 blur-2xl" />
+          <div className="relative overflow-hidden rounded-[2.4rem] border border-slate-200 bg-white/88 shadow-[0_28px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-white/70 px-5 py-4">
+              <div className="flex gap-2">
+                <span className="h-3 w-3 rounded-full bg-rose-400" />
+                <span className="h-3 w-3 rounded-full bg-amber-400" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400" />
               </div>
-              <div className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-xs font-black text-emerald-100">
-                Live
-              </div>
+              <p className="text-sm font-black text-slate-500">FlowCrew Workspace</p>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">Live</span>
             </div>
 
-            <div className="mt-6 space-y-3">
-              {copy.landing.flowSteps.map((step, index) => {
-                const visual = flowVisuals[index] ?? flowVisuals[0];
-                const Icon = visual.Icon;
-                const flowAgentId = flowAgentIds[index];
+            <div className="grid min-h-[560px] grid-cols-[170px_1fr]">
+              <aside className="border-r border-slate-200 bg-slate-50/70 p-4 max-sm:hidden">
+                {["Inbox", "Tags", "Replies", "Follow-up", "Settings"].map((item, index) => (
+                  <div className={`mb-2 flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-black ${index === 0 ? "bg-white text-blue-700 shadow-sm" : "text-slate-500"}`} key={item}>
+                    <span className="grid h-7 w-7 place-items-center rounded-xl bg-blue-50 text-blue-600">{index === 0 ? "✦" : "•"}</span>
+                    {item}
+                  </div>
+                ))}
+              </aside>
 
-                return (
-                  <div className="relative" key={step}>
-                    <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0B1020]/72 p-4 transition hover:border-cyan-200/25 hover:bg-[#11172A]/78">
-                      {flowAgentId ? (
-                        <AgentAvatar
-                          agentId={flowAgentId}
-                          decorative
-                          size="sm"
-                        />
-                      ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06]">
-                          <Icon
-                            aria-hidden="true"
-                            className={`h-5 w-5 ${visual.color}`}
-                          />
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/38">
-                          Step {index + 1}
-                        </p>
-                        <p className="mt-1 text-base font-black text-white">
-                          {step}
-                        </p>
+              <section className="p-5">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black tracking-[-0.04em]">Lead intelligence</h2>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">Jackie organized 14 new messages.</p>
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-blue-100">92% ready</span>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[1fr_0.92fr]">
+                  <div className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Scattered messages</p>
+                    {[
+                      ["WhatsApp · Marco", "Ciao, volevo sapere quanto viene un sito per il mio studio. Mi serve abbastanza presto..."],
+                      ["Gmail · Marco B.", "Ti mando anche il logo. Possiamo sentirci domani? Ho un budget ma vorrei capire prima."],
+                      ["Instagram DM", "Ah, dimenticavo: mi serve anche la pagina prenotazioni collegata al calendario."],
+                    ].map(([title, body]) => (
+                      <div className="mb-2 rounded-2xl border border-slate-100 bg-slate-50 p-3" key={title}>
+                        <p className="text-sm font-black text-slate-900">{title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{body}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-[1.6rem] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center gap-3">
+                      <AgentAvatar agentId="jackie" decorative size="md" />
+                      <div>
+                        <p className="font-black text-slate-950">Jackie</p>
+                        <p className="text-sm font-semibold text-slate-500">Summary agent</p>
                       </div>
                     </div>
-                    {index < copy.landing.flowSteps.length - 1 ? (
-                      <div className="ml-10 h-4 w-px bg-gradient-to-b from-cyan-200/40 to-transparent" />
-                    ) : null}
+                    {[
+                      ["Client", "Marco Bianchi"],
+                      ["Need", "Website + booking page"],
+                      ["Priority", "High · wants call tomorrow"],
+                      ["Next step", "Ask budget, deadline, examples"],
+                    ].map(([label, value]) => (
+                      <div className="grid grid-cols-[92px_1fr] gap-3 border-t border-slate-100 py-3 text-sm" key={label}>
+                        <span className="font-black text-slate-400">{label}</span>
+                        <b className="text-slate-900">{value}</b>
+                      </div>
+                    ))}
+                    <div className="mt-3 rounded-2xl bg-slate-950 p-4 text-white shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.13em] text-blue-200">Ready-to-send reply</p>
+                      <p className="text-sm leading-6 text-slate-200">Ciao Marco, grazie per tutti i dettagli. Ti propongo una call domani così capiamo budget, tempistiche e struttura della pagina prenotazioni.</p>
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              </section>
             </div>
           </div>
         </div>
       </section>
 
-      <CrewOrchestrationSection copy={copy.landing} />
-
-      <section
-        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
-        id="how-it-works"
-      >
-        <div className="max-w-3xl">
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
-            {copy.landing.howEyebrow}
-          </p>
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
-            {copy.landing.howTitle}
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-slate-300">
-            {copy.landing.howBody}
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {copy.landing.howSteps.map((step, index) => {
-            const Icon = howIcons[index] ?? howIcons[0];
-
-            return (
-              <article
-                className="rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-xl shadow-black/10 backdrop-blur transition hover:-translate-y-1 hover:border-cyan-200/25"
-                key={step.title}
-              >
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-200/10">
-                  <Icon aria-hidden="true" className="h-5 w-5 text-cyan-100" />
-                </div>
-                <h3 className="text-xl font-black text-white">{step.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
-                  {step.body}
-                </p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section
-        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
-        id="agents"
-      >
-        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-3xl">
-            <p className="text-sm font-black uppercase tracking-[0.24em] text-fuchsia-100/62">
-              {copy.landing.agentsEyebrow}
-            </p>
-            <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
-              {copy.landing.agentsTitle}
-            </h2>
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              {copy.landing.agentsBody}
-            </p>
-          </div>
-          <Link
-            className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.055] px-5 py-3 font-black text-white transition hover:bg-white/10"
-            href="/trial"
-          >
-            {copy.landing.primaryCta}
-          </Link>
-        </div>
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {agents.map((agent) => {
-            const style = agentStyles[agent.id];
-            const AgentIcon = style.Icon;
-            const agentCopy = copy.landing.agentCards[agent.id];
-
-            return (
-              <article
-                className={`group overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.055] p-6 shadow-2xl ${style.glow} backdrop-blur transition hover:-translate-y-1 hover:border-white/20`}
-                key={agent.id}
-              >
-                <div className="mb-8 flex items-start justify-between gap-4">
-                  <div className="relative">
-                    <AgentAvatar
-                      agentId={agent.id}
-                      label={`${agent.name} AI portrait`}
-                      size="lg"
-                    />
-                    <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-[#0B1020]/90 backdrop-blur">
-                      <AgentIcon
-                        aria-hidden="true"
-                        className={`h-4 w-4 ${style.accent}`}
-                      />
-                    </span>
-                  </div>
-                  <span className="rounded-full border border-emerald-200/15 bg-emerald-200/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100/80">
-                    {agent.status}
-                  </span>
-                </div>
-                <p className="text-2xl font-black text-white">{agent.name}</p>
-                <p className={`mt-2 text-sm font-black ${style.accent}`}>
-                  {agentCopy.role}
-                </p>
-                <p className="mt-5 min-h-20 text-sm leading-6 text-slate-300">
-                  {agentCopy.tagline}
-                </p>
-                <div className="mt-6 rounded-2xl border border-white/10 bg-[#0B1020]/72 p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-white/35">
-                    Output
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-white/75">
-                    {agent.microCopy}
-                  </p>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section
-        className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
-        id="pricing"
-      >
+      <section id="workflow" className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
-            {copy.landing.pricingEyebrow}
-          </p>
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
-            {copy.landing.pricingTitle}
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-slate-300">
-            {copy.landing.pricingBody}
-          </p>
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">How it works</p>
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 sm:text-6xl">From chaos to a client-ready action plan.</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-600">The product should show this instantly: one messy lead goes in, a clean business output comes out.</p>
         </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {localizedPlans.map((plan) => (
-            <PricingCard
-              bestValueLabel={copy.landing.bestValue}
-              depthLabel={copy.landing.pricingDepth}
-              key={plan.name}
-              plan={plan}
-            />
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {flowSteps.map((step) => {
+            const Icon = step.icon;
+            return (
+              <article className="rounded-[2rem] border border-slate-200 bg-white/84 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_24px_70px_rgba(15,23,42,0.12)]" key={step.title}>
+                <div className="mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                  <Icon aria-hidden="true" className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-black tracking-[-0.035em]">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{step.body}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="agents" className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-black uppercase tracking-[0.22em] text-violet-700">The Crew</p>
+          <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] text-slate-950 sm:text-6xl">Every agent has a face, a vibe and a job.</h2>
+          <p className="mt-5 text-lg leading-8 text-slate-600">FlowCrew should feel like a memorable AI team, not generic automation blocks.</p>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {crew.map((agent) => (
+            <article className="group overflow-hidden rounded-[2.1rem] border border-slate-200 bg-white/84 p-6 text-center shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(15,23,42,0.13)]" key={agent.id}>
+              <div className="mb-4 flex items-center justify-between">
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-500">{agent.badge}</span>
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
+              </div>
+              <div className="flex justify-center">
+                <AgentAvatar agentId={agent.id} decorative size="xl" />
+              </div>
+              <h3 className="mt-5 text-2xl font-black tracking-[-0.045em]">{agent.name}</h3>
+              <p className="mt-1 text-sm font-black text-slate-500">{agent.role}</p>
+              <p className="mt-4 min-h-20 text-sm leading-6 text-slate-600">{agent.copy}</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {agent.chips.map((chip) => (
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-500" key={chip}>{chip}</span>
+                ))}
+              </div>
+            </article>
           ))}
         </div>
       </section>
 
-      <FlowCrewChat />
-
-      <section className="relative z-10 mx-auto max-w-7xl px-5 pb-20 pt-12 sm:px-8">
-        <div className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-cyan-300/14 via-fuchsia-400/10 to-violet-500/14 p-8 text-center shadow-2xl shadow-black/25 backdrop-blur sm:p-12">
-          <h2 className="mx-auto max-w-3xl text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
-            {copy.landing.finalTitle}
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            {copy.landing.finalBody}
-          </p>
-          <Link
-            className="mt-8 inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-cyan-100"
-            href="/trial"
-          >
-            {copy.landing.primaryCta}
-            <ArrowRight aria-hidden="true" className="h-5 w-5" />
-          </Link>
-        </div>
-      </section>
-
-      <footer className="relative z-10 border-t border-white/10 px-5 py-8 text-center text-sm text-white/45 sm:px-8">
-        {copy.landing.footer}
-      </footer>
-    </main>
-  );
-}
-
-function CrewOrchestrationSection({ copy }: { copy: LandingCopy }) {
-  return (
-    <section
-      className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8"
-      id="orchestration"
-    >
-      <div className="grid gap-8 rounded-[2.5rem] border border-white/10 bg-white/[0.045] p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div>
-          <p className="text-sm font-black uppercase tracking-[0.24em] text-cyan-100/62">
-            {copy.orchestrationEyebrow}
-          </p>
-          <h2 className="mt-4 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">
-            {copy.orchestrationTitle}
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-slate-300">
-            {copy.orchestrationBody}
-          </p>
-
-          <div className="mt-7 grid gap-3">
-            {copy.orchestrationItems.map((item) => (
-              <div
-                className="rounded-3xl border border-white/10 bg-[#0B1020]/70 p-4"
-                key={item.title}
-              >
-                <div className="flex gap-3">
-                  <CheckCircle2
-                    aria-hidden="true"
-                    className="mt-1 h-4 w-4 shrink-0 text-cyan-100"
-                  />
-                  <div>
-                    <p className="font-black text-white">{item.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-300">
-                      {item.body}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 sm:px-8">
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="rounded-[2.3rem] border border-slate-200 bg-white/84 p-7 shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
+            <h3 className="text-2xl font-black tracking-[-0.04em]">Before FlowCrew</h3>
+            <div className="mt-5 rounded-3xl border border-slate-100 bg-slate-50 p-5 text-slate-600">“Ciao, quanto costa? Mi serve presto. Ti mando logo via mail. Forse anche booking. Possiamo sentirci domani?”</div>
+            <div className="mt-3 rounded-3xl border border-slate-100 bg-slate-50 p-5 text-slate-600">Email, WhatsApp and DMs are disconnected. You lose context, urgency and next steps.</div>
           </div>
-        </div>
 
-        <div className="relative overflow-hidden rounded-[2rem] border border-cyan-200/15 bg-[#090D1A]/86 p-5 sm:p-6">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.16),transparent_32%),radial-gradient(circle_at_72%_72%,rgba(217,70,239,0.14),transparent_38%)]" />
-
-          <div className="relative">
-            <div className="mx-auto max-w-sm rounded-[2rem] border border-white/12 bg-white/[0.07] p-5 text-center shadow-2xl shadow-cyan-500/10">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-200/20 bg-cyan-200/10">
-                <Workflow
-                  aria-hidden="true"
-                  className="h-6 w-6 text-cyan-100"
-                />
-              </div>
-              <p className="mt-4 text-xs font-black uppercase tracking-[0.24em] text-cyan-100/65">
-                {copy.orchestrationCenterLabel}
-              </p>
-              <h3 className="mt-2 text-2xl font-black text-white">
-                {copy.orchestrationCenterTitle}
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300">
-                {copy.orchestrationCenterBody}
-              </p>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {orchestratedAgents.map((agentId, index) => {
-                const agentCopy = copy.agentCards[agentId];
-                const name = agentId[0].toUpperCase() + agentId.slice(1);
-
-                return (
-                  <div
-                    className="flex items-center gap-3 rounded-3xl border border-white/10 bg-[#0B1020]/76 p-3"
-                    key={agentId}
-                  >
-                    <AgentAvatar agentId={agentId} decorative size="sm" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-black uppercase tracking-[0.18em] text-white/38">
-                        {copy.orchestrationPassLabel} {index + 1}
-                      </p>
-                      <p className="font-black text-white">{name}</p>
-                      <p className="truncate text-xs font-semibold text-slate-400">
-                        {agentCopy.role}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 flex items-center justify-center gap-2 rounded-3xl border border-emerald-200/15 bg-emerald-200/10 px-4 py-3 text-sm font-black text-emerald-100">
-              {copy.orchestrationOutcome.map((item, index) => (
-                <span className="inline-flex items-center gap-2" key={item}>
-                  <span>{item}</span>
-                  {index < copy.orchestrationOutcome.length - 1 ? (
-                    <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                  ) : null}
-                </span>
+          <div className="rounded-[2.3rem] bg-slate-950 p-7 text-white shadow-[0_28px_80px_rgba(15,23,42,0.20)]">
+            <h3 className="text-2xl font-black tracking-[-0.04em]">After FlowCrew</h3>
+            <div className="mt-5 grid gap-3">
+              {[
+                ["Client", "Marco Bianchi"],
+                ["Intent", "Website estimate"],
+                ["Urgency", "High"],
+                ["Next step", "Schedule discovery call"],
+                ["Reply", "Ready to send"],
+              ].map(([label, value]) => (
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm" key={label}>
+                  <span className="font-black text-blue-200">{label}</span>
+                  <b>{value}</b>
+                </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section id="trial" className="relative z-10 mx-auto max-w-7xl px-5 pb-24 pt-16 sm:px-8">
+        <div className="grid gap-8 rounded-[2.5rem] border border-slate-200 bg-white/88 p-7 shadow-[0_28px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl lg:grid-cols-[0.9fr_1.1fr] lg:items-center sm:p-10">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-blue-700">Free trial</p>
+            <h2 className="mt-4 text-4xl font-black tracking-[-0.06em] sm:text-6xl">Paste one lead. See the magic.</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">No complex setup. Paste a messy client conversation and FlowCrew turns it into a clear summary, tags, urgency and a suggested reply.</p>
+          </div>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm">
+            <label className="mb-3 block text-sm font-black text-slate-700" htmlFor="lead">Client conversation</label>
+            <textarea className="h-40 w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100" id="lead" defaultValue="Ciao, volevo un preventivo per un sito. Ho scritto anche via mail, mi serve abbastanza presto e vorrei capire se possiamo sentirci domani..." />
+            <Link className="mt-4 inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 font-black text-white shadow-[0_16px_34px_rgba(37,99,235,0.24)]" href="/trial">
+              Generate client brief
+              <Sparkles aria-hidden="true" className="h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-slate-200 px-5 py-8 text-center text-sm font-semibold text-slate-500 sm:px-8">
+        FlowCrew © 2026 · Premium AI workspace for client conversations
+      </footer>
+    </main>
   );
 }

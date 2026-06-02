@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #070812;
-  --foreground: #f8fafc;
+  --background: #f7f9fc;
+  --foreground: #07111f;
   --glass: rgba(17, 20, 39, 0.72);
   --glass-strong: rgba(18, 22, 45, 0.92);
   --line: rgba(148, 163, 184, 0.16);
@@ -40,8 +40,8 @@ textarea {
 }
 
 ::selection {
-  background: rgba(81, 229, 255, 0.32);
-  color: #ffffff;
+  background: rgba(37, 99, 235, 0.18);
+  color: #07111f;
 }
 
 .flow-bg {

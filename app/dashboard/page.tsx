@@ -1,290 +1,176 @@
+import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   CalendarClock,
   CheckCircle2,
-  ClipboardList,
   Clock3,
-  FileText,
-  PlayCircle,
+  MessageSquareText,
   Sparkles,
-  Target,
   TrendingUp,
+  Zap,
 } from "lucide-react";
-import Link from "next/link";
-import ActivityLog from "@/components/ActivityLog";
-import AgentCard from "@/components/AgentCard";
+import AgentAvatar from "@/components/AgentAvatar";
 import AppShell from "@/components/AppShell";
-import CrewStatus from "@/components/CrewStatus";
-import {
-  activities,
-  agents,
-  dashboardStats,
-  demoLeads,
-  missionChecklist,
-} from "@/lib/data";
+import { activities, demoLeads } from "@/lib/data";
 
-const missionFlow = [
-  { label: "Jackie", value: "86 heat", detail: "Rank Studio Aurora" },
-  { label: "Nora", value: "focused", detail: "Shape scope and deliverables" },
-  { label: "Milo", value: "48h", detail: "Protect the follow-up" },
-  { label: "Dex", value: "synced", detail: "Log the handoff trace" },
+const stats = [
+  { label: "Leads cleaned", value: "24", detail: "+8 this week", Icon: Sparkles },
+  { label: "Replies ready", value: "9", detail: "waiting approval", Icon: MessageSquareText },
+  { label: "Follow-ups", value: "6", detail: "next 48 hours", Icon: CalendarClock },
+  { label: "Time saved", value: "7.5h", detail: "estimated", Icon: Clock3 },
 ];
 
-const missionCards = [
-  {
-    label: "Priority leads",
-    value: "3 active",
-    caption: "Open opportunities that need a next step this week.",
-    Icon: AlertTriangle,
-    accent: "text-rose-200",
-    surface: "border-rose-300/20 bg-rose-300/10",
-  },
-  {
-    label: "Time saved",
-    value: "6.5h",
-    caption: "Scoring, drafting, and logging handled by the crew.",
-    Icon: Clock3,
-    accent: "text-lime-200",
-    surface: "border-lime-300/20 bg-lime-300/10",
-  },
+const workflow = [
+  ["Jackie", "Cleaned the client context", "Done"],
+  ["Milo", "Tagged urgency and intent", "91%"],
+  ["Nora", "Drafted a premium reply", "Ready"],
+  ["Dex", "Created follow-up actions", "Set"],
 ];
+
+const agentIds = ["jackie", "milo", "nora", "dex"] as const;
 
 export default function DashboardPage() {
   return (
     <AppShell>
-      <div className="space-y-4">
-        <CrewStatus agents={agents} />
-
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="glass-panel overflow-hidden rounded-[1.8rem] p-5 sm:p-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-lime-200">
-                  <Sparkles aria-hidden="true" className="h-4 w-4" />
-                  Today Mission
-                </div>
-                <h1 className="mt-3 max-w-2xl text-4xl font-semibold tracking-[-0.04em] text-white md:text-5xl">
-                  Turn today into booked calls.
-                </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-                  FlowCrew is watching the money signal, proposal timing, and
-                  follow-up windows so the hottest leads do not cool down.
-                </p>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {missionChecklist.map((item) => (
-                    <div
-                      key={item}
-                      className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
-                    >
-                      <CheckCircle2
-                        aria-hidden="true"
-                        className="mt-0.5 h-5 w-5 shrink-0 text-lime-200"
-                      />
-                      <span className="text-sm leading-6 text-slate-300">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+      <div className="space-y-5">
+        <section className="overflow-hidden rounded-[2.25rem] border border-slate-200 bg-white/82 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-2xl sm:p-8">
+          <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
+                Live operations
               </div>
-
-              <div className="rounded-[1.5rem] border border-cyan-300/20 bg-cyan-300/10 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100/70">
-                      Live route
-                    </p>
-                    <h2 className="mt-2 text-xl font-semibold text-white">
-                      Lead to booked call
-                    </h2>
-                  </div>
-                  <Target aria-hidden="true" className="h-6 w-6 text-cyan-100" />
-                </div>
-
-                <div className="mt-5 space-y-3">
-                  {missionFlow.map((item, index) => (
-                    <div key={item.label} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white text-sm font-black text-slate-950">
-                          {index + 1}
-                        </span>
-                        {index < missionFlow.length - 1 ? (
-                          <span className="mt-2 h-7 w-px bg-cyan-100/25" />
-                        ) : null}
-                      </div>
-                      <div className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/20 p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="font-semibold text-white">{item.label}</p>
-                          <span className="text-xs font-semibold text-cyan-100">
-                            {item.value}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-sm text-slate-400">{item.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <h1 className="max-w-3xl text-5xl font-black leading-[0.95] tracking-[-0.075em] text-slate-950 md:text-7xl">
+                Your client work, organized at a glance.
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                A premium dashboard for the real FlowCrew product: incoming leads, AI work, replies, tags and follow-ups in one clean workspace.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link href="/chat" className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)]">
+                  Open AI Dialogue
+                </Link>
+                <Link href="/leads" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
+                  View leads
+                </Link>
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-              {missionCards.map((card) => {
-                const Icon = card.Icon;
+            <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Crew performance</p>
+                  <h2 className="mt-2 text-2xl font-black tracking-[-0.05em]">Today pipeline</h2>
+                </div>
+                <div className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-black text-emerald-200">Healthy</div>
+              </div>
 
-                return (
-                  <article
-                    key={card.label}
-                    className={`rounded-2xl border ${card.surface} p-4`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <Icon aria-hidden="true" className={`h-5 w-5 ${card.accent}`} />
-                      <TrendingUp aria-hidden="true" className="h-4 w-4 text-white/30" />
+              <div className="mt-6 grid gap-3">
+                {workflow.map(([name, detail, status], index) => (
+                  <div key={name} className="grid grid-cols-[42px_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-sm font-black text-slate-950">{index + 1}</div>
+                    <div>
+                      <p className="font-black">{name}</p>
+                      <p className="text-sm text-slate-400">{detail}</p>
                     </div>
-                    <p className="mt-4 text-3xl font-semibold tracking-tight text-white">
-                      {card.value}
-                    </p>
-                    <h2 className="mt-1 text-sm font-semibold text-white">
-                      {card.label}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      {card.caption}
-                    </p>
-                  </article>
-                );
-              })}
-
-              <Link
-                href="/leads"
-                className="group flex min-h-40 flex-col justify-between rounded-2xl border border-white/10 bg-white px-5 py-4 text-slate-950 shadow-2xl shadow-white/10 transition hover:scale-[1.01]"
-              >
-                <PlayCircle aria-hidden="true" className="h-7 w-7" />
-                <span>
-                  <span className="block text-lg font-black tracking-tight">
-                    Run your first lead
-                  </span>
-                  <span className="mt-2 flex items-center gap-2 text-sm font-semibold">
-                    Open Lead Inbox
-                    <ArrowRight
-                      aria-hidden="true"
-                      className="h-4 w-4 transition group-hover:translate-x-1"
-                    />
-                  </span>
-                </span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-            {dashboardStats.map((stat) => {
-              const Icon = stat.Icon;
-
-              return (
-                <article
-                  key={stat.label}
-                  className="glass-panel rounded-[1.5rem] p-5"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <Icon
-                      aria-hidden="true"
-                      className="h-5 w-5"
-                      style={{ color: stat.accent }}
-                    />
-                    <span className="text-xs text-slate-500">Today</span>
+                    <span className="rounded-full bg-blue-400/15 px-3 py-1 text-xs font-black text-blue-100">{status}</span>
                   </div>
-                  <p className="mt-5 text-4xl font-semibold tracking-tight text-white">
-                    {stat.value}
-                  </p>
-                  <h2 className="mt-2 text-sm font-semibold text-white">
-                    {stat.label}
-                  </h2>
-                  <p className="mt-2 text-sm text-slate-400">{stat.caption}</p>
-                </article>
-              );
-            })}
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
-          ))}
+          {stats.map((stat) => {
+            const Icon = stat.Icon;
+            return (
+              <article key={stat.label} className="rounded-[1.75rem] border border-slate-200 bg-white/82 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-emerald-500" aria-hidden="true" />
+                </div>
+                <p className="mt-5 text-4xl font-black tracking-[-0.06em] text-slate-950">{stat.value}</p>
+                <h2 className="mt-1 font-black text-slate-800">{stat.label}</h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{stat.detail}</p>
+              </article>
+            );
+          })}
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="glass-panel rounded-[1.5rem] p-5">
-            <div className="flex items-center justify-between gap-4">
+        <section className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+          <div className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                  Lead heat
-                </p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
-                  Hot leads
-                </h2>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Hot leads</p>
+                <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Ready to move</h2>
               </div>
-              <ClipboardList aria-hidden="true" className="h-5 w-5 text-cyan-200" />
+              <Link href="/leads" className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+                All leads <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-            <div className="mt-5 space-y-3">
+
+            <div className="grid gap-3">
               {demoLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-white">{lead.name}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {lead.projectType}
-                      </p>
+                <article key={lead.id} className="grid gap-4 rounded-3xl border border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-black text-slate-950">{lead.name}</h3>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.status}</span>
                     </div>
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-sm font-semibold text-cyan-100">
-                      {lead.status} - {lead.score}/100
-                    </span>
+                    <p className="mt-1 text-sm text-slate-500">{lead.projectType} · {lead.scope}</p>
                   </div>
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-violet-300"
-                      style={{ width: `${lead.score}%` }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${lead.score}%` }} />
+                    </div>
+                    <b className="text-sm text-slate-950">{lead.score}</b>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <article className="glass-panel rounded-[1.5rem] p-5">
-              <FileText aria-hidden="true" className="h-6 w-6 text-violet-200" />
-              <h2 className="mt-5 text-xl font-semibold text-white">
-                Proposals ready
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Nora has three polished scopes waiting for review, including a
-                focused launch plan for Studio Aurora.
-              </p>
-              <div className="mt-5 rounded-2xl border border-violet-300/20 bg-violet-300/10 p-4 text-sm font-medium text-violet-100">
-                Nora is refining the offer language.
-              </div>
-            </article>
-
-            <article className="glass-panel rounded-[1.5rem] p-5">
-              <CalendarClock aria-hidden="true" className="h-6 w-6 text-lime-200" />
-              <h2 className="mt-5 text-xl font-semibold text-white">
-                Follow-up pending
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                Milo is watching five warm leads and has two credible nudges
-                queued for the next 48 hours.
-              </p>
-              <div className="mt-5 rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4 text-sm font-medium text-lime-100">
-                Milo is protecting the next step.
-              </div>
-            </article>
-
-            <div className="md:col-span-2">
-              <ActivityLog activities={activities} agents={agents} />
+          <div className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Active crew</p>
+            <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Agents are visible</h2>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {agentIds.map((id) => (
+                <div key={id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4 text-center">
+                  <AgentAvatar agentId={id} decorative size="lg" className="mx-auto" />
+                  <p className="mt-3 text-sm font-black capitalize text-slate-950">{id}</p>
+                  <p className="text-xs font-semibold text-slate-500">Online</p>
+                </div>
+              ))}
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black tracking-[-0.05em] text-slate-950">Recent activity</h2>
+              <p className="text-sm text-slate-500">What the crew did while you were away.</p>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {activities.map((activity) => (
+              <article key={activity.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+                  <div>
+                    <h3 className="font-black text-slate-950">{activity.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{activity.message}</p>
+                    <p className="mt-2 text-xs font-bold text-slate-400">{activity.time}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </div>

@@ -1,349 +1,213 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowRight,
-  Bot,
-  Inbox,
-  LoaderCircle,
-  Mail,
-  Sparkles,
-} from "lucide-react";
-import LeadResult from "@/components/LeadResult";
-import { demoLeads } from "@/lib/data";
-import type {
-  ConversationAnalysis,
-  ConversationSource,
-  LeadAnalysisResult,
-} from "@/lib/flowcrew-types";
+import { useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, Filter, Inbox, MessageSquareText, Search, Sparkles } from "lucide-react";
+import AgentAvatar from "@/components/AgentAvatar";
+import { demoLeads, type AgentId } from "@/lib/data";
 
-export type LeadInput = {
-  name: string;
-  email: string;
-  projectType: string;
-  complexity: string;
-  message: string;
-};
-
-const initialForm: LeadInput = {
-  name: "Studio Aurora",
-  email: "hello@studioaurora.it",
-  projectType: "Confused request",
-  complexity: "Needs clarification",
-  message:
-    "We need a polished website refresh for a launch this month. The current site feels dated and we want a clear conversion path.",
-};
-
-const crewPulse = [
-  "Jackie is ranking fit and urgency...",
-  "Nora is shaping a clean scope...",
-  "Milo is setting a reliable follow-up window...",
-  "Dex is writing the handoff trace...",
+const leadMessages = [
+  {
+    name: "Marco Bianchi",
+    source: "WhatsApp + Gmail",
+    message: "Vorrei un sito per il mio studio, forse con pagina prenotazioni. Possiamo sentirci domani?",
+    priority: "High",
+    intent: "Website quote",
+    score: 92,
+    owner: "jackie" as AgentId,
+  },
+  {
+    name: "Studio Luma",
+    source: "Instagram DM",
+    message: "Ci serve una landing per un evento, però non sappiamo ancora bene budget e tempi.",
+    priority: "Medium",
+    intent: "Event landing",
+    score: 76,
+    owner: "milo" as AgentId,
+  },
+  {
+    name: "Claudia Store",
+    source: "Gmail",
+    message: "Vorrei capire se potete migliorare il negozio online e aumentare le richieste da clienti locali.",
+    priority: "Warm",
+    intent: "E-commerce refresh",
+    score: 81,
+    owner: "nora" as AgentId,
+  },
+  {
+    name: "Andrea Rossi",
+    source: "Notes",
+    message: "Ha chiesto un logo refresh, ma mancano esempi, budget e deadline precisa.",
+    priority: "Needs clarity",
+    intent: "Branding",
+    score: 61,
+    owner: "dex" as AgentId,
+  },
 ];
 
+const statuses = ["All", "High", "Medium", "Warm", "Needs clarity"];
+
 export default function LeadInboxDemo() {
-  const [form, setForm] = useState<LeadInput>(initialForm);
-  const [result, setResult] = useState<LeadAnalysisResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [pulseIndex, setPulseIndex] = useState(0);
+  const [active, setActive] = useState(statuses[0]);
+  const [selected, setSelected] = useState(leadMessages[0]);
 
-  useEffect(() => {
-    if (!isRunning) return;
-
-    const pulseTimer = setInterval(() => {
-      setPulseIndex((current) => (current + 1) % crewPulse.length);
-    }, 320);
-
-    return () => clearInterval(pulseTimer);
-  }, [isRunning]);
-
-  function updateForm<K extends keyof LeadInput>(key: K, value: LeadInput[K]) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setIsRunning(true);
-    setPulseIndex(0);
-    setResult(null);
-    setErrorMessage("");
-
-    try {
-      const sourceType: ConversationSource = form.projectType
-        .toLowerCase()
-        .includes("gmail")
-        ? "gmail"
-        : form.projectType.toLowerCase().includes("whatsapp")
-          ? "whatsapp"
-          : "other";
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          clientName: form.name,
-          sourceType,
-          messyMessage: form.message,
-          businessType: form.projectType,
-          goal: form.complexity,
-          language: "en",
-        }),
-      });
-      const data = (await response.json()) as {
-        analysis?: ConversationAnalysis;
-        error?: string;
-      };
-
-      if (!response.ok || !data.analysis) {
-        throw new Error(data.error || "Gemini could not analyze this conversation.");
-      }
-
-      setResult({
-        leadName: form.name.trim() || "New client",
-        generatedAt: "Just now",
-        analysis: data.analysis,
-      });
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Gemini could not analyze this conversation.",
-      );
-    } finally {
-      setIsRunning(false);
-    }
-  }
+  const filtered = useMemo(() => {
+    if (active === "All") return leadMessages;
+    return leadMessages.filter((lead) => lead.priority === active);
+  }, [active]);
 
   return (
-    <div className="space-y-4">
-      <section className="glass-panel rounded-[1.6rem] p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-5">
+      <section className="rounded-[2.25rem] border border-slate-200 bg-white/82 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-2xl sm:p-8">
+        <div className="grid gap-7 xl:grid-cols-[0.85fr_1.15fr]">
           <div>
-            <div className="flex items-center gap-2 text-sm font-medium text-cyan-200">
-              <Inbox aria-hidden="true" className="h-4 w-4" />
-              Client Inbox
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
+              <Inbox className="h-4 w-4" />
+              Lead inbox
             </div>
-            <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white md:text-5xl">
-              Drop a messy client message. Watch the crew organize it.
+            <h1 className="max-w-2xl text-5xl font-black leading-[0.95] tracking-[-0.075em] text-slate-950 md:text-7xl">
+              Every messy lead becomes a clean card.
             </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              Paste one client conversation. Gemini powers the Crew analysis while the API key stays safely on the server.
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+              This page is the operational inbox: conversations from WhatsApp, Gmail and DMs become sortable client cards with priority, intent and next action.
             </p>
           </div>
-          <div className="rounded-full border border-violet-300/25 bg-violet-300/10 px-4 py-2 text-sm font-semibold text-violet-100">
-            Free Trial - 1 Conversation
+
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Selected lead</p>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.06em]">{selected.name}</h2>
+                <p className="mt-1 text-sm text-slate-400">{selected.source}</p>
+              </div>
+              <AgentAvatar agentId={selected.owner} decorative size="lg" />
+            </div>
+            <p className="mt-5 rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-6 text-slate-200">
+              {selected.message}
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <MiniMetric label="Intent" value={selected.intent} />
+              <MiniMetric label="Priority" value={selected.priority} />
+              <MiniMetric label="Score" value={`${selected.score}%`} />
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
-        <form
-          onSubmit={handleSubmit}
-          className="glass-panel rounded-[1.6rem] p-5 sm:p-6"
-        >
-          <div className="flex items-center gap-3 border-b border-white/10 pb-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-300/15 text-cyan-200">
-              <Mail aria-hidden="true" className="h-5 w-5" />
-            </div>
+      <section className="grid gap-5 xl:grid-cols-[0.72fr_1.28fr]">
+        <aside className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-white">New conversation</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                The prototype analyzes this message with Gemini and does not save it.
-              </p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Controls</p>
+              <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Filter leads</h2>
+            </div>
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+              <Filter className="h-5 w-5" />
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium text-slate-300">
-              Name
-              <input
-                required
-                value={form.name}
-                onChange={(event) => updateForm("name", event.target.value)}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/55 focus:bg-white/[0.07]"
-                placeholder="Client or source name"
-              />
-            </label>
-            <label className="text-sm font-medium text-slate-300">
-              Email
-              <input
-                required
-                type="email"
-                value={form.email}
-                onChange={(event) => updateForm("email", event.target.value)}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/55 focus:bg-white/[0.07]"
-                placeholder="hello@client.com"
-              />
-            </label>
-            <label className="text-sm font-medium text-slate-300">
-              Conversation type
-              <select
-                value={form.projectType}
-                onChange={(event) => updateForm("projectType", event.target.value)}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
-              >
-                <option>WhatsApp request</option>
-                <option>Confused request</option>
-                <option>Event inquiry</option>
-                <option>Gmail request</option>
-                <option>Not sure yet</option>
-              </select>
-            </label>
-            <label className="text-sm font-medium text-slate-300">
-              Clarity level
-              <select
-                value={form.complexity}
-                onChange={(event) => updateForm("complexity", event.target.value)}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-[#111427] px-4 text-sm text-white outline-none transition focus:border-cyan-300/55"
-              >
-                <option>Info incomplete</option>
-                <option>Needs clarification</option>
-                <option>Multiple topics</option>
-                <option>High urgency</option>
-              </select>
-            </label>
-            <label className="text-sm font-medium text-slate-300 sm:col-span-2">
-              Messy message
-              <textarea
-                required
-                rows={5}
-                value={form.message}
-                onChange={(event) => updateForm("message", event.target.value)}
-                className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/55 focus:bg-white/[0.07]"
-                placeholder="Paste the messy client message..."
-              />
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isRunning}
-            className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-cyan-200 px-6 text-sm font-semibold text-slate-950 transition hover:bg-white disabled:cursor-wait disabled:opacity-80 sm:w-auto"
-          >
-            {isRunning ? (
-              <>
-                <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
-                Crew is reading
-              </>
-            ) : (
-              <>
-                Run the Crew
-                <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </>
-            )}
-          </button>
-          {errorMessage ? (
-            <p
-              className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm font-semibold text-rose-100"
-              role="alert"
-            >
-              {errorMessage}
-            </p>
-          ) : null}
-        </form>
-
-        <aside className="glass-panel rounded-[1.6rem] p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-300/15 text-violet-100">
-              <Bot aria-hidden="true" className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Crew pulse
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-white">
-                Crew is sorting the chaos
-              </h2>
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Search className="h-4 w-4" />
+              <span className="text-sm font-bold">Search clients, sources, tags...</span>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
-            {crewPulse.map((pulse, index) => (
-              <div
-                key={pulse}
-                className={`flex items-center gap-3 rounded-2xl border p-4 text-sm transition ${
-                  isRunning && pulseIndex === index
-                    ? "border-cyan-300/35 bg-cyan-300/10 text-cyan-50"
-                    : "border-white/10 bg-white/[0.04] text-slate-400"
+          <div className="mt-5 flex flex-wrap gap-2">
+            {statuses.map((status) => (
+              <button
+                type="button"
+                key={status}
+                onClick={() => setActive(status)}
+                className={`rounded-full px-4 py-2 text-sm font-black transition ${
+                  active === status ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    isRunning && pulseIndex === index
-                      ? "bg-cyan-200 shadow-[0_0_18px_rgba(81,229,255,0.9)]"
-                      : "bg-slate-600"
-                  }`}
-                />
-                {pulse}
-              </div>
+                {status}
+              </button>
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-lime-300/20 bg-lime-300/10 p-4">
-            <div className="flex gap-3">
-              <Sparkles
-                aria-hidden="true"
-                className="mt-0.5 h-5 w-5 shrink-0 text-lime-200"
-              />
-              <p className="text-sm leading-6 text-lime-50">
-                Try changing the message. Jackie, Dex, Nora, and Milo now react to a real Gemini analysis.
-              </p>
-            </div>
+          <div className="mt-6 rounded-[1.5rem] border border-blue-100 bg-blue-50 p-4">
+            <p className="text-sm font-black text-blue-800">Crew rule</p>
+            <p className="mt-2 text-sm leading-6 text-blue-900/70">
+              FlowCrew can draft and organize, but replies wait for your approval. This keeps the product trustworthy.
+            </p>
           </div>
         </aside>
-      </section>
 
-      <AnimatePresence mode="wait">
-        {result ? (
-          <motion.div
-            key={`${result.leadName}-${result.generatedAt}`}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-          >
-            <LeadResult result={result} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <section className="glass-panel rounded-[1.6rem] p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-              Client inbox
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">
-              Conversations already moving
-            </h2>
+        <div className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Pipeline</p>
+              <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Client conversations</h2>
+            </div>
+            <button className="hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-4 py-2 text-sm font-black text-white shadow-[0_14px_34px_rgba(37,99,235,0.20)] sm:block">
+              Import message
+            </button>
           </div>
-          <span className="w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-400">
-            Demo conversations
-          </span>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {demoLeads.map((lead) => (
-            <article
-              key={lead.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-white">{lead.name}</p>
-                <span className="text-sm font-semibold text-cyan-100">
-                  {lead.score}/100
-                </span>
-              </div>
-              <p className="mt-2 text-sm text-slate-400">{lead.projectType}</p>
-              <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-500">
-                {lead.status} - {lead.scope}
-              </p>
-            </article>
-          ))}
+
+          <div className="grid gap-3">
+            {filtered.map((lead) => (
+              <button
+                type="button"
+                key={lead.name}
+                onClick={() => setSelected(lead)}
+                className={`text-left transition hover:-translate-y-0.5 ${selected.name === lead.name ? "scale-[1.01]" : ""}`}
+              >
+                <article className={`rounded-[1.65rem] border p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)] ${
+                  selected.name === lead.name ? "border-blue-200 bg-blue-50/80" : "border-slate-100 bg-white"
+                }`}>
+                  <div className="grid gap-4 md:grid-cols-[56px_1fr_auto] md:items-center">
+                    <AgentAvatar agentId={lead.owner} decorative size="md" />
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-black text-slate-950">{lead.name}</h3>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.priority}</span>
+                      </div>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{lead.source} · {lead.intent}</p>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{lead.message}</p>
+                    </div>
+                    <div className="flex items-center gap-3 md:justify-end">
+                      <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
+                        <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${lead.score}%` }} />
+                      </div>
+                      <b className="text-sm text-slate-950">{lead.score}</b>
+                      <ArrowRight className="h-4 w-4 text-slate-400" />
+                    </div>
+                  </div>
+                </article>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
+
+      <section className="grid gap-5 xl:grid-cols-3">
+        {demoLeads.map((lead) => (
+          <article key={lead.id} className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-600">{lead.status}</span>
+            </div>
+            <h3 className="text-xl font-black tracking-[-0.04em] text-slate-950">{lead.name}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{lead.projectType} · {lead.scope}</p>
+            <div className="mt-4 flex items-center gap-2 text-sm font-black text-blue-700">
+              Open brief <ArrowRight className="h-4 w-4" />
+            </div>
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-black text-white">{value}</p>
     </div>
   );
 }

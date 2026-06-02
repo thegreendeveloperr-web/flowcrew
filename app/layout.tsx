@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "FlowCrew | AI crew for client work",
   description:
-    "A navigable SaaS demo for FlowCrew, the AI crew that qualifies leads, drafts proposals, follows up, and keeps the system alive.",
+    "FlowCrew is a premium AI client workspace that turns messy WhatsApp, Gmail and client conversations into clear briefs, tags, replies and follow-ups.",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
-      <body className="min-h-full bg-[#070812] text-slate-100">
+      <body className="min-h-full bg-[#f7f9fc] text-slate-950">
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
