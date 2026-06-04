@@ -38,7 +38,11 @@ export function analysisToLeadRow(
     analysis.jackie.keyFacts.at(0) ||
     "Client request";
 
-  const nextAction = analysis.nora.nextSteps.at(0) || analysis.jackie.missingInfo.at(0) || "Review lead";
+  const nextAction =
+    analysis.nora.nextSteps.at(0) ||
+    analysis.jackie.missingInfo.at(0) ||
+    "Review lead";
+
   const followUp = analysis.milo.followUp || compactText(analysis.nora.nextSteps.slice(1));
 
   return {
@@ -57,6 +61,29 @@ export function analysisToLeadRow(
     owner_agent: analysis.jackie.suggestedAgent || "Jackie",
     status: analysis.dex.status || "new",
   };
+}
+
+export async function getUserLeadCount(userId: string) {
+  if (!isSupabaseAuthConfigured()) return 0;
+
+  const supabase = await createClient();
+
+  const { count, error } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("FlowCrew lead count failed", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+
+    throw new Error("Could not check lead usage.");
+  }
+
+  return count ?? 0;
 }
 
 export async function createLeadFromAnalysis(
@@ -79,6 +106,7 @@ export async function createLeadFromAnalysis(
       details: error.details,
       hint: error.hint,
     });
+
     throw new Error("Could not save lead in Supabase.");
   }
 
@@ -89,6 +117,7 @@ export async function getStoredLeads(limit = 30) {
   if (!isSupabaseAuthConfigured()) return [] as StoredLead[];
 
   const supabase = await createClient();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -98,6 +127,7 @@ export async function getStoredLeads(limit = 30) {
   const { data, error } = await supabase
     .from("leads")
     .select("*")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(limit)
     .returns<StoredLead[]>();
@@ -108,6 +138,7 @@ export async function getStoredLeads(limit = 30) {
       details: error.details,
       hint: error.hint,
     });
+
     return [] as StoredLead[];
   }
 

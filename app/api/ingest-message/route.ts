@@ -6,7 +6,9 @@ import {
   logAIError,
   parseConversationInput,
 } from "@/lib/flowcrew-ai";
-import { createLeadFromAnalysis } from "@/lib/leads";
+import { createLeadFromAnalysis, getUserLeadCount } from "@/lib/leads";
+
+const freeTrialLeadLimit = 1;
 
 export async function POST(request: Request) {
   try {
@@ -14,12 +16,26 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Accedi per salvare un lead nel tuo workspace." },
+        { error: "Accedi per analizzare il tuo lead gratuito." },
         { status: 401 },
       );
     }
 
     const input = parseConversationInput(await request.json());
+
+    const existingLeadCount = await getUserLeadCount(user.id);
+
+    if (existingLeadCount >= freeTrialLeadLimit) {
+      return NextResponse.json(
+        {
+          error:
+            "Hai già usato il lead gratuito. Sblocca FlowCrew Pro per analizzare altri lead e salvare lo storico clienti.",
+          code: "free_trial_used",
+        },
+        { status: 402 },
+      );
+    }
+
     const analysis = await analyzeConversation(input);
     const lead = await createLeadFromAnalysis(input, analysis, user.id);
 
