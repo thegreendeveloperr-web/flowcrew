@@ -640,6 +640,15 @@ export default function TrialPage() {
                 usage={usage}
               />
 
+              <AIDiagnosticCard
+                analysis={analysis}
+                detectedBudget={detectedBudget}
+                detectedDeadline={detectedDeadline}
+                detectedTags={detectedTags}
+                generated={generated}
+                lead={lead}
+              />
+
               <section className="rounded-[2rem] border border-white/[0.06] bg-[rgba(14,14,14,0.76)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
                 <div className="mb-4 flex items-center gap-2">
                   <span className="grid h-9 w-9 place-items-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-[var(--fc-accent)]">
@@ -737,6 +746,116 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       {label}
       <div className="mt-2">{children}</div>
     </label>
+  );
+}
+
+function AIDiagnosticCard({
+  analysis,
+  lead,
+  generated,
+  detectedBudget,
+  detectedDeadline,
+  detectedTags,
+}: {
+  analysis: ConversationAnalysis | undefined;
+  lead: StoredLead | undefined;
+  generated: boolean;
+  detectedBudget: string;
+  detectedDeadline: string;
+  detectedTags: string[];
+}) {
+  const missingInfo = analysis?.jackie.missingInfo.filter(Boolean).slice(0, 2).join(" · ");
+  const nextSteps = analysis?.nora.nextSteps.filter(Boolean).slice(0, 2).join(" · ");
+
+  const diagnosticRows = [
+    {
+      label: "Contesto",
+      title: "Cosa sta chiedendo il cliente",
+      value: generated
+        ? lead?.summary ?? analysis?.jackie.cleanSummary ?? "Richiesta sintetizzata"
+        : "L'AI separa rumore, richiesta, vincoli e dettagli utili.",
+    },
+    {
+      label: "Decisione",
+      title: "Quanto va seguito subito",
+      value: generated
+        ? `${lead?.urgency ?? analysis?.nora.urgency ?? "Media"} · ${analysis?.nora.leadQuality ?? "lead da qualificare"}`
+        : "Urgenza, qualita lead e rischio vengono stimati prima della risposta.",
+    },
+    {
+      label: "Mancanti",
+      title: "Cosa chiedere prima di vendere",
+      value: generated
+        ? missingInfo || "Nessun dato critico mancante rilevato."
+        : "Scope, budget, deadline e decision maker diventano domande chiare.",
+    },
+    {
+      label: "Output",
+      title: "Cosa finisce nel workspace",
+      value: generated
+        ? `${detectedTags.slice(0, 3).join(", ")} · ${detectedBudget} · ${detectedDeadline}`
+        : "Tag, status, prossima azione e risposta pronta sono salvati sul lead.",
+    },
+  ];
+
+  return (
+    <section className="rounded-[2rem] border border-[rgba(200,245,66,0.14)] bg-[rgba(200,245,66,0.045)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[rgba(200,245,66,0.2)] bg-[rgba(200,245,66,0.08)] text-[var(--fc-accent)]">
+          <Sparkles aria-hidden="true" className="h-4 w-4" />
+        </span>
+
+        <div>
+          <p className="fc-label text-[var(--fc-accent)]">AI reasoning</p>
+          <h3 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
+            Come FlowCrew legge il lead
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
+            Il valore non e solo la risposta pronta: e la diagnosi che trasforma una chat in lavoro gestibile.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {diagnosticRows.map((row) => (
+          <article className="rounded-2xl border border-white/[0.06] bg-[#0e0e0e]/70 p-4" key={row.label}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-accent)]">
+                {row.label}
+              </p>
+              <span className={`flow-mono rounded-full px-2 py-0.5 text-[11px] ${generated ? "bg-[rgba(139,255,197,0.08)] text-[var(--fc-mint)]" : "bg-white/[0.04] text-[var(--fc-text-soft)]"}`}>
+                {generated ? "calcolato" : "in attesa"}
+              </span>
+            </div>
+
+            <h4 className="mt-2 text-sm font-extrabold tracking-[-0.025em] text-[var(--fc-text)]">
+              {row.title}
+            </h4>
+            <p className="mt-2 line-clamp-3 text-xs leading-5 text-[var(--fc-text-muted)]">
+              {row.value}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
+        <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
+          Guardrail prodotto
+        </p>
+        <div className="mt-3 grid gap-2 text-xs leading-5 text-[var(--fc-text-muted)]">
+          {[
+            "Nessun invio automatico al cliente.",
+            "Il messaggio originale resta salvato sul lead.",
+            nextSteps ? `Prossime azioni: ${nextSteps}` : "Task e follow-up restano approvabili da te.",
+          ].map((item) => (
+            <p className="flex gap-2" key={item}>
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--fc-accent)]" />
+              <span>{item}</span>
+            </p>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

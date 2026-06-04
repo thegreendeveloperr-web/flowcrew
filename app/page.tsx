@@ -126,6 +126,61 @@ const features = [
   },
 ];
 
+const productLayers = [
+  {
+    step: "01",
+    title: "Legge il contesto",
+    body: "Identifica cliente, canale, richiesta principale, budget, scadenza e dettagli mancanti. Il messaggio resta sporco, ma il brief diventa leggibile.",
+    signals: ["cliente", "canale", "richiesta", "vincoli"],
+  },
+  {
+    step: "02",
+    title: "Decide le priorita",
+    body: "Stima urgenza, qualita del lead, rischio e prossima azione. Non produce solo testo: decide cosa merita attenzione adesso.",
+    signals: ["urgenza", "rischio", "lead quality", "next action"],
+  },
+  {
+    step: "03",
+    title: "Prepara l'azione",
+    body: "Trasforma l'analisi in task, domande da fare e risposta pronta. Tu approvi, modifichi o copi: l'AI non invia nulla al posto tuo.",
+    signals: ["task", "domande", "reply", "approval"],
+  },
+  {
+    step: "04",
+    title: "Salva memoria",
+    body: "Ogni analisi diventa un lead con stato, tag e storico. La dashboard non e una lista: e una memoria operativa dei clienti.",
+    signals: ["status", "tag", "storico", "dashboard"],
+  },
+];
+
+const decisionSignals = [
+  ["Intento", "Che cosa sta chiedendo davvero il cliente"],
+  ["Budget", "Se il messaggio contiene limiti economici"],
+  ["Deadline", "Quanto e urgente rispondere"],
+  ["Mancanti", "Quali informazioni servono prima del preventivo"],
+  ["Tono", "Come rispondere senza sembrare automatici"],
+  ["Follow-up", "Quando e come riaprire la conversazione"],
+];
+
+const productSurfaces = [
+  {
+    title: "Lead record",
+    body: "Summary, richiesta, urgenza, tag, next action e risposta pronta nello stesso posto.",
+  },
+  {
+    title: "Reply desk",
+    body: "Una bozza chiara da copiare o adattare, con domande precise per qualificare meglio il cliente.",
+  },
+  {
+    title: "Priority queue",
+    body: "I lead non restano tutti uguali: scadenze, budget e segnali caldi emergono subito.",
+  },
+  {
+    title: "Client memory",
+    body: "Lo storico delle richieste evita di rileggere chat infinite quando il cliente torna.",
+  },
+];
+
 const plans = [
   {
     name: "Starter",
@@ -193,6 +248,7 @@ export default function Home() {
               ["Come funziona", "#come-funziona"],
               ["Agenti", "#agenti"],
               ["Demo", "#demo"],
+              ["Prodotto", "#prodotto"],
               ["Prezzi", "#prezzi"],
             ].map(([label, href]) => (
               <a
@@ -205,7 +261,7 @@ export default function Home() {
             ))}
           </div>
 
-          <Link className="fc-button fc-button-primary" href="/trial">
+          <Link className="fc-button fc-button-primary max-sm:!hidden" href="/trial">
             Analizza gratis
           </Link>
         </nav>
@@ -214,26 +270,28 @@ export default function Home() {
       <section className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-4 pb-20 pt-32 text-center sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute left-1/2 top-[18%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[rgba(200,245,66,0.08)] blur-[120px]" />
 
-        <div className="fc-pill relative z-10 mb-8">
+        <div className="fc-pill relative z-10 mb-8 max-w-full flex-wrap justify-center whitespace-normal text-center leading-5">
           <span className="fc-status-dot text-[var(--fc-accent)]" />
-          AI-powered · Agenti autonomi · Made for freelance
+          Agenti AI per freelance
         </div>
 
-        <h1 className="relative z-10 max-w-5xl text-[clamp(3.4rem,8vw,7.6rem)] font-extrabold leading-[0.94] tracking-[-0.06em]">
-          Non perdere più clienti <br />
+        <h1 className="relative z-10 max-w-[22rem] text-[clamp(2.45rem,11vw,4rem)] font-extrabold leading-[0.96] tracking-[-0.045em] sm:max-w-5xl sm:text-[clamp(3.4rem,8vw,7.6rem)] sm:leading-[0.94] sm:tracking-[-0.06em]">
+          <span className="block sm:inline">Non</span>{" "}
+          <span className="block sm:inline">perdere</span>{" "}
+          <span className="block sm:inline">più clienti</span> <br />
           <em className="flow-serif font-normal text-[var(--fc-accent)]">nel caos.</em>
         </h1>
 
-        <p className="relative z-10 mt-8 max-w-2xl text-lg leading-8 text-[var(--fc-text-muted)]">
+        <p className="relative z-10 mt-8 w-full max-w-[18.5rem] text-lg leading-8 text-[var(--fc-text-muted)] sm:max-w-2xl">
           FlowCrew trasforma messaggi sparsi, mail confuse e richieste dei clienti in task chiari,
           priorità, tag e risposte pronte.
         </p>
 
-        <p className="flow-mono relative z-10 mt-4 text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+        <p className="flow-mono relative z-10 mt-4 w-full max-w-[18.5rem] text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)] sm:max-w-2xl">
           Incolli una richiesta confusa → ottieni summary, task, tag e risposta pronta.
         </p>
 
-        <div className="relative z-10 mt-8 w-full max-w-3xl rounded-[2rem] border border-white/[0.06] bg-white/[0.025] p-4 text-left shadow-[0_0_70px_rgba(200,245,66,0.06)] backdrop-blur-xl sm:p-5">
+        <div className="relative z-10 mt-8 w-full max-w-[18.5rem] rounded-[2rem] border border-white/[0.06] bg-white/[0.025] p-4 text-left shadow-[0_0_70px_rgba(200,245,66,0.06)] backdrop-blur-xl sm:max-w-3xl sm:p-5">
           <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
             <div className="rounded-3xl border border-white/[0.06] bg-[#0e0e0e] p-4">
               <p className="flow-mono mb-3 text-[11px] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
@@ -491,6 +549,106 @@ export default function Home() {
                 ))}
               </div>
             </OutputCard>
+          </div>
+        </div>
+      </Section>
+
+      <Section
+        id="prodotto"
+        kicker="AI operativa"
+        title={
+          <>
+            Il prodotto non e la risposta.
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">E il sistema che ci sta dietro.</em>
+          </>
+        }
+      >
+        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="fc-panel overflow-hidden p-5 sm:p-6">
+            <div className="grid gap-4 lg:grid-cols-2">
+              {productLayers.map((layer) => (
+                <article
+                  className="rounded-3xl border border-white/[0.06] bg-white/[0.025] p-5"
+                  key={layer.step}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="flow-mono grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-sm text-[var(--fc-accent)]">
+                      {layer.step}
+                    </span>
+                    <span className="fc-pill fc-pill-success">product layer</span>
+                  </div>
+
+                  <h3 className="mt-5 text-2xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
+                    {layer.title}
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-7 text-[var(--fc-text-muted)]">
+                    {layer.body}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {layer.signals.map((signal) => (
+                      <span className="fc-pill" key={signal}>
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-5">
+            <div className="fc-card overflow-hidden p-5 sm:p-6">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-[var(--fc-accent)]">
+                  <Zap aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="fc-label">Decision engine</p>
+                  <h3 className="text-2xl font-extrabold tracking-[-0.045em]">
+                    Cosa valuta l&apos;AI
+                  </h3>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {decisionSignals.map(([label, body]) => (
+                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4" key={label}>
+                    <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-accent)]">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
+                      {body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="fc-card p-5 sm:p-6">
+              <p className="fc-label">Product surfaces</p>
+              <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.045em]">
+                Dove finisce il lavoro dell&apos;AI
+              </h3>
+
+              <div className="mt-5 grid gap-3">
+                {productSurfaces.map((surface) => (
+                  <div
+                    className="grid gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4 sm:grid-cols-[150px_1fr]"
+                    key={surface.title}
+                  >
+                    <p className="font-extrabold tracking-[-0.035em] text-[var(--fc-text)]">
+                      {surface.title}
+                    </p>
+                    <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
+                      {surface.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Section>

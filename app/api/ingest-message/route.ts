@@ -31,12 +31,14 @@ export async function POST(request: Request) {
         {
           error:
             plan === "free"
-              ? "Hai già usato il lead gratuito. Sblocca FlowCrew Pro per analizzare altri lead e salvare lo storico clienti."
+              ? "Hai già usato il lead gratuito. Richiedi accesso Pro per analizzare altri lead e salvare lo storico clienti."
               : "Hai raggiunto il limite del tuo piano. Contattaci per aumentare il limite.",
           code: "plan_limit_reached",
           plan,
           limit: limits.maxLeads,
           used: existingLeadCount,
+          remaining: 0,
+          label: limits.label,
         },
         { status: 402 },
       );
@@ -44,14 +46,17 @@ export async function POST(request: Request) {
 
     const analysis = await analyzeConversation(input);
     const lead = await createLeadFromAnalysis(input, analysis, user.id);
+    const usedLeadCount = existingLeadCount + 1;
 
     return NextResponse.json({
       analysis,
       lead,
       usage: {
         plan,
-        used: existingLeadCount + 1,
+        used: usedLeadCount,
         limit: limits.maxLeads,
+        remaining: Math.max(limits.maxLeads - usedLeadCount, 0),
+        label: limits.label,
       },
     });
   } catch (error) {

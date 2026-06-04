@@ -46,6 +46,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -54,6 +55,7 @@ body {
   font-family: var(--font-flow-sans), Arial, Helvetica, sans-serif;
   font-weight: 400;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 body::before {
