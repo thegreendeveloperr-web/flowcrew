@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { getPlanLimits, getUserPlan } from "@/lib/billing";
 import {
   analyzeConversation,
   FlowCrewAIError,
@@ -7,8 +8,6 @@ import {
   parseConversationInput,
 } from "@/lib/flowcrew-ai";
 import { createLeadFromAnalysis, getUserLeadCount } from "@/lib/leads";
-
-const freeTrialLeadLimit = 1;
 
 export async function POST(request: Request) {
   try {
@@ -23,14 +22,21 @@ export async function POST(request: Request) {
 
     const input = parseConversationInput(await request.json());
 
+    const plan = getUserPlan(user.id);
+    const limits = getPlanLimits(plan);
     const existingLeadCount = await getUserLeadCount(user.id);
 
-    if (existingLeadCount >= freeTrialLeadLimit) {
+    if (existingLeadCount >= limits.maxLeads) {
       return NextResponse.json(
         {
           error:
-            "Hai già usato il lead gratuito. Sblocca FlowCrew Pro per analizzare altri lead e salvare lo storico clienti.",
-          code: "free_trial_used",
+            plan === "free"
+              ? "Hai già usato il lead gratuito. Sblocca FlowCrew Pro per analizzare altri lead e salvare lo storico clienti."
+              : "Hai raggiunto il limite del tuo piano. Contattaci per aumentare il limite.",
+          code: "plan_limit_reached",
+          plan,
+          limit: limits.maxLeads,
+          used: existingLeadCount,
         },
         { status: 402 },
       );
@@ -39,7 +45,15 @@ export async function POST(request: Request) {
     const analysis = await analyzeConversation(input);
     const lead = await createLeadFromAnalysis(input, analysis, user.id);
 
-    return NextResponse.json({ analysis, lead });
+    return NextResponse.json({
+      analysis,
+      lead,
+      usage: {
+        plan,
+        used: existingLeadCount + 1,
+        limit: limits.maxLeads,
+      },
+    });
   } catch (error) {
     const normalized =
       error instanceof FlowCrewAIError
