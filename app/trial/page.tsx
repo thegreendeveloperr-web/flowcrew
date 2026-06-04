@@ -21,6 +21,8 @@ import type { ConversationAnalysis, ConversationSource } from "@/lib/flowcrew-ty
 import type { StoredLead } from "@/lib/leads";
 import { trialDraftStorageKey } from "@/lib/trial-draft";
 
+const manualProHref = "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
+
 const sample = `ciao, io e mio fratello dobbiamo fare una cosa per il negozio... si voglio dire un sito, ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo. ah, e non abbiamo budget enorme, max 800 euro forse. dimmi tu`;
 
 const loadingSteps = [
@@ -175,7 +177,7 @@ export default function TrialPage() {
     }
 
     if (hasReachedLimit) {
-      setError("Hai finito il lead gratuito. Sblocca Pro per analizzare altri lead.");
+      setError("Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead.");
       return;
     }
 
@@ -634,10 +636,10 @@ export default function TrialPage() {
                   </p>
 
                   <div className="mt-5 grid gap-2">
-                    <Link href="/#prezzi" className="fc-button fc-button-primary">
-                      Sblocca Pro
+                    <a href={manualProHref} className="fc-button fc-button-primary">
+                      Richiedi accesso Pro
                       <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                    </Link>
+                    </a>
 
                     <Link href="/leads" className="fc-button">
                       Vai alla dashboard
@@ -726,16 +728,16 @@ function UsageCard({
           {usage
             ? usage.remaining > 0
               ? `Ti restano ${usage.remaining} analisi nel piano ${usage.label}.`
-              : "Hai finito il lead gratuito. Sblocca Pro per analizzare altri lead."
+              : "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead."
             : "Utilizzo non disponibile."}
         </p>
       </div>
 
       {hasReachedLimit ? (
-        <Link href="/#prezzi" className="fc-button fc-button-primary mt-4 w-full">
-          Sblocca Pro
+        <a href={manualProHref} className="fc-button fc-button-primary mt-4 w-full">
+          Richiedi accesso Pro
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
-        </Link>
+        </a>
       ) : null}
     </section>
   );

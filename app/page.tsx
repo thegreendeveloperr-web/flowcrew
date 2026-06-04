@@ -9,6 +9,8 @@ import {
   Zap,
 } from "lucide-react";
 
+const manualProHref = "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
+
 const keywords = [
   "Organizzazione messaggi",
   "Agenti AI",
@@ -138,17 +140,17 @@ const plans = [
     name: "Pro",
     price: "€19",
     period: "/mese",
-    body: "Per freelance che ricevono richieste ogni giorno e non vogliono perderle tra chat, mail e follow-up.",
+    body: "Per freelance che ricevono richieste ogni giorno e vogliono attivare FlowCrew con più analisi, storico clienti e modelli AI migliori.",
     features: [
       "Più analisi lead",
       "Modelli AI migliori",
       "Dashboard clienti",
       "Tone of voice personalizzato",
       "Storico richieste",
-      "Supporto prioritario",
+      "Attivazione manuale in beta",
     ],
-    cta: "Inizia con Pro",
-    href: "/trial",
+    cta: "Richiedi accesso Pro",
+    href: manualProHref,
     featured: true,
   },
   {
@@ -164,7 +166,7 @@ const plans = [
       "Accesso anticipato alle nuove funzioni",
     ],
     cta: "Richiedi accesso",
-    href: "mailto:hello@flowcrew.ai",
+    href: "mailto:hello@flowcrew.ai?subject=Richiesta%20Early%20Access%20FlowCrew",
   },
 ];
 
@@ -534,7 +536,7 @@ export default function Home() {
             >
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-2xl font-extrabold tracking-[-0.045em]">{plan.name}</h3>
-                {plan.featured ? <span className="fc-pill fc-pill-success">Consigliato</span> : null}
+                {plan.featured ? <span className="fc-pill fc-pill-success">Manual beta</span> : null}
               </div>
 
               <div className="mt-6 flex items-end gap-2">
