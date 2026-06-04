@@ -1,3 +1,7 @@
+/**
+ * Service-role client for future admin scripts only.
+ * Do not import this module from user-facing pages or API routes.
+ */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let cachedClient: SupabaseClient | null = null;

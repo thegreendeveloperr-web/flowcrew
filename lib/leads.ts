@@ -1,8 +1,10 @@
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase-admin";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseAuthConfigured } from "@/lib/supabase/env";
 import type { ConversationAnalysis, ConversationInput } from "@/lib/flowcrew-types";
 
 export type StoredLead = {
   id: string;
+  user_id: string;
   source: string;
   sender_name: string | null;
   sender_contact: string | null;
@@ -25,7 +27,11 @@ function compactText(values: Array<string | undefined>) {
   return values.map((value) => value?.trim()).filter(Boolean).join(" · ");
 }
 
-export function analysisToLeadRow(input: ConversationInput, analysis: ConversationAnalysis): NewLeadRow {
+export function analysisToLeadRow(
+  input: ConversationInput,
+  analysis: ConversationAnalysis,
+  userId: string,
+): NewLeadRow {
   const primaryRequest =
     analysis.dex.category ||
     analysis.jackie.detectedTopics.at(0) ||
@@ -36,6 +42,7 @@ export function analysisToLeadRow(input: ConversationInput, analysis: Conversati
   const followUp = analysis.milo.followUp || compactText(analysis.nora.nextSteps.slice(1));
 
   return {
+    user_id: userId,
     source: input.sourceType,
     sender_name: input.clientName || "Unknown lead",
     sender_contact: null,
@@ -52,9 +59,13 @@ export function analysisToLeadRow(input: ConversationInput, analysis: Conversati
   };
 }
 
-export async function createLeadFromAnalysis(input: ConversationInput, analysis: ConversationAnalysis) {
-  const row = analysisToLeadRow(input, analysis);
-  const supabase = getSupabaseAdmin();
+export async function createLeadFromAnalysis(
+  input: ConversationInput,
+  analysis: ConversationAnalysis,
+  userId: string,
+) {
+  const row = analysisToLeadRow(input, analysis, userId);
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leads")
@@ -75,9 +86,16 @@ export async function createLeadFromAnalysis(input: ConversationInput, analysis:
 }
 
 export async function getStoredLeads(limit = 30) {
-  if (!isSupabaseConfigured()) return [] as StoredLead[];
+  if (!isSupabaseAuthConfigured()) return [] as StoredLead[];
 
-  const { data, error } = await getSupabaseAdmin()
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [] as StoredLead[];
+
+  const { data, error } = await supabase
     .from("leads")
     .select("*")
     .order("created_at", { ascending: false })

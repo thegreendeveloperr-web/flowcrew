@@ -1,8 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, ClipboardList, ExternalLink, Home, Inbox, MessageSquareText, PlugZap, Sparkles, WandSparkles } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  BarChart3,
+  ClipboardList,
+  ExternalLink,
+  Home,
+  Inbox,
+  LogOut,
+  MessageSquareText,
+  PlugZap,
+  Sparkles,
+  WandSparkles,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/", label: "Landing", Icon: Home },
@@ -16,6 +29,26 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        setUserEmail(data.user?.email ?? null);
+      });
+    } catch {
+      setUserEmail(null);
+    }
+  }, []);
+
+  async function signOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <aside className="sticky top-5 z-20 flex w-full flex-col rounded-[2rem] border border-slate-200/90 bg-white/82 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-2xl lg:h-[calc(100vh-2.5rem)] lg:w-76 lg:p-4">
@@ -65,14 +98,27 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-4 hidden rounded-[1.65rem] border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 lg:mt-auto lg:block">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-700">
-          Product direction
-        </p>
-        <p className="mt-2 text-xl font-black tracking-[-0.045em] text-slate-950">Light premium UI</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Same system across landing, trial, dialogue, dashboard and leads.
-        </p>
+      <div className="mt-4 rounded-[1.65rem] border border-slate-200 bg-slate-50 p-4 lg:mt-auto">
+        {userEmail ? (
+          <>
+            <p className="truncate text-xs font-bold text-slate-500">{userEmail}</p>
+            <button
+              type="button"
+              onClick={signOut}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Esci
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="flex w-full items-center justify-center rounded-2xl bg-slate-950 px-3 py-2.5 text-sm font-black text-white"
+          >
+            Accedi
+          </Link>
+        )}
       </div>
     </aside>
   );

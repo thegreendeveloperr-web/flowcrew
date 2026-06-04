@@ -62,6 +62,9 @@ export default function ImportPage() {
       const payload = (await response.json()) as IngestResponse | { error?: string };
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Accedi per salvare un lead nel tuo workspace.");
+        }
         throw new Error(
           "error" in payload && payload.error
             ? payload.error

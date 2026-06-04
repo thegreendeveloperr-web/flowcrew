@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth";
 import {
   analyzeConversation,
   FlowCrewAIError,
@@ -9,9 +10,18 @@ import { createLeadFromAnalysis } from "@/lib/leads";
 
 export async function POST(request: Request) {
   try {
+    const user = await getSessionUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Accedi per salvare un lead nel tuo workspace." },
+        { status: 401 },
+      );
+    }
+
     const input = parseConversationInput(await request.json());
     const analysis = await analyzeConversation(input);
-    const lead = await createLeadFromAnalysis(input, analysis);
+    const lead = await createLeadFromAnalysis(input, analysis, user.id);
 
     return NextResponse.json({ analysis, lead });
   } catch (error) {

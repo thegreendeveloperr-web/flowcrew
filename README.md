@@ -10,7 +10,18 @@ a Gemini-powered AI crew:
 
 ## Local Setup
 
-Create `.env.local` from `.env.example` and add a server-side Gemini API key:
+Create `.env.local` from `.env.example` and configure:
+
+- `GEMINI_API_KEY` for AI routes
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for auth and leads
+- Apply the SQL migration in `supabase/migrations/` to your Supabase project
+
+Enable Email auth in the Supabase dashboard and add redirect URLs:
+
+- `http://localhost:3000/auth/callback`
+- your production URL + `/auth/callback`
+
+Add a server-side Gemini API key:
 
 ```bash
 GEMINI_API_KEY=your_google_ai_studio_key
@@ -35,6 +46,13 @@ outbound HTTPS calls:
 $env:NODE_OPTIONS="--use-system-ca"
 npm run dev
 ```
+
+## Auth and leads
+
+- `/login` — email and password sign-in (per-user workspace).
+- Protected pages: `/dashboard`, `/leads`, `/trial`, `/import`.
+- `POST /api/ingest-message` requires a logged-in user (401 otherwise).
+- Leads are isolated with `user_id` and Supabase RLS.
 
 ## AI Routes
 
