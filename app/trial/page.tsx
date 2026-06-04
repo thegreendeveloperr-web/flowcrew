@@ -24,9 +24,9 @@ import { trialDraftStorageKey } from "@/lib/trial-draft";
 const sample = `ciao, io e mio fratello dobbiamo fare una cosa per il negozio... si voglio dire un sito, ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo. ah, e non abbiamo budget enorme, max 800 euro forse. dimmi tu`;
 
 const loadingSteps = [
-  "Jackie sta leggendo il caos",
-  "Milo sta cercando urgenze e task",
-  "Nora sta preparando una risposta",
+  "Jackie sta capendo cosa vuole il cliente",
+  "Milo sta cercando task, urgenze e prossimi passi",
+  "Nora sta preparando una risposta pronta",
   "Dex sta assegnando tag e contesto",
 ];
 
@@ -100,8 +100,8 @@ export default function TrialPage() {
   const taskItems = useMemo(() => {
     if (!generated) {
       return [
-        "Lancia l'analisi per ottenere i prossimi passi.",
-        "FlowCrew dividerà il messaggio in azioni chiare.",
+        "Incolla una richiesta cliente e avvia l'analisi.",
+        "FlowCrew la dividerà in summary, task, risposta e tag.",
       ];
     }
 
@@ -155,7 +155,11 @@ export default function TrialPage() {
           throw new Error("Accedi per salvare un lead nel tuo workspace.");
         }
 
-        throw new Error("error" in payload && payload.error ? payload.error : "Non siamo riusciti ad analizzare il messaggio. Riprova tra poco.");
+        throw new Error(
+          "error" in payload && payload.error
+            ? payload.error
+            : "Non siamo riusciti ad analizzare il messaggio. Riprova tra poco.",
+        );
       }
 
       setResult(payload as IngestResponse);
@@ -191,10 +195,11 @@ export default function TrialPage() {
                 <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--fc-accent)] text-black shadow-[0_0_34px_rgba(200,245,66,0.22)]">
                   <Sparkles aria-hidden="true" className="h-5 w-5" />
                 </div>
+
                 <div>
-                  <p className="fc-label text-[var(--fc-accent)]">FlowCrew trial workspace</p>
+                  <p className="fc-label text-[var(--fc-accent)]">FlowCrew free trial</p>
                   <h1 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-                    Prova un lead gratis
+                    Analizza un lead gratis
                   </h1>
                 </div>
               </div>
@@ -211,7 +216,7 @@ export default function TrialPage() {
                 </Link>
 
                 <Link href="/leads" className="fc-button">
-                  Inbox
+                  Dashboard
                   <ArrowRight aria-hidden="true" className="h-4 w-4" />
                 </Link>
               </div>
@@ -225,20 +230,28 @@ export default function TrialPage() {
                   <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--fc-accent)] shadow-[0_0_18px_rgba(200,245,66,0.8)]" />
                     <span className="flow-mono text-xs uppercase tracking-[0.16em] text-[var(--fc-accent)]">
-                      AI crew for client chaos
+                      Messaggio sporco → output operativo
                     </span>
                   </div>
 
                   <h2 className="text-5xl font-extrabold leading-[0.95] tracking-[-0.065em] text-[var(--fc-text)] sm:text-6xl lg:text-7xl">
-                    Prova FlowCrew
+                    Trasforma un messaggio
                     <br />
-                    su un <span className="font-serif italic text-[var(--fc-accent)]">lead reale.</span>
+                    in un <span className="flow-serif font-normal italic text-[var(--fc-accent)]">piano d’azione.</span>
                   </h2>
 
                   <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--fc-text-muted)] sm:text-lg">
-                    Incolla un messaggio confuso di un cliente. Jackie, Milo, Nora e Dex lo trasformano in riepilogo,
-                    task, priorità, tag e risposta pronta.
+                    Incolla una richiesta confusa di un cliente. FlowCrew ti restituisce summary, task, priorità,
+                    tag e una risposta pronta da copiare.
                   </p>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {["Summary", "Task", "Priorità", "Risposta", "Tags"].map((item) => (
+                      <span className="fc-pill fc-pill-success" key={item}>
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </section>
 
@@ -337,7 +350,7 @@ export default function TrialPage() {
                     />
 
                     <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">
-                      Non serve formattare. FlowCrew lavora anche con messaggi scritti male, incompleti o pieni di dettagli sparsi.
+                      Non devi preparare nulla. Incolla il messaggio così com’è: anche se è scritto male, incompleto o pieno di dettagli sparsi.
                     </p>
                   </div>
 
@@ -349,7 +362,7 @@ export default function TrialPage() {
                       </>
                     ) : (
                       <>
-                        Analizza con FlowCrew
+                        Analizza questo lead
                         <ArrowRight aria-hidden="true" className="h-5 w-5" />
                       </>
                     )}
@@ -381,9 +394,15 @@ export default function TrialPage() {
                   ) : null}
 
                   {lead ? (
-                    <div aria-live="polite" className="flex items-center gap-2 rounded-3xl border border-[rgba(139,255,197,0.22)] bg-[rgba(139,255,197,0.08)] p-4 text-sm font-bold text-[var(--fc-mint)]" role="status">
-                      <Database aria-hidden="true" className="h-5 w-5" />
-                      Salvato in Supabase come lead <span className="flow-mono text-xs">{lead.id.slice(0, 8)}</span>
+                    <div aria-live="polite" className="rounded-3xl border border-[rgba(139,255,197,0.22)] bg-[rgba(139,255,197,0.08)] p-4 text-sm font-bold text-[var(--fc-mint)]" role="status">
+                      <div className="flex items-center gap-2">
+                        <Database aria-hidden="true" className="h-5 w-5" />
+                        Lead salvato nel workspace <span className="flow-mono text-xs">{lead.id.slice(0, 8)}</span>
+                      </div>
+
+                      <p className="mt-2 text-xs font-medium leading-5 text-[var(--fc-text-muted)]">
+                        Questo è il tipo di output che puoi ottenere per ogni cliente con FlowCrew.
+                      </p>
                     </div>
                   ) : null}
                 </div>
@@ -397,7 +416,7 @@ export default function TrialPage() {
                     <div>
                       <p className="fc-label">Output</p>
                       <h3 className="mt-1 text-2xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-                        Brief pulito
+                        Brief operativo
                       </h3>
                     </div>
 
@@ -417,7 +436,7 @@ export default function TrialPage() {
                     title="Cosa vuole il cliente"
                   >
                     <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
-                      {lead?.summary ?? "Lancia l'analisi per ottenere un riassunto chiaro della richiesta cliente."}
+                      {lead?.summary ?? "Il riassunto chiaro della richiesta cliente comparirà qui."}
                     </p>
                   </AgentOutputCard>
 
@@ -497,6 +516,7 @@ export default function TrialPage() {
                   <span className="grid h-9 w-9 place-items-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-[var(--fc-accent)]">
                     <Zap aria-hidden="true" className="h-4 w-4" />
                   </span>
+
                   <div>
                     <p className="fc-label">Priority scan</p>
                     <h3 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
@@ -515,25 +535,42 @@ export default function TrialPage() {
 
               {generated ? (
                 <section className="rounded-[2rem] border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-5 shadow-2xl shadow-black/20 sm:p-6">
-                  <p className="fc-label text-[var(--fc-accent)]">Upgrade naturale</p>
+                  <p className="fc-label text-[var(--fc-accent)]">Next step</p>
+
                   <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
-                    Questo è solo il primo lead.
+                    Vuoi analizzare altri lead e salvare lo storico?
                   </h3>
+
                   <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">
-                    Con FlowCrew Pro puoi salvare lo storico clienti, analizzare più richieste, personalizzare il tono delle risposte
+                    Con FlowCrew Pro puoi gestire più richieste, mantenere una dashboard clienti, personalizzare il tono delle risposte
                     e usare modelli AI migliori.
                   </p>
 
-                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                    <Link href="/pricing" className="fc-button fc-button-primary flex-1">
-                      Sblocca FlowCrew Pro
+                  <div className="mt-5 grid gap-2">
+                    <Link href="/#prezzi" className="fc-button fc-button-primary">
+                      Sblocca Pro
+                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
                     </Link>
-                    <Link href="/" className="fc-button flex-1">
-                      Torna alla home
+
+                    <Link href="/leads" className="fc-button">
+                      Vai alla dashboard
                     </Link>
                   </div>
                 </section>
-              ) : null}
+              ) : (
+                <section className="rounded-[2rem] border border-white/[0.06] bg-white/[0.025] p-5 shadow-2xl shadow-black/20 sm:p-6">
+                  <p className="fc-label">Cosa ottieni</p>
+
+                  <div className="mt-4 space-y-3">
+                    {["Riassunto chiaro della richiesta", "Task e prossima azione", "Risposta pronta da copiare", "Tag e priorità del lead"].map((item) => (
+                      <div className="flex gap-2 text-sm text-[var(--fc-text-muted)]" key={item}>
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fc-accent)]" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </aside>
           </section>
         </div>
@@ -587,6 +624,7 @@ function AgentOutputCard({
             <p className="flow-mono text-[11px] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
               {agent} · {label}
             </p>
+
             <h4 className="mt-1 text-base font-extrabold tracking-[-0.035em] text-[var(--fc-text)]">
               {title}
             </h4>
@@ -609,6 +647,7 @@ function SignalCard({ label, value }: { label: string; value: string }) {
       <p className="flow-mono text-[11px] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
         {label}
       </p>
+
       <p className="mt-2 text-sm font-extrabold text-[var(--fc-text)]">
         {value}
       </p>

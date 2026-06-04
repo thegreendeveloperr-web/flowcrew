@@ -21,6 +21,20 @@ const keywords = [
   "Client chaos",
 ];
 
+const proofItems = [
+  "1 lead gratuito",
+  "Nessuna carta richiesta",
+  "Output immediato",
+  "Beta privata",
+];
+
+const heroPreview = [
+  "Summary chiaro",
+  "Task ordinati",
+  "Risposta pronta",
+  "Tag lead-caldo",
+];
+
 const steps = [
   {
     number: "01",
@@ -54,29 +68,37 @@ const steps = [
 
 const agents = [
   {
+    id: "01",
     name: "Jackie",
-    role: "Organizza il caos",
+    role: "Summary",
+    title: "Organizza il caos",
     body: "Legge messaggi, email e note sparse e li trasforma in un riassunto chiaro. Capisce cosa sta chiedendo il cliente, quali dettagli contano e cosa va fatto.",
     tags: ["Riassunti", "Richieste confuse", "Conversazioni lunghe"],
     accent: "var(--fc-accent)",
   },
   {
+    id: "02",
     name: "Milo",
-    role: "Trova priorità e task",
+    role: "Tasks",
+    title: "Trova priorità e task",
     body: "Prende le informazioni ordinate da Jackie e le trasforma in cose da fare. Evidenzia urgenze, scadenze, problemi e prossimi passi.",
     tags: ["Task list", "Urgenze", "Scadenze"],
     accent: "var(--fc-orange)",
   },
   {
+    id: "03",
     name: "Nora",
-    role: "Prepara risposte",
+    role: "Reply",
+    title: "Prepara risposte",
     body: "Ti aiuta a rispondere ai clienti in modo chiaro, professionale e umano. Prepara messaggi pronti da copiare, adattandoli al tuo tono.",
     tags: ["Risposte veloci", "Follow-up", "Tone of voice"],
     accent: "var(--fc-mint)",
   },
   {
+    id: "04",
     name: "Dex",
-    role: "Classifica e collega",
+    role: "Tags",
+    title: "Classifica e collega",
     body: "Aggiunge tag, categorie e struttura. Aiuta a capire se una richiesta riguarda un lead, un problema, un pagamento, un appuntamento o un'attività.",
     tags: ["Tagging", "Categorie", "Dashboard"],
     accent: "var(--fc-purple)",
@@ -105,18 +127,20 @@ const features = [
 const plans = [
   {
     name: "Starter",
-    price: "€0/mese",
-    body: "Per provare FlowCrew senza carta.",
+    price: "€0",
+    period: "gratis",
+    body: "Per provare FlowCrew su un lead reale, senza carta.",
     features: ["1 lead gratuito", "Output completo", "Tutti e 4 gli agenti", "Copia risposta pronta"],
-    cta: "Prova gratis",
+    cta: "Analizza un lead gratis",
     href: "/trial",
   },
   {
     name: "Pro",
-    price: "€19/mese",
-    body: "Per freelance che vogliono usare FlowCrew ogni giorno.",
+    price: "€19",
+    period: "/mese",
+    body: "Per freelance che ricevono richieste ogni giorno e non vogliono perderle tra chat, mail e follow-up.",
     features: [
-      "Analisi giornaliere",
+      "Più analisi lead",
       "Modelli AI migliori",
       "Dashboard clienti",
       "Tone of voice personalizzato",
@@ -128,11 +152,18 @@ const plans = [
     featured: true,
   },
   {
-    name: "Team",
-    price: "€49/mese",
-    body: "Per piccoli team e agenzie.",
-    features: ["Tutto di Pro", "Più utenti", "Workspace condiviso", "Vista team", "Priorità sulle integrazioni"],
-    cta: "Parla con noi",
+    name: "Early Access",
+    price: "Custom",
+    period: "beta",
+    body: "Per piccoli team, creator e agenzie che vogliono provare FlowCrew prima del lancio completo.",
+    features: [
+      "Setup guidato",
+      "Workspace condiviso",
+      "Feedback diretto sul prodotto",
+      "Priorità sulle prossime integrazioni",
+      "Accesso anticipato alle nuove funzioni",
+    ],
+    cta: "Richiedi accesso",
     href: "mailto:hello@flowcrew.ai",
   },
 ];
@@ -173,7 +204,7 @@ export default function Home() {
           </div>
 
           <Link className="fc-button fc-button-primary" href="/trial">
-            Prova gratis
+            Analizza gratis
           </Link>
         </nav>
       </header>
@@ -192,12 +223,47 @@ export default function Home() {
         </h1>
 
         <p className="relative z-10 mt-8 max-w-2xl text-lg leading-8 text-[var(--fc-text-muted)]">
-          FlowCrew trasforma messaggi sparsi, mail confuse e richieste dei clienti in task chiari, priorità e risposte pronte.
+          FlowCrew trasforma messaggi sparsi, mail confuse e richieste dei clienti in task chiari,
+          priorità, tag e risposte pronte.
         </p>
+
+        <p className="flow-mono relative z-10 mt-4 text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+          Incolli una richiesta confusa → ottieni summary, task, tag e risposta pronta.
+        </p>
+
+        <div className="relative z-10 mt-8 w-full max-w-3xl rounded-[2rem] border border-white/[0.06] bg-white/[0.025] p-4 text-left shadow-[0_0_70px_rgba(200,245,66,0.06)] backdrop-blur-xl sm:p-5">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+            <div className="rounded-3xl border border-white/[0.06] bg-[#0e0e0e] p-4">
+              <p className="flow-mono mb-3 text-[11px] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+                Messaggio confuso
+              </p>
+              <p className="line-clamp-3 text-sm leading-6 text-[var(--fc-text-muted)]">
+                “ciao, ci serviva un sito forse anche social... entro fine mese, budget max 800€, dimmi tu”
+              </p>
+            </div>
+
+            <div className="hidden text-[var(--fc-accent)] md:block">
+              <ArrowRight aria-hidden="true" className="h-6 w-6" />
+            </div>
+
+            <div className="rounded-3xl border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.055)] p-4">
+              <p className="flow-mono mb-3 text-[11px] uppercase tracking-[0.14em] text-[var(--fc-accent)]">
+                Output FlowCrew
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {heroPreview.map((item) => (
+                  <span className="fc-pill fc-pill-success" key={item}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="relative z-10 mt-10 flex flex-col gap-3 sm:flex-row">
           <Link className="fc-button fc-button-primary px-6 py-4 text-base" href="/trial">
-            Prova un lead gratis
+            Analizza un lead gratis
             <ArrowRight aria-hidden="true" className="h-5 w-5" />
           </Link>
 
@@ -206,9 +272,13 @@ export default function Home() {
           </a>
         </div>
 
-        <p className="flow-mono relative z-10 mt-8 text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
-          In beta privata · Creato per freelance e piccoli team
-        </p>
+        <div className="relative z-10 mt-8 flex flex-wrap justify-center gap-2">
+          {proofItems.map((item) => (
+            <span className="fc-pill" key={item}>
+              {item}
+            </span>
+          ))}
+        </div>
       </section>
 
       <section className="relative z-10 border-y border-white/[0.06] bg-white/[0.02] py-4">
@@ -258,6 +328,15 @@ export default function Home() {
                   </p>
                 </div>
               ))}
+            </div>
+
+            <div className="relative mt-5 rounded-3xl border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.055)] p-5">
+              <p className="flow-mono mb-3 text-xs uppercase tracking-[0.14em] text-[var(--fc-accent)]">
+                Dopo FlowCrew
+              </p>
+              <p className="text-sm leading-7 text-[var(--fc-text-muted)]">
+                Summary chiaro · task ordinati · risposta pronta · tag <span className="text-[var(--fc-accent)]">lead-caldo</span>
+              </p>
             </div>
           </div>
 
@@ -313,16 +392,20 @@ export default function Home() {
 
               <div className="relative">
                 <div
-                  className="flow-mono mb-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm"
+                  className="flow-mono mb-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm font-bold"
                   style={{ color: agent.accent }}
                 >
-                  {agent.name.slice(0, 2).toUpperCase()}
+                  {agent.id}
                 </div>
 
-                <h3 className="text-3xl font-extrabold tracking-[-0.055em]">{agent.name}</h3>
+                <p className="flow-mono text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+                  {agent.role}
+                </p>
+
+                <h3 className="mt-2 text-3xl font-extrabold tracking-[-0.055em]">{agent.name}</h3>
 
                 <p className="mt-1 text-sm font-bold" style={{ color: agent.accent }}>
-                  {agent.role}
+                  {agent.title}
                 </p>
 
                 <p className="mt-5 text-sm leading-7 text-[var(--fc-text-muted)]">{agent.body}</p>
@@ -345,12 +428,16 @@ export default function Home() {
         kicker="Demo"
         title={
           <>
-            Vedi FlowCrew
+            Da messaggio confuso
             <br />
-            <em className="flow-serif font-normal text-[var(--fc-accent)]">in azione.</em>
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">a piano d’azione.</em>
           </>
         }
       >
+        <p className="-mt-4 mb-8 max-w-2xl text-base leading-7 text-[var(--fc-text-muted)]">
+          FlowCrew non risponde e basta. Divide il lavoro tra agenti e ti restituisce ciò che puoi usare subito.
+        </p>
+
         <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <div className="fc-panel p-5 sm:p-6">
             <p className="fc-label">Messaggio incollato</p>
@@ -358,6 +445,11 @@ export default function Home() {
             <div className="mt-5 rounded-3xl border border-white/[0.06] bg-[#0e0e0e] p-5 text-base leading-8 text-[var(--fc-text-muted)]">
               “ciao, io e mio fratello dobbiamo fare una cosa per il negozio... sì voglio dire un sito, ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo. ah, e non abbiamo budget enorme, max 800€ forse. dimmi tu”
             </div>
+
+            <Link className="fc-button fc-button-primary mt-5 w-full" href="/trial">
+              Provalo con un tuo messaggio
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
           </div>
 
           <div className="grid gap-4">
@@ -442,10 +534,14 @@ export default function Home() {
             >
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-2xl font-extrabold tracking-[-0.045em]">{plan.name}</h3>
-                {plan.featured ? <span className="fc-pill fc-pill-success">Popular</span> : null}
+                {plan.featured ? <span className="fc-pill fc-pill-success">Consigliato</span> : null}
               </div>
 
-              <p className="mt-6 text-4xl font-extrabold tracking-[-0.06em]">{plan.price}</p>
+              <div className="mt-6 flex items-end gap-2">
+                <p className="text-4xl font-extrabold tracking-[-0.06em]">{plan.price}</p>
+                <p className="pb-1 text-sm font-medium text-[var(--fc-text-soft)]">{plan.period}</p>
+              </div>
+
               <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">{plan.body}</p>
 
               <ul className="mt-6 space-y-3">
@@ -483,7 +579,7 @@ export default function Home() {
           </p>
 
           <Link className="fc-button fc-button-primary mt-8 px-7 py-4 text-base" href="/trial">
-            Prova FlowCrew gratis
+            Analizza un lead gratis
           </Link>
 
           <p className="flow-mono mt-5 text-xs uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
