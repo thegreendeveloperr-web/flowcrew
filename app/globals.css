@@ -1,25 +1,30 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #f6f7f9;
-  --foreground: #0f172a;
-  --fc-bg: #f6f7f9;
-  --fc-surface: #ffffff;
-  --fc-surface-muted: #f8fafc;
-  --fc-surface-subtle: #f1f5f9;
-  --fc-border: #e2e8f0;
-  --fc-border-strong: #cbd5e1;
-  --fc-text: #0f172a;
-  --fc-text-muted: #64748b;
-  --fc-text-soft: #94a3b8;
-  --fc-accent: #2563eb;
-  --fc-accent-strong: #1d4ed8;
-  --fc-accent-soft: #eff6ff;
-  --fc-success: #059669;
-  --fc-warning: #d97706;
-  --fc-danger: #dc2626;
-  --fc-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
-  --fc-shadow-subtle: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --background: #080808;
+  --foreground: #f0ede8;
+  --fc-bg: #080808;
+  --fc-bg-secondary: #0e0e0e;
+  --fc-surface: #141414;
+  --fc-surface-muted: #1a1a1a;
+  --fc-surface-subtle: #101010;
+  --fc-border: rgba(255, 255, 255, 0.06);
+  --fc-border-strong: rgba(255, 255, 255, 0.12);
+  --fc-text: #f0ede8;
+  --fc-text-muted: rgba(240, 237, 232, 0.55);
+  --fc-text-soft: rgba(240, 237, 232, 0.28);
+  --fc-accent: #c8f542;
+  --fc-accent-strong: #d8ff64;
+  --fc-accent-soft: rgba(200, 245, 66, 0.08);
+  --fc-mint: #8bffc5;
+  --fc-orange: #ff9a5c;
+  --fc-purple: #c084fc;
+  --fc-success: #8bffc5;
+  --fc-warning: #ff9a5c;
+  --fc-danger: #ff5f5f;
+  --fc-shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --fc-shadow-subtle: 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 45px rgba(0, 0, 0, 0.22);
   --glass: rgba(17, 20, 39, 0.72);
   --glass-strong: rgba(18, 22, 45, 0.92);
   --line: rgba(148, 163, 184, 0.16);
@@ -27,15 +32,16 @@
   --cyan: #51e5ff;
   --lime: #a8ff78;
   --coral: #ff8a9b;
-  --font-flow-sans: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
-  --font-flow-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-flow-sans: "Syne", "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-flow-mono: "DM Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-flow-serif: "Instrument Serif", Georgia, serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-sans: "Syne", "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-mono: "DM Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 html {
@@ -48,6 +54,16 @@ body {
   font-family: var(--font-flow-sans), Arial, Helvetica, sans-serif;
   font-weight: 400;
   line-height: 1.5;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
 }
 
 button,
@@ -75,8 +91,8 @@ textarea:focus-visible,
   z-index: 1000;
   transform: translateY(-150%);
   border-radius: 999px;
-  background: #0f172a;
-  color: white;
+  background: var(--fc-accent);
+  color: #080808;
   font-size: 0.875rem;
   font-weight: 900;
   padding: 0.75rem 1rem;
@@ -89,13 +105,36 @@ textarea:focus-visible,
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.16);
+  background: rgba(200, 245, 66, 0.22);
   color: var(--fc-text);
+}
+
+.flow-serif {
+  font-family: var(--font-flow-serif);
+}
+
+.flow-mono {
+  font-family: var(--font-flow-mono);
+}
+
+.flow-grid-dark {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 82% 64% at 50% 18%, black 0%, transparent 100%);
+}
+
+.flow-lime-glow {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(200, 245, 66, 0.12), transparent 34rem),
+    radial-gradient(circle at 15% 24%, rgba(139, 255, 197, 0.065), transparent 28rem),
+    radial-gradient(circle at 85% 18%, rgba(192, 132, 252, 0.07), transparent 26rem);
 }
 
 .fc-panel {
   border: 1px solid var(--fc-border);
-  border-radius: 1.25rem;
+  border-radius: 1.15rem;
   background: var(--fc-surface);
   box-shadow: var(--fc-shadow-subtle);
 }
@@ -104,7 +143,7 @@ textarea:focus-visible,
   border: 1px solid var(--fc-border);
   border-radius: 1rem;
   background: var(--fc-surface);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--fc-shadow-subtle);
 }
 
 .fc-muted-card {
@@ -116,8 +155,9 @@ textarea:focus-visible,
 .fc-label {
   color: var(--fc-text-soft);
   font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-family: var(--font-flow-mono);
+  font-weight: 400;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -126,15 +166,15 @@ textarea:focus-visible,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.8rem;
+  border-radius: 999px;
   border: 1px solid var(--fc-border);
   background: var(--fc-surface);
   color: var(--fc-text);
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1;
-  min-height: 2.5rem;
-  padding: 0.75rem 1rem;
+  min-height: 2.25rem;
+  padding: 0.625rem 0.85rem;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -148,15 +188,15 @@ textarea:focus-visible,
 }
 
 .fc-button-primary {
-  border-color: #0f172a;
-  background: #0f172a;
-  color: #ffffff;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  border-color: var(--fc-accent);
+  background: var(--fc-accent);
+  color: #080808;
+  box-shadow: 0 0 34px rgba(200, 245, 66, 0.18);
 }
 
 .fc-button-primary:hover {
-  border-color: #1e293b;
-  background: #1e293b;
+  border-color: var(--fc-accent-strong);
+  background: var(--fc-accent-strong);
 }
 
 .fc-pill {
@@ -168,20 +208,78 @@ textarea:focus-visible,
   background: var(--fc-surface-muted);
   color: var(--fc-text-muted);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-family: var(--font-flow-mono);
+  font-weight: 400;
   line-height: 1;
   padding: 0.4rem 0.65rem;
 }
 
 .fc-pill-plain {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.035);
   color: var(--fc-text-muted);
 }
 
 .fc-pill-success {
-  border-color: #bbf7d0;
-  background: #ecfdf5;
-  color: #047857;
+  border-color: rgba(139, 255, 197, 0.22);
+  background: rgba(139, 255, 197, 0.08);
+  color: var(--fc-mint);
+}
+
+.fc-input,
+.fc-select,
+.fc-textarea {
+  width: 100%;
+  border: 1px solid var(--fc-border);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--fc-text);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.fc-input,
+.fc-select {
+  min-height: 2.5rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.fc-textarea {
+  min-height: 12rem;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+.fc-input::placeholder,
+.fc-textarea::placeholder {
+  color: var(--fc-text-soft);
+}
+
+.fc-input:focus,
+.fc-select:focus,
+.fc-textarea:focus {
+  border-color: rgba(200, 245, 66, 0.48);
+  box-shadow: 0 0 0 3px rgba(200, 245, 66, 0.1);
+}
+
+.fc-toolbar {
+  border: 1px solid var(--fc-border);
+  border-radius: 1.15rem;
+  background: rgba(20, 20, 20, 0.84);
+  box-shadow: var(--fc-shadow-subtle);
+  backdrop-filter: blur(18px);
+}
+
+.fc-status-dot {
+  display: inline-block;
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .flow-bg {

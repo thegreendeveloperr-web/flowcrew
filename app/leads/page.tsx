@@ -1,24 +1,35 @@
 import Link from "next/link";
-import { ArrowRight, Database, Inbox, Search, Sparkles } from "lucide-react";
-import AgentAvatar from "@/components/AgentAvatar";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardList,
+  Inbox,
+  MessageSquareText,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Tags,
+} from "lucide-react";
 import AppShell from "@/components/AppShell";
-import type { AgentId } from "@/lib/data";
+import { agentRoles } from "@/lib/agent-roles";
 import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
-function ownerToAgent(owner: string | null): AgentId {
+function ownerToLabel(owner: string | null) {
   const normalized = owner?.toLowerCase() ?? "";
-  if (normalized.includes("milo")) return "milo";
-  if (normalized.includes("nora")) return "nora";
-  if (normalized.includes("dex")) return "dex";
-  return "jackie";
+  if (normalized.includes("milo")) return agentRoles.milo;
+  if (normalized.includes("nora")) return agentRoles.nora;
+  if (normalized.includes("dex")) return agentRoles.dex;
+  return agentRoles.jackie;
 }
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("it-IT", {
-    dateStyle: "short",
-    timeStyle: "short",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(value));
 }
 
@@ -33,211 +44,277 @@ export default async function LeadsPage({
 
   return (
     <AppShell>
-      <div className="space-y-5">
-        <section className="rounded-[2.25rem] border border-slate-200 bg-white/82 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-2xl sm:p-8">
-          <div className="grid gap-7 xl:grid-cols-[0.85fr_1.15fr]">
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-blue-700">
-                <Inbox className="h-4 w-4" />
-                Live lead inbox
-              </div>
-              <h1 className="max-w-2xl text-5xl font-black leading-[0.95] tracking-[-0.075em] text-slate-950 md:text-7xl">
-                Every saved message becomes a clean client card.
+      <div className="mx-auto max-w-[1500px] space-y-4">
+        <section className="fc-toolbar px-4 py-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-baseline gap-3">
+              <h1 className="text-4xl font-extrabold tracking-[-0.055em] text-[var(--fc-text)]">
+                Lead inbox
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                This inbox now reads from Supabase. Leads created from the trial appear here with summary, tags, priority, reply and follow-up.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/trial" className="rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-3 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)]">
-                  Import a new message
-                </Link>
-                <Link href="/dashboard" className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-800 shadow-[0_12px_28px_rgba(15,23,42,0.06)]">
-                  Open dashboard
-                </Link>
-              </div>
+              <span className="fc-pill">{leads.length} salvati</span>
             </div>
 
-            <SelectedLead lead={selected} />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="relative block sm:w-72">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fc-text-soft)]" />
+                <input className="fc-input pl-9" placeholder="Cerca lead" type="search" />
+              </label>
+              <button type="button" className="fc-button">
+                <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                Filtri
+              </button>
+              <Link href="/trial" className="fc-button fc-button-primary">
+                <Plus aria-hidden="true" className="h-4 w-4" />
+                Nuovo lead
+              </Link>
+            </div>
           </div>
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[0.72fr_1.28fr]">
-          <aside className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Database</p>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Supabase status</h2>
-              </div>
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <Database className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex items-center gap-2 text-slate-400">
-                <Search className="h-4 w-4" />
-                <span className="text-sm font-bold">Search UI will come after the database layer.</span>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3">
-              <MiniMetric label="Saved leads" value={String(leads.length)} />
-              <MiniMetric label="Latest source" value={selected?.source ?? "None yet"} />
-              <MiniMetric label="Top urgency" value={selected?.urgency ?? "Waiting"} />
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-blue-100 bg-blue-50 p-4">
-              <p className="text-sm font-black text-blue-800">Crew rule</p>
-              <p className="mt-2 text-sm leading-6 text-blue-900/70">
-                FlowCrew can draft and organize, but replies wait for your approval. This keeps the product trustworthy.
-              </p>
-            </div>
-          </aside>
-
-          <div className="rounded-[2rem] border border-slate-200 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-6">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Pipeline</p>
-                <h2 className="mt-1 text-2xl font-black tracking-[-0.05em] text-slate-950">Client conversations</h2>
-              </div>
-              <Link href="/trial" className="hidden rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-4 py-2 text-sm font-black text-white shadow-[0_14px_34px_rgba(37,99,235,0.20)] sm:block">
-                Import message
-              </Link>
-            </div>
-
-            {leads.length ? (
-              <div className="grid gap-3">
-                {leads.map((lead) => (
-                  <LeadRow isSelected={lead.id === selected?.id} key={lead.id} lead={lead} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState />
-            )}
-          </div>
+        <section className="grid min-h-[calc(100vh-8rem)] gap-4 xl:grid-cols-[320px_minmax(0,1fr)_360px]">
+          <LeadList leads={leads} selectedId={selected?.id} />
+          <LeadDetail lead={selected} />
+          <AIPanel lead={selected} />
         </section>
       </div>
     </AppShell>
   );
 }
 
-function SelectedLead({ lead }: { lead?: StoredLead }) {
-  if (!lead) {
-    return (
-      <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Selected lead</p>
-            <h2 className="mt-2 text-3xl font-black tracking-[-0.06em]">No leads yet</h2>
-            <p className="mt-1 text-sm text-slate-400">Create one from /trial.</p>
-          </div>
-          <AgentAvatar agentId="jackie" decorative size="lg" />
-        </div>
-        <p className="mt-5 rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-6 text-slate-200">
-          Paste a client message in the trial page and FlowCrew will save the structured lead here.
-        </p>
-      </div>
-    );
-  }
-
-  const score = scoreLead(lead);
-
+function LeadList({ leads, selectedId }: { leads: StoredLead[]; selectedId?: string }) {
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
-      <div className="flex items-center justify-between gap-4">
+    <aside className="fc-panel overflow-hidden">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-200">Selected lead</p>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.06em]">{getLeadDisplayName(lead)}</h2>
-          <p className="mt-1 text-sm capitalize text-slate-400">{lead.source} · {formatDate(lead.created_at)}</p>
+          <p className="fc-label">Inbox</p>
+          <h2 className="mt-1 text-lg font-bold tracking-[-0.03em] text-[var(--fc-text)]">Client chaos</h2>
         </div>
-        <AgentAvatar agentId={ownerToAgent(lead.owner_agent)} decorative size="lg" />
+        <span className="flow-mono text-xs text-[var(--fc-text-soft)]">Newest first</span>
       </div>
-      <p className="mt-5 rounded-3xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-6 text-slate-200">
-        {lead.summary ?? lead.raw_message}
-      </p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <DarkMetric label="Request" value={lead.request ?? "—"} />
-        <DarkMetric label="Priority" value={lead.urgency ?? "—"} />
-        <DarkMetric label="Score" value={`${score}%`} />
-      </div>
-    </div>
+
+      {leads.length ? (
+        <div className="max-h-[calc(100vh-13rem)] overflow-y-auto">
+          {leads.map((lead) => (
+            <LeadListItem isSelected={lead.id === selectedId} key={lead.id} lead={lead} />
+          ))}
+        </div>
+      ) : (
+        <EmptyInbox />
+      )}
+    </aside>
   );
 }
 
-function LeadRow({ lead, isSelected }: { lead: StoredLead; isSelected: boolean }) {
+function LeadListItem({ lead, isSelected }: { lead: StoredLead; isSelected: boolean }) {
   const score = scoreLead(lead);
-  const tags = lead.tags ?? [];
   const displayName = getLeadDisplayName(lead);
-  const selectionLabel = isSelected ? `Selected lead: ${displayName}` : `Select lead: ${displayName}`;
+  const tags = lead.tags ?? [];
 
   return (
     <Link
       aria-current={isSelected ? "page" : undefined}
-      aria-label={`${selectionLabel}. ${lead.request ?? "Client request"}. Score ${score}%.`}
-      className={`block rounded-[1.65rem] border bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition hover:border-blue-200 hover:shadow-[0_16px_40px_rgba(15,23,42,0.09)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 ${isSelected ? "border-blue-300 ring-2 ring-blue-100" : "border-slate-100"}`}
       href={{ pathname: "/leads", query: { lead: lead.id } }}
+      className={`block border-b border-white/[0.05] px-4 py-3 transition hover:bg-white/[0.035] ${
+        isSelected ? "bg-[rgba(200,245,66,0.07)]" : ""
+      }`}
     >
-      <div className="grid gap-4 md:grid-cols-[56px_1fr_auto] md:items-center">
-        <AgentAvatar agentId={ownerToAgent(lead.owner_agent)} decorative size="md" />
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-black text-slate-950">{displayName}</h3>
-            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{lead.urgency ?? "New"}</span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black capitalize text-slate-600">{lead.source}</span>
-          </div>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{lead.request ?? "Client request"}</p>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{lead.summary ?? lead.raw_message}</p>
-          {tags.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {tags.slice(0, 5).map((tag) => (
-                <span key={tag} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{tag}</span>
-              ))}
-            </div>
-          ) : null}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-[var(--fc-text)]">{displayName}</p>
+          <p className="flow-mono mt-1 truncate text-xs capitalize text-[var(--fc-text-soft)]">
+            {lead.source} - {formatDate(lead.created_at)}
+          </p>
         </div>
-        <div className="flex items-center gap-3 md:justify-end">
-          <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-500" style={{ width: `${score}%` }} />
-          </div>
-          <b className="text-sm text-slate-950">{score}</b>
-          <ArrowRight aria-hidden="true" className="h-4 w-4 text-slate-400" />
-        </div>
+        <span className="flow-mono rounded-md border border-white/[0.08] bg-white/[0.04] px-1.5 py-1 text-xs text-[var(--fc-accent)]">
+          {score}
+        </span>
+      </div>
+      <p className="mt-2 line-clamp-2 text-sm leading-5 text-[var(--fc-text-muted)]">
+        {lead.summary ?? lead.raw_message}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <span className="fc-pill capitalize">{lead.urgency ?? lead.status ?? "Nuovo"}</span>
+        {tags.slice(0, 2).map((tag) => (
+          <span className="fc-pill fc-pill-plain" key={tag}>
+            {tag}
+          </span>
+        ))}
       </div>
     </Link>
   );
 }
 
-function EmptyState() {
+function LeadDetail({ lead }: { lead?: StoredLead }) {
+  if (!lead) {
+    return (
+      <section className="fc-panel grid place-items-center p-6 text-center">
+        <div>
+          <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-[var(--fc-accent)]">
+            <Inbox aria-hidden="true" className="h-4 w-4" />
+          </div>
+          <h2 className="mt-3 text-lg font-bold text-[var(--fc-text)]">Nessun lead selezionato</h2>
+          <p className="mt-1 max-w-sm text-sm leading-6 text-[var(--fc-text-muted)]">
+            Analizza un messaggio cliente e apparira qui.
+          </p>
+          <Link href="/trial" className="fc-button fc-button-primary mt-4">
+            Nuovo lead
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  const score = scoreLead(lead);
+  const owner = ownerToLabel(lead.owner_agent);
+
   return (
-    <div className="rounded-[1.65rem] border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-blue-600">
-        <Sparkles className="h-6 w-6" />
+    <main className="fc-panel overflow-hidden">
+      <div className="border-b border-white/[0.06] px-5 py-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <p className="fc-label">Selected lead</p>
+            <h2 className="mt-1 truncate text-3xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
+              {getLeadDisplayName(lead)}
+            </h2>
+            <p className="flow-mono mt-1 text-xs capitalize text-[var(--fc-text-soft)]">
+              {lead.source} - {formatDate(lead.created_at)}
+            </p>
+          </div>
+          <span className="fc-pill">
+            <span className="fc-status-dot text-[var(--fc-accent)]" />
+            {owner.name} intelligence
+          </span>
+        </div>
       </div>
-      <h3 className="mt-4 text-2xl font-black tracking-[-0.05em] text-slate-950">No saved leads yet</h3>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-        Use the trial page to ingest a message. Gemini will analyze it and Supabase will store the generated lead card.
-      </p>
-      <Link href="/trial" className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white">
-        Create first lead <ArrowRight className="h-4 w-4" />
+
+      <div className="space-y-4 p-5">
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-text)]">
+            <ClipboardList aria-hidden="true" className="h-4 w-4 text-[var(--fc-accent)]" />
+            Messaggio originale
+          </div>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--fc-text-muted)]">
+            {lead.raw_message}
+          </p>
+        </section>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <InfoBlock title="Riassunto" value={lead.summary ?? "Nessun riassunto salvato."} />
+          <InfoBlock title="Richiesta" value={lead.request ?? "Richiesta cliente"} />
+          <InfoBlock title="Priorita" value={lead.urgency ?? lead.status ?? "Nuovo"} />
+          <InfoBlock title="Score" value={`${score}%`} meter={score} />
+        </div>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <p className="text-sm font-bold text-[var(--fc-text)]">Prossimo passo</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
+            {lead.next_action ?? lead.follow_up ?? "Rivedi il lead e decidi la prossima azione."}
+          </p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function AIPanel({ lead }: { lead?: StoredLead }) {
+  const tags = lead?.tags ?? [];
+  const owner = ownerToLabel(lead?.owner_agent ?? null);
+
+  return (
+    <aside className="fc-panel overflow-hidden">
+      <div className="border-b border-white/[0.06] px-4 py-3">
+        <p className="fc-label">AI panel</p>
+        <h2 className="mt-1 text-lg font-bold tracking-[-0.03em] text-[var(--fc-text)]">Handling consigliato</h2>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <section>
+          <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-text)]">
+            <Tags aria-hidden="true" className="h-4 w-4 text-[var(--fc-accent)]" />
+            Tag automatici
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {tags.length ? (
+              tags.map((tag) => (
+                <span className="fc-pill" key={tag}>
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-[var(--fc-text-muted)]">Nessun tag.</span>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-text)]">
+            <MessageSquareText aria-hidden="true" className="h-4 w-4 text-[var(--fc-accent)]" />
+            Risposta pronta
+          </div>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--fc-text-muted)]">
+            {lead?.suggested_reply ?? "Seleziona o genera un lead per vedere la bozza."}
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-text)]">
+            <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-[var(--fc-mint)]" />
+            Azioni
+          </div>
+          <div className="mt-3 grid gap-2">
+            <ActionRow label="Owner" value={`${owner.name} - ${owner.title}`} />
+            <ActionRow label="Status" value={lead?.status ?? "Waiting"} />
+            <ActionRow label="Follow-up" value={lead?.follow_up ?? "Non programmato"} />
+          </div>
+          <div className="mt-4 grid gap-2">
+            <Link href="/trial" className="fc-button w-full">
+              Crea un altro lead
+            </Link>
+            <Link href="/dashboard" className="fc-button w-full">
+              Torna a Oggi
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
+function InfoBlock({ title, value, meter }: { title: string; value: string; meter?: number }) {
+  return (
+    <section className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+      <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">{value}</p>
+      {typeof meter === "number" ? (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+          <div className="h-full rounded-full bg-[var(--fc-accent)]" style={{ width: `${meter}%` }} />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ActionRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.035] px-3 py-2">
+      <span className="flow-mono text-xs text-[var(--fc-text-soft)]">{label}</span>
+      <span className="text-right text-xs font-bold text-[var(--fc-text)]">{value}</span>
+    </div>
+  );
+}
+
+function EmptyInbox() {
+  return (
+    <div className="p-6 text-center">
+      <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-[var(--fc-accent)]">
+        <Inbox aria-hidden="true" className="h-4 w-4" />
+      </div>
+      <h3 className="mt-3 text-base font-bold text-[var(--fc-text)]">Nessun lead</h3>
+      <p className="mt-1 text-sm leading-6 text-[var(--fc-text-muted)]">I nuovi lead analizzati appariranno qui.</p>
+      <Link href="/trial" className="fc-button fc-button-primary mt-4">
+        Nuovo lead
       </Link>
-    </div>
-  );
-}
-
-function MiniMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function DarkMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
     </div>
   );
 }

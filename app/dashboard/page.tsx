@@ -7,23 +7,12 @@ import {
   Inbox,
   MessageSquareText,
   Plus,
-  Sparkles,
-  TrendingUp,
-  Zap,
 } from "lucide-react";
-import AgentAvatar from "@/components/AgentAvatar";
 import AppShell from "@/components/AppShell";
 import { agentOrder, agentRoles } from "@/lib/agent-roles";
 import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
-
-const statTone = {
-  blue: "bg-blue-50 text-blue-700 ring-blue-100",
-  emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
-  amber: "bg-amber-50 text-amber-700 ring-amber-100",
-  rose: "bg-rose-50 text-rose-700 ring-rose-100",
-};
 
 function urgentCount(leads: StoredLead[]) {
   return leads.filter((lead) => {
@@ -41,11 +30,11 @@ function followUpCount(leads: StoredLead[]) {
 }
 
 function formatDate(value?: string) {
-  if (!value) return "No date";
+  if (!value) return "Nessuna data";
 
   return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
     month: "short",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
@@ -53,197 +42,232 @@ function formatDate(value?: string) {
 
 export default async function DashboardPage() {
   const leads = await getStoredLeads(12);
-  const topLeads = leads.slice(0, 4);
+  const priorityLeads = [...leads].sort((a, b) => scoreLead(b) - scoreLead(a)).slice(0, 5);
+  const recentLeads = leads.slice(0, 6);
   const hasLeads = leads.length > 0;
   const stats = [
-    {
-      label: "Saved leads",
-      value: String(leads.length),
-      detail: "Synced from Supabase",
-      Icon: Sparkles,
-      tone: "blue" as const,
-    },
-    {
-      label: "Replies ready",
-      value: String(replyCount(leads)),
-      detail: "Awaiting approval",
-      Icon: MessageSquareText,
-      tone: "emerald" as const,
-    },
-    {
-      label: "Follow-ups",
-      value: String(followUpCount(leads)),
-      detail: "Next actions found",
-      Icon: CalendarClock,
-      tone: "amber" as const,
-    },
-    {
-      label: "Urgent leads",
-      value: String(urgentCount(leads)),
-      detail: "High priority signals",
-      Icon: Clock3,
-      tone: "rose" as const,
-    },
+    { label: "Lead aperti", value: String(leads.length), detail: "Conversazioni salvate", Icon: Inbox },
+    { label: "Risposte pronte", value: String(replyCount(leads)), detail: "Da approvare", Icon: MessageSquareText },
+    { label: "Follow-up", value: String(followUpCount(leads)), detail: "Azioni successive", Icon: CalendarClock },
+    { label: "Urgenti", value: String(urgentCount(leads)), detail: "Segnali alti", Icon: Clock3 },
   ];
 
   return (
     <AppShell>
-      <div className="space-y-5">
-        <section className="fc-panel p-5 sm:p-6">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <p className="fc-label">Dashboard</p>
-              <h1 className="mt-2 max-w-2xl text-3xl font-bold leading-tight tracking-[-0.04em] text-slate-950 sm:text-4xl">
-                Client work, prioritized for today.
+      <div className="mx-auto max-w-[1380px] space-y-4">
+        <section className="fc-toolbar px-4 py-4 sm:px-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className="fc-label">AI command center</p>
+              <h1 className="mt-2 text-4xl font-extrabold tracking-[-0.055em] text-[var(--fc-text)] sm:text-5xl">
+                Oggi
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                A clean operating view for saved messages, reply drafts and follow-up signals. Data stays connected to the same Supabase lead records.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--fc-text-muted)]">
+                Cosa richiede attenzione: lead caldi, risposte pronte, task e follow-up.
               </p>
             </div>
-
             <div className="flex flex-wrap gap-2">
               <Link href="/trial" className="fc-button fc-button-primary">
                 <Plus aria-hidden="true" className="h-4 w-4" />
-                Capture lead
+                Nuovo lead
               </Link>
               <Link href="/leads" className="fc-button">
-                Open inbox
+                Apri inbox
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
             </div>
           </div>
+        </section>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => {
-              const Icon = stat.Icon;
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => {
+            const Icon = stat.Icon;
 
-              return (
-                <article className="fc-card p-4" key={stat.label}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className={`grid h-10 w-10 place-items-center rounded-xl ring-1 ${statTone[stat.tone]}`}>
-                      <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={2.1} />
-                    </div>
-                    <TrendingUp aria-hidden="true" className="h-4 w-4 text-slate-300" />
+            return (
+              <article className="fc-card p-4" key={stat.label}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="flow-mono text-xs uppercase tracking-[0.1em] text-[var(--fc-text-soft)]">{stat.label}</p>
+                    <p className="mt-3 text-4xl font-extrabold tracking-[-0.055em] text-[var(--fc-text)]">
+                      {stat.value}
+                    </p>
                   </div>
-                  <p className="mt-5 text-3xl font-bold tracking-[-0.045em] text-slate-950">
-                    {stat.value}
-                  </p>
-                  <h2 className="mt-1 text-sm font-semibold text-slate-800">{stat.label}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{stat.detail}</p>
-                </article>
-              );
-            })}
-          </div>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-[var(--fc-accent)]">
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                </div>
+                <p className="mt-3 text-xs font-medium text-[var(--fc-text-muted)]">{stat.detail}</p>
+              </article>
+            );
+          })}
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <LeadQueue leads={topLeads} totalCount={leads.length} />
-          <WorkflowPanel hasLeads={hasLeads} />
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <PriorityQueue leads={priorityLeads} totalCount={leads.length} />
+          <CrewActivity hasLeads={hasLeads} />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)]">
-          <CrewPanel />
-          <ActivityPanel hasLeads={hasLeads} />
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)]">
+          <RecentLeads leads={recentLeads} />
+          <SystemStatus hasLeads={hasLeads} />
         </section>
       </div>
     </AppShell>
   );
 }
 
-function LeadQueue({ leads, totalCount }: { leads: StoredLead[]; totalCount: number }) {
+function PriorityQueue({ leads, totalCount }: { leads: StoredLead[]; totalCount: number }) {
   return (
-    <section className="fc-panel p-5 sm:p-6">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="fc-panel overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
         <div>
-          <p className="fc-label">Lead queue</p>
-          <h2 className="mt-1 text-xl font-bold tracking-[-0.03em] text-slate-950">
-            Ready to move
+          <p className="fc-label">Priority queue</p>
+          <h2 className="mt-1 text-xl font-bold tracking-[-0.035em] text-[var(--fc-text)]">
+            Lead da gestire prima
           </h2>
         </div>
-        <Link href="/leads" className="fc-button self-start sm:self-auto">
-          {totalCount} total
+        <Link href="/leads" className="fc-button">
+          {totalCount} totali
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </Link>
       </div>
 
       {leads.length ? (
-        <div className="mt-4 divide-y divide-slate-100">
+        <div className="divide-y divide-white/[0.05]">
           {leads.map((lead) => (
-            <LeadQueueRow key={lead.id} lead={lead} />
+            <PriorityRow key={lead.id} lead={lead} />
           ))}
         </div>
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-7 text-center">
-          <div className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white text-blue-600 ring-1 ring-slate-200">
-            <Inbox aria-hidden="true" className="h-5 w-5" />
-          </div>
-          <h3 className="mt-4 text-xl font-bold tracking-[-0.03em] text-slate-950">
-            No saved leads yet
-          </h3>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">
-            Create a lead from the trial page and the saved brief will appear here.
-          </p>
-          <Link href="/trial" className="fc-button fc-button-primary mt-5">
-            Capture first lead
-          </Link>
-        </div>
+        <EmptyQueue />
       )}
     </section>
   );
 }
 
-function LeadQueueRow({ lead }: { lead: StoredLead }) {
+function PriorityRow({ lead }: { lead: StoredLead }) {
   const score = scoreLead(lead);
   const displayName = getLeadDisplayName(lead);
-  const urgency = lead.urgency ?? lead.status ?? "New";
+  const urgency = lead.urgency ?? lead.status ?? "Nuovo";
 
   return (
-    <article className="grid gap-4 py-4 first:pt-0 last:pb-0 lg:grid-cols-[minmax(0,1fr)_150px] lg:items-center">
+    <Link
+      href={{ pathname: "/leads", query: { lead: lead.id } }}
+      className="grid gap-3 px-4 py-3 transition hover:bg-white/[0.035] lg:grid-cols-[minmax(0,1fr)_100px_126px] lg:items-center"
+    >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-slate-950">{displayName}</h3>
-          <span className="fc-pill fc-pill-plain capitalize">{urgency}</span>
-          <span className="text-xs font-medium capitalize text-slate-400">{lead.source}</span>
-          <span className="text-xs text-slate-400">{formatDate(lead.created_at)}</span>
+          <h3 className="truncate text-sm font-bold text-[var(--fc-text)]">{displayName}</h3>
+          <span className="fc-pill capitalize">{urgency}</span>
+          <span className="flow-mono text-xs capitalize text-[var(--fc-text-soft)]">{lead.source}</span>
         </div>
-        <p className="mt-1 text-sm font-medium text-slate-700">
-          {lead.request ?? "Client request"}
+        <p className="mt-1 truncate text-sm text-[var(--fc-text-muted)]">
+          {lead.request ?? lead.summary ?? "Richiesta cliente"}
         </p>
-        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-500">
-          {lead.summary ?? lead.raw_message}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {lead.suggested_reply ? <span className="fc-pill">Reply ready</span> : null}
-          {lead.next_action || lead.follow_up ? <span className="fc-pill">Follow-up</span> : null}
-          {(lead.tags ?? []).slice(0, 3).map((tag) => (
-            <span key={tag} className="fc-pill">
-              {tag}
-            </span>
-          ))}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between text-xs text-[var(--fc-text-muted)]">
+          <span className="flow-mono">Score</span>
+          <span className="flow-mono text-[var(--fc-text)]">{score}</span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+          <div className="h-full rounded-full bg-[var(--fc-accent)]" style={{ width: `${score}%` }} />
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-          <span>Score</span>
-          <span className="text-slate-950">{score}</span>
-        </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full rounded-full bg-blue-600" style={{ width: `${score}%` }} />
-        </div>
-      </div>
-    </article>
+      <p className="flow-mono text-xs text-[var(--fc-text-soft)] lg:text-right">{formatDate(lead.created_at)}</p>
+    </Link>
   );
 }
 
-function WorkflowPanel({ hasLeads }: { hasLeads: boolean }) {
+function RecentLeads({ leads }: { leads: StoredLead[] }) {
   return (
-    <section className="fc-panel p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-4">
+    <section className="fc-panel overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
         <div>
-          <p className="fc-label">Workflow</p>
-          <h2 className="mt-1 text-xl font-bold tracking-[-0.03em] text-slate-950">
-            Processing model
+          <p className="fc-label">Recent leads</p>
+          <h2 className="mt-1 text-xl font-bold tracking-[-0.035em] text-[var(--fc-text)]">
+            Conversazioni salvate
+          </h2>
+        </div>
+        <Link href="/trial" className="fc-button">
+          Nuovo lead
+        </Link>
+      </div>
+
+      {leads.length ? (
+        <div className="divide-y divide-white/[0.05]">
+          {leads.map((lead) => (
+            <Link
+              key={lead.id}
+              href={{ pathname: "/leads", query: { lead: lead.id } }}
+              className="grid gap-2 px-4 py-3 transition hover:bg-white/[0.035] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-[var(--fc-text)]">
+                  {getLeadDisplayName(lead)}
+                </p>
+                <p className="mt-1 line-clamp-1 text-sm text-[var(--fc-text-muted)]">
+                  {lead.summary ?? lead.raw_message}
+                </p>
+              </div>
+              <span className="flow-mono text-xs text-[var(--fc-text-soft)]">{formatDate(lead.created_at)}</span>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <EmptyQueue />
+      )}
+    </section>
+  );
+}
+
+function CrewActivity({ hasLeads }: { hasLeads: boolean }) {
+  const rows = agentOrder.map((id) => ({
+    name: agentRoles[id].name,
+    title: agentRoles[id].title,
+    action: agentRoles[id].workflowAction,
+  }));
+
+  return (
+    <section className="fc-panel overflow-hidden">
+      <div className="border-b border-white/[0.06] px-4 py-3">
+        <p className="fc-label">Crew activity</p>
+        <h2 className="mt-1 text-xl font-bold tracking-[-0.035em] text-[var(--fc-text)]">
+          Log operativo
+        </h2>
+      </div>
+      <div className="divide-y divide-white/[0.05]">
+        {rows.map((row, index) => (
+          <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 px-4 py-3" key={row.name}>
+            <span className="flow-mono text-xs text-[var(--fc-text-soft)]">
+              {hasLeads ? `T-${index + 1}` : "Idle"}
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-bold text-[var(--fc-text)]">{row.name}</p>
+                <span className="rounded-full border border-white/[0.06] bg-white/[0.035] px-2 py-0.5 text-xs text-[var(--fc-text-muted)]">
+                  {row.title}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-[var(--fc-text-muted)]">{row.action}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SystemStatus({ hasLeads }: { hasLeads: boolean }) {
+  return (
+    <section className="fc-panel p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="fc-label">Workspace status</p>
+          <h2 className="mt-1 text-xl font-bold tracking-[-0.035em] text-[var(--fc-text)]">
+            Modello operativo
           </h2>
         </div>
         <span className="fc-pill fc-pill-success">
@@ -252,20 +276,15 @@ function WorkflowPanel({ hasLeads }: { hasLeads: boolean }) {
         </span>
       </div>
 
-      <div className="mt-5 space-y-3">
-        {agentOrder.map((id, index) => (
-          <div key={id} className="rounded-xl border border-slate-200 bg-white p-3">
-            <div className="flex items-start gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-950 text-xs font-bold text-white">
-                {index + 1}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-950">{agentRoles[id].name}</p>
-                <p className="mt-1 text-sm leading-5 text-slate-500">
-                  {agentRoles[id].workflowAction}
-                </p>
-              </div>
-            </div>
+      <div className="mt-4 space-y-3">
+        {[
+          ["Storage", "Supabase leads"],
+          ["Reply mode", "Approvi tu"],
+          ["Automation", "Nessun invio automatico"],
+        ].map(([label, value]) => (
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-white/[0.035] px-3 py-2.5" key={label}>
+            <span className="flow-mono text-xs text-[var(--fc-text-soft)]">{label}</span>
+            <span className="text-right text-sm font-bold text-[var(--fc-text)]">{value}</span>
           </div>
         ))}
       </div>
@@ -273,54 +292,19 @@ function WorkflowPanel({ hasLeads }: { hasLeads: boolean }) {
   );
 }
 
-function CrewPanel() {
+function EmptyQueue() {
   return (
-    <section className="fc-panel p-5 sm:p-6">
-      <div className="border-b border-slate-200 pb-4">
-        <p className="fc-label">Crew roles</p>
-        <h2 className="mt-1 text-xl font-bold tracking-[-0.03em] text-slate-950">
-          Handoff responsibilities
-        </h2>
+    <div className="p-6 text-center">
+      <div className="mx-auto grid h-10 w-10 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-[var(--fc-accent)]">
+        <Inbox aria-hidden="true" className="h-4 w-4" />
       </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {agentOrder.map((id) => (
-          <article key={id} className="fc-muted-card p-4">
-            <AgentAvatar agentId={id} decorative size="md" />
-            <p className="mt-3 text-sm font-semibold text-slate-950">{agentRoles[id].name}</p>
-            <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
-              {agentRoles[id].title}
-            </p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ActivityPanel({ hasLeads }: { hasLeads: boolean }) {
-  return (
-    <section className="fc-panel p-5 sm:p-6">
-      <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-700">
-          <Zap aria-hidden="true" className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="fc-label">Activity</p>
-          <h2 className="mt-1 text-xl font-bold tracking-[-0.03em] text-slate-950">
-            Recent signal
-          </h2>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-slate-900">
-          {hasLeads ? "Saved lead cards are live." : "No saved lead activity yet."}
-        </p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Detailed activity will appear once event tracking is connected. For now, this workspace only shows data FlowCrew can verify from Supabase.
-        </p>
-      </div>
-    </section>
+      <h3 className="mt-3 text-base font-bold text-[var(--fc-text)]">Nessun lead salvato</h3>
+      <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-[var(--fc-text-muted)]">
+        Crea un lead e apparira nel command center.
+      </p>
+      <Link href="/trial" className="fc-button fc-button-primary mt-4">
+        Analizza il primo lead
+      </Link>
+    </div>
   );
 }

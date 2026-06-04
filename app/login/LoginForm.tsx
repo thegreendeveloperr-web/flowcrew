@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, LoaderCircle, LockKeyhole, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowLeft, LoaderCircle, LockKeyhole } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginForm() {
@@ -41,7 +41,7 @@ export default function LoginForm() {
 
         if (signUpError) throw signUpError;
 
-        setMessage("Controlla la email per confermare l'account, poi accedi.");
+        setMessage("Controlla la mail per confermare l'account, poi accedi.");
         setMode("sign_in");
         return;
       }
@@ -67,79 +67,70 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6f8fc] text-slate-950" id="main-content" tabIndex={-1}>
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-14%] top-[-18%] h-[34rem] w-[34rem] rounded-full bg-indigo-300/24 blur-[130px]" />
-        <div className="absolute right-[-14%] top-[3%] h-[34rem] w-[34rem] rounded-full bg-cyan-200/26 blur-[130px]" />
-      </div>
+    <main className="flow-lime-glow min-h-screen overflow-hidden bg-[var(--fc-bg)] text-[var(--fc-text)]" id="main-content" tabIndex={-1}>
+      <div className="pointer-events-none fixed inset-0 flow-grid-dark opacity-55" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-4 py-10 sm:px-6">
-        <Link
-          href="/"
-          className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-black text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur-xl"
-        >
-          <ArrowLeft className="h-4 w-4" /> Home
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10 sm:px-6">
+        <Link href="/" className="fc-button mb-6 w-fit">
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          Home
         </Link>
 
-        <section className="rounded-[2.25rem] border border-slate-200 bg-white/86 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.12)] backdrop-blur-2xl sm:p-8">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-500 text-white shadow-[0_18px_40px_rgba(37,99,235,0.28)]">
-              <Sparkles className="h-5 w-5" />
+        <section className="fc-panel p-6 sm:p-7">
+          <div className="mb-7 flex items-start gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl border border-[rgba(200,245,66,0.24)] bg-[rgba(200,245,66,0.09)] text-[var(--fc-accent)]">
+              <LockKeyhole aria-hidden="true" className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">FlowCrew</p>
-              <h1 className="text-2xl font-black tracking-[-0.05em] text-slate-950">
-                {mode === "sign_in" ? "Accedi al workspace" : "Crea account"}
+              <p className="fc-label">FlowCrew private workspace</p>
+              <h1 className="mt-2 text-3xl font-bold tracking-[-0.045em] text-[var(--fc-text)]">
+                {mode === "sign_in" ? "Accedi a FlowCrew" : "Crea il tuo account"}
               </h1>
             </div>
           </div>
 
-          <p className="mb-6 text-sm leading-6 text-slate-600">
-            I tuoi lead sono privati per account. Dashboard, trial e import richiedono l&apos;accesso.
+          <p className="mb-6 text-sm leading-6 text-[var(--fc-text-muted)]">
+            Il tuo command center clienti e privato e collegato solo al tuo account.
           </p>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <label className="block text-sm font-black text-slate-700">
+            <label className="block text-sm font-semibold text-[var(--fc-text)]">
               Email
               <input
                 autoComplete="email"
+                className="fc-input mt-2"
                 name="email"
-                type="email"
-                required
-                value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                required
+                type="email"
+                value={email}
               />
             </label>
 
-            <label className="block text-sm font-black text-slate-700">
+            <label className="block text-sm font-semibold text-[var(--fc-text)]">
               Password
               <input
                 autoComplete={mode === "sign_up" ? "new-password" : "current-password"}
-                name="password"
-                type="password"
-                required
+                className="fc-input mt-2"
                 minLength={8}
-                value={password}
+                name="password"
                 onChange={(event) => setPassword(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                required
+                type="password"
+                value={password}
               />
             </label>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.25)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <button type="submit" disabled={isLoading} className="fc-button fc-button-primary w-full">
               {isLoading ? (
                 <>
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
                   Attendi...
                 </>
               ) : (
                 <>
-                  <LockKeyhole className="h-4 w-4" />
-                  {mode === "sign_in" ? "Accedi" : "Registrati"}
+                  <LockKeyhole aria-hidden="true" className="h-4 w-4" />
+                  {mode === "sign_in" ? "Accedi" : "Crea account"}
                 </>
               )}
             </button>
@@ -147,25 +138,25 @@ export default function LoginForm() {
 
           <button
             type="button"
-            className="mt-4 w-full text-center text-sm font-black text-blue-700 transition hover:text-blue-950"
+            className="mt-4 w-full text-center text-sm font-semibold text-[var(--fc-accent)] transition hover:text-[var(--fc-accent-strong)]"
             onClick={() => {
               setMode(mode === "sign_in" ? "sign_up" : "sign_in");
               setError(null);
               setMessage(null);
             }}
           >
-            {mode === "sign_in" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
+            {mode === "sign_in" ? "Non hai un account? Crealo" : "Hai gia un account? Accedi"}
           </button>
 
           {error ? (
-            <div className="mt-4 flex gap-3 rounded-3xl border border-rose-100 bg-rose-50 p-4 text-sm font-bold leading-6 text-rose-800" role="alert">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="mt-4 flex gap-3 rounded-xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-medium leading-6 text-red-100" role="alert">
+              <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
               {error}
             </div>
           ) : null}
 
           {message ? (
-            <p className="mt-4 rounded-3xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold text-emerald-800" role="status">
+            <p className="mt-4 rounded-xl border border-[rgba(139,255,197,0.22)] bg-[rgba(139,255,197,0.08)] p-4 text-sm font-medium text-[var(--fc-mint)]" role="status">
               {message}
             </p>
           ) : null}

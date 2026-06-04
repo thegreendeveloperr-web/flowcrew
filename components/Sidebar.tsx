@@ -13,30 +13,29 @@ import {
   MessageSquareText,
   Plus,
   PlugZap,
-  ShieldCheck,
   WandSparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const navGroups = [
   {
-    label: "Workspace",
+    label: "Command",
     items: [
-      { href: "/dashboard", label: "Overview", Icon: BarChart3 },
-      { href: "/leads", label: "Lead inbox", Icon: Inbox },
-      { href: "/trial", label: "New lead", Icon: WandSparkles },
+      { href: "/dashboard", label: "Oggi", Icon: BarChart3 },
+      { href: "/leads", label: "Leads", Icon: Inbox },
+      { href: "/trial", label: "Nuovo lead", Icon: WandSparkles },
     ],
   },
   {
-    label: "Operations",
+    label: "Sistema",
     items: [
       { href: "/import", label: "Import", Icon: ClipboardList },
-      { href: "/integrations", label: "Integrations", Icon: PlugZap },
-      { href: "/chat", label: "Live demo", Icon: MessageSquareText, separatePage: true },
+      { href: "/integrations", label: "Canali", Icon: PlugZap },
+      { href: "/chat", label: "Demo", Icon: MessageSquareText, separatePage: true },
     ],
   },
   {
-    label: "Site",
+    label: "Public",
     items: [{ href: "/", label: "Landing", Icon: Home }],
   },
 ];
@@ -65,40 +64,35 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sticky top-3 z-20 flex w-full flex-col rounded-[1.25rem] border border-slate-200 bg-white p-3 shadow-[0_8px_28px_rgba(15,23,42,0.06)] lg:h-[calc(100vh-2rem)] lg:w-[280px] lg:p-3.5">
-      <Link
-        href="/"
-        className="flex items-center gap-3 rounded-[0.95rem] px-2.5 py-2.5 transition hover:bg-slate-50"
-        aria-label="FlowCrew landing"
-      >
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-sm font-bold tracking-[-0.04em] text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
-          FC
-        </span>
-        <span className="min-w-0">
-          <span className="block text-base font-bold tracking-[-0.035em] text-slate-950">
-            FlowCrew
+    <aside className="relative z-20 flex w-full flex-col border-b border-white/[0.06] bg-[#0b0b0b]/92 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:w-[260px] lg:shrink-0 lg:border-b-0 lg:border-r">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 lg:block lg:px-4 lg:py-5">
+        <Link href="/" className="flex min-w-0 items-center gap-3" aria-label="FlowCrew landing">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--fc-accent)] text-sm font-extrabold tracking-[-0.04em] text-[#080808]">
+            F
           </span>
-          <span className="block truncate text-xs font-medium text-slate-500">
-            Client operations workspace
+          <span className="min-w-0">
+            <span className="block text-base font-bold tracking-[-0.03em] text-[var(--fc-text)]">
+              FlowCrew
+            </span>
+            <span className="flow-mono block truncate text-[0.65rem] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+              AI command center
+            </span>
           </span>
-        </span>
-      </Link>
+        </Link>
 
-      <Link
-        href="/trial"
-        className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-3.5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] transition hover:bg-slate-800"
-      >
-        <Plus aria-hidden="true" className="h-4 w-4" />
-        Capture lead
-      </Link>
+        <Link href="/trial" className="fc-button fc-button-primary lg:mt-5 lg:w-full">
+          <Plus aria-hidden="true" className="h-4 w-4" />
+          Prova gratis
+        </Link>
+      </div>
 
-      <nav className="mt-4 space-y-4">
+      <nav className="flex gap-2 overflow-x-auto border-t border-white/[0.04] px-3 py-2 lg:flex-1 lg:flex-col lg:gap-6 lg:overflow-visible lg:border-t-0 lg:px-3 lg:py-2">
         {navGroups.map((group) => (
-          <div key={group.label}>
-            <p className="px-2.5 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <div className="min-w-max lg:min-w-0" key={group.label}>
+            <p className="flow-mono hidden px-2 text-[0.64rem] uppercase tracking-[0.16em] text-[var(--fc-text-soft)] lg:block">
               {group.label}
             </p>
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5 lg:grid-cols-1">
+            <div className="flex gap-1.5 lg:mt-2 lg:flex-col">
               {group.items.map((item) => {
                 const isActive =
                   item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -108,16 +102,16 @@ export default function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-2.5 py-2.5 text-sm font-semibold transition lg:justify-start ${
+                    className={`flex min-h-9 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                       isActive
-                        ? "bg-blue-50 text-blue-700 ring-1 ring-blue-100"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                        ? "border-[rgba(200,245,66,0.24)] bg-[rgba(200,245,66,0.09)] text-[var(--fc-accent)]"
+                        : "border-transparent text-[var(--fc-text-muted)] hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-[var(--fc-text)]"
                     }`}
                   >
                     <Icon aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
                     <span className="truncate">{item.label}</span>
                     {item.separatePage ? (
-                      <ExternalLink aria-hidden="true" className="h-3.5 w-3.5 text-slate-400" />
+                      <ExternalLink aria-hidden="true" className="ml-auto hidden h-3.5 w-3.5 opacity-55 lg:block" />
                     ) : null}
                   </Link>
                 );
@@ -127,29 +121,32 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 lg:mt-auto">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <ShieldCheck aria-hidden="true" className="h-4 w-4 text-emerald-600" />
-          Approval-first replies
+      <div className="border-t border-white/[0.06] px-4 py-3 lg:mt-auto">
+        <div className="mb-3 rounded-2xl border border-white/[0.06] bg-white/[0.035] p-3">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[var(--fc-accent)] shadow-[0_0_18px_rgba(200,245,66,0.45)]" />
+            <p className="flow-mono text-[0.65rem] uppercase tracking-[0.12em] text-[var(--fc-text-muted)]">
+              Tutti gli agenti operativi
+            </p>
+          </div>
         </div>
+
         {userEmail ? (
-          <>
-            <p className="mt-3 truncate text-xs font-medium text-slate-500">{userEmail}</p>
-            <button
-              type="button"
-              onClick={signOut}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
+          <div className="flex items-center justify-between gap-3 lg:block">
+            <div className="min-w-0">
+              <p className="flow-mono text-[0.64rem] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+                Account
+              </p>
+              <p className="mt-1 truncate text-xs font-medium text-[var(--fc-text-muted)]">{userEmail}</p>
+            </div>
+            <button type="button" onClick={signOut} className="fc-button shrink-0 lg:mt-3 lg:w-full">
+              <LogOut aria-hidden="true" className="h-4 w-4" />
+              Esci
             </button>
-          </>
+          </div>
         ) : (
-          <Link
-            href="/login"
-            className="mt-3 flex w-full items-center justify-center rounded-xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50"
-          >
-            Sign in
+          <Link href="/login" className="fc-button w-full">
+            Accedi
           </Link>
         )}
       </div>
