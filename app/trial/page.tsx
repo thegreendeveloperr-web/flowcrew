@@ -30,9 +30,28 @@ const loadingSteps = [
   "Dex sta assegnando tag e contesto",
 ];
 
+type UsageResponse = {
+  plan: "free" | "pro" | "team";
+  used: number;
+  limit: number;
+  remaining: number;
+  label: string;
+};
+
 type IngestResponse = {
   analysis: ConversationAnalysis;
   lead: StoredLead;
+  usage?: UsageResponse;
+};
+
+type ErrorPayload = {
+  error?: string;
+  code?: string;
+  plan?: UsageResponse["plan"];
+  used?: number;
+  limit?: number;
+  remaining?: number;
+  label?: string;
 };
 
 const sourceOptions: Array<{ value: ConversationSource; label: string }> = [
@@ -51,6 +70,8 @@ export default function TrialPage() {
   const [goal, setGoal] = useState("Riassunto, priorita, task, tag e risposta pronta.");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<IngestResponse | null>(null);
+  const [usage, setUsage] = useState<UsageResponse | null>(null);
+  const [isUsageLoading, setIsUsageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedReply, setCopiedReply] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +88,30 @@ export default function TrialPage() {
     }
   }, []);
 
+  useEffect(() => {
+    async function loadUsage() {
+      try {
+        const response = await fetch("/api/usage", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as UsageResponse;
+        setUsage(payload);
+      } catch {
+        // Usage info is helpful, but the trial page can still render without it.
+      } finally {
+        setIsUsageLoading(false);
+      }
+    }
+
+    void loadUsage();
+  }, []);
+
   const generated = Boolean(result);
+  const hasReachedLimit = Boolean(usage && usage.remaining <= 0);
   const analysis = result?.analysis;
   const lead = result?.lead;
 
@@ -130,6 +174,11 @@ export default function TrialPage() {
       return;
     }
 
+    if (hasReachedLimit) {
+      setError("Hai finito il lead gratuito. Sblocca Pro per analizzare altri lead.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setCopiedReply(false);
@@ -148,21 +197,41 @@ export default function TrialPage() {
         }),
       });
 
-      const payload = (await response.json()) as IngestResponse | { error?: string };
+      const payload = (await response.json()) as IngestResponse | ErrorPayload;
 
       if (!response.ok) {
+        const errorPayload = payload as ErrorPayload;
+
+        if (
+          typeof errorPayload.used === "number" &&
+          typeof errorPayload.limit === "number" &&
+          errorPayload.plan
+        ) {
+          setUsage({
+            plan: errorPayload.plan,
+            used: errorPayload.used,
+            limit: errorPayload.limit,
+            remaining: Math.max(errorPayload.limit - errorPayload.used, 0),
+            label: errorPayload.label ?? getPlanLabel(errorPayload.plan),
+          });
+        }
+
         if (response.status === 401) {
           throw new Error("Accedi per salvare un lead nel tuo workspace.");
         }
 
         throw new Error(
-          "error" in payload && payload.error
-            ? payload.error
-            : "Non siamo riusciti ad analizzare il messaggio. Riprova tra poco.",
+          errorPayload.error ??
+            "Non siamo riusciti ad analizzare il messaggio. Riprova tra poco.",
         );
       }
 
-      setResult(payload as IngestResponse);
+      const ingestPayload = payload as IngestResponse;
+      setResult(ingestPayload);
+
+      if (ingestPayload.usage) {
+        setUsage(ingestPayload.usage);
+      }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Errore sconosciuto.");
     } finally {
@@ -207,7 +276,11 @@ export default function TrialPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="flow-mono inline-flex items-center gap-2 rounded-full border border-[rgba(139,255,197,0.18)] bg-[rgba(139,255,197,0.07)] px-4 py-2 text-xs text-[var(--fc-mint)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--fc-mint)]" />
-                  1 lead gratuito
+                  {isUsageLoading
+                    ? "Controllo piano"
+                    : usage
+                      ? `${usage.label} · ${usage.remaining} rimasti`
+                      : "1 lead gratuito"}
                 </div>
 
                 <Link href="/" className="fc-button">
@@ -354,7 +427,11 @@ export default function TrialPage() {
                     </p>
                   </div>
 
-                  <button type="submit" disabled={isLoading || !message.trim()} className="fc-button fc-button-primary w-full py-4 text-base">
+                  <button
+                    type="submit"
+                    disabled={isLoading || isUsageLoading || !message.trim() || hasReachedLimit}
+                    className="fc-button fc-button-primary w-full py-4 text-base"
+                  >
                     {isLoading ? (
                       <>
                         <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />
@@ -362,7 +439,11 @@ export default function TrialPage() {
                       </>
                     ) : (
                       <>
-                        Analizza questo lead
+                        {isUsageLoading
+                          ? "Controllo piano..."
+                          : hasReachedLimit
+                            ? "Lead gratuito già usato"
+                            : "Analizza questo lead"}
                         <ArrowRight aria-hidden="true" className="h-5 w-5" />
                       </>
                     )}
@@ -511,6 +592,12 @@ export default function TrialPage() {
                 </div>
               </section>
 
+              <UsageCard
+                hasReachedLimit={hasReachedLimit}
+                isUsageLoading={isUsageLoading}
+                usage={usage}
+              />
+
               <section className="rounded-[2rem] border border-white/[0.06] bg-[rgba(14,14,14,0.76)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
                 <div className="mb-4 flex items-center gap-2">
                   <span className="grid h-9 w-9 place-items-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-[var(--fc-accent)]">
@@ -588,6 +675,72 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function UsageCard({
+  usage,
+  isUsageLoading,
+  hasReachedLimit,
+}: {
+  usage: UsageResponse | null;
+  isUsageLoading: boolean;
+  hasReachedLimit: boolean;
+}) {
+  const progress = usage ? Math.min((usage.used / Math.max(usage.limit, 1)) * 100, 100) : 0;
+
+  return (
+    <section className="rounded-[2rem] border border-white/[0.06] bg-[rgba(14,14,14,0.76)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="fc-label">Piano attuale</p>
+          <h3 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
+            {isUsageLoading ? "Caricamento..." : usage?.label ?? "Free"}
+          </h3>
+        </div>
+
+        <span
+          className={`flow-mono rounded-full px-3 py-1 text-xs ${
+            hasReachedLimit
+              ? "border border-red-400/20 bg-red-400/10 text-red-100"
+              : "border border-[rgba(139,255,197,0.18)] bg-[rgba(139,255,197,0.07)] text-[var(--fc-mint)]"
+          }`}
+        >
+          {hasReachedLimit ? "Limit reached" : "Active"}
+        </span>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <span className="text-[var(--fc-text-muted)]">Lead usati</span>
+          <span className="flow-mono font-bold text-[var(--fc-text)]">
+            {usage ? `${usage.used}/${usage.limit}` : "—"}
+          </span>
+        </div>
+
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <div
+            className="h-full rounded-full bg-[var(--fc-accent)] transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <p className="mt-3 text-xs leading-5 text-[var(--fc-text-muted)]">
+          {usage
+            ? usage.remaining > 0
+              ? `Ti restano ${usage.remaining} analisi nel piano ${usage.label}.`
+              : "Hai finito il lead gratuito. Sblocca Pro per analizzare altri lead."
+            : "Utilizzo non disponibile."}
+        </p>
+      </div>
+
+      {hasReachedLimit ? (
+        <Link href="/#prezzi" className="fc-button fc-button-primary mt-4 w-full">
+          Sblocca Pro
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
+      ) : null}
+    </section>
+  );
+}
+
 function AgentOutputCard({
   icon,
   agent,
@@ -653,4 +806,10 @@ function SignalCard({ label, value }: { label: string; value: string }) {
       </p>
     </div>
   );
+}
+
+function getPlanLabel(plan: UsageResponse["plan"]) {
+  if (plan === "pro") return "Pro";
+  if (plan === "team") return "Team";
+  return "Free";
 }
