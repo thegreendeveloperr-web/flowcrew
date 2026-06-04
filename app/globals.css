@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f9fc;
-  --foreground: #07111f;
+  --background: #f6f7f9;
+  --foreground: #0f172a;
+  --fc-bg: #f6f7f9;
+  --fc-surface: #ffffff;
+  --fc-surface-muted: #f8fafc;
+  --fc-surface-subtle: #f1f5f9;
+  --fc-border: #e2e8f0;
+  --fc-border-strong: #cbd5e1;
+  --fc-text: #0f172a;
+  --fc-text-muted: #64748b;
+  --fc-text-soft: #94a3b8;
+  --fc-accent: #2563eb;
+  --fc-accent-strong: #1d4ed8;
+  --fc-accent-soft: #eff6ff;
+  --fc-success: #059669;
+  --fc-warning: #d97706;
+  --fc-danger: #dc2626;
+  --fc-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --fc-shadow-subtle: 0 8px 24px rgba(15, 23, 42, 0.06);
   --glass: rgba(17, 20, 39, 0.72);
   --glass-strong: rgba(18, 22, 45, 0.92);
   --line: rgba(148, 163, 184, 0.16);
@@ -17,8 +34,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-flow-sans);
-  --font-mono: var(--font-flow-mono);
+  --font-sans: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 html {
@@ -29,7 +46,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-flow-sans), Arial, Helvetica, sans-serif;
-  font-weight: 500;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 button,
@@ -46,8 +64,8 @@ select:focus-visible,
 textarea:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:not([tabindex="-1"]):focus-visible {
-  outline: 3px solid #2563eb !important;
-  outline-offset: 3px;
+  outline: 2px solid var(--fc-accent) !important;
+  outline-offset: 2px;
 }
 
 .skip-link {
@@ -71,8 +89,99 @@ textarea:focus-visible,
 }
 
 ::selection {
-  background: rgba(37, 99, 235, 0.18);
-  color: #07111f;
+  background: rgba(37, 99, 235, 0.16);
+  color: var(--fc-text);
+}
+
+.fc-panel {
+  border: 1px solid var(--fc-border);
+  border-radius: 1.25rem;
+  background: var(--fc-surface);
+  box-shadow: var(--fc-shadow-subtle);
+}
+
+.fc-card {
+  border: 1px solid var(--fc-border);
+  border-radius: 1rem;
+  background: var(--fc-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.fc-muted-card {
+  border: 1px solid var(--fc-border);
+  border-radius: 1rem;
+  background: var(--fc-surface-muted);
+}
+
+.fc-label {
+  color: var(--fc-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--fc-border);
+  background: var(--fc-surface);
+  color: var(--fc-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 2.5rem;
+  padding: 0.75rem 1rem;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.fc-button:hover {
+  border-color: var(--fc-border-strong);
+  background: var(--fc-surface-muted);
+}
+
+.fc-button-primary {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.fc-button-primary:hover {
+  border-color: #1e293b;
+  background: #1e293b;
+}
+
+.fc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--fc-border);
+  background: var(--fc-surface-muted);
+  color: var(--fc-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.4rem 0.65rem;
+}
+
+.fc-pill-plain {
+  background: #ffffff;
+  color: var(--fc-text-muted);
+}
+
+.fc-pill-success {
+  border-color: #bbf7d0;
+  background: #ecfdf5;
+  color: #047857;
 }
 
 .flow-bg {

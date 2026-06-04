@@ -21,7 +21,7 @@ const agentConfig: Record<
 > = {
   jackie: {
     name: "Jackie",
-    bg: "from-indigo-100 via-blue-50 to-white",
+    bg: "from-blue-50 via-white to-slate-50",
     hair: "#4f46e5",
     skin: "#f3c6a5",
     accent: "#5b5ff8",
@@ -29,7 +29,7 @@ const agentConfig: Record<
   },
   milo: {
     name: "Milo",
-    bg: "from-cyan-100 via-blue-50 to-white",
+    bg: "from-cyan-50 via-white to-slate-50",
     hair: "#1e293b",
     skin: "#f0c7a8",
     accent: "#06b6d4",
@@ -37,7 +37,7 @@ const agentConfig: Record<
   },
   nora: {
     name: "Nora",
-    bg: "from-rose-100 via-pink-50 to-white",
+    bg: "from-rose-50 via-white to-slate-50",
     hair: "#db2777",
     skin: "#f2c3a5",
     accent: "#f43f5e",
@@ -45,7 +45,7 @@ const agentConfig: Record<
   },
   dex: {
     name: "Dex",
-    bg: "from-emerald-100 via-teal-50 to-white",
+    bg: "from-emerald-50 via-white to-slate-50",
     hair: "#3f3028",
     skin: "#d7a77e",
     accent: "#10b981",
@@ -54,10 +54,10 @@ const agentConfig: Record<
 };
 
 const sizeClasses = {
-  sm: "h-10 w-10 rounded-2xl",
-  md: "h-14 w-14 rounded-[1.35rem]",
-  lg: "h-20 w-20 rounded-[1.85rem]",
-  xl: "h-28 w-28 rounded-[2.25rem]",
+  sm: "h-10 w-10 rounded-xl",
+  md: "h-14 w-14 rounded-2xl",
+  lg: "h-20 w-20 rounded-[1.35rem]",
+  xl: "h-28 w-28 rounded-[1.65rem]",
 };
 
 export default function AgentAvatar({
@@ -73,10 +73,10 @@ export default function AgentAvatar({
     <div
       aria-hidden={decorative ? true : undefined}
       aria-label={decorative ? undefined : label ?? `${config.name} AI portrait`}
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-white bg-gradient-to-br ${config.bg} shadow-[0_18px_45px_rgba(15,23,42,0.12)] ${sizeClasses[size]} ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden border border-slate-200 bg-gradient-to-br ${config.bg} shadow-[0_10px_24px_rgba(15,23,42,0.08)] ${sizeClasses[size]} ${className}`}
       role={decorative ? undefined : "img"}
     >
-      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(255,255,255,0.9),transparent_34%),radial-gradient(circle_at_76%_82%,rgba(37,99,235,0.12),transparent_34%)]" />
+      <span className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(255,255,255,0.85),transparent_34%)]" />
       <svg
         className="relative h-[78%] w-[78%] overflow-visible"
         viewBox="0 0 120 120"
@@ -130,7 +130,7 @@ export default function AgentAvatar({
         ) : null}
       </svg>
       <span
-        className="absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-white"
+        className="absolute bottom-2 right-2 h-2.5 w-2.5 rounded-full border-2 border-white"
         style={{ backgroundColor: config.accent }}
       />
     </div>
