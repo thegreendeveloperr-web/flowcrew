@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   ClipboardList,
   Copy,
+  Crown,
   Database,
   Home,
+  LayoutDashboard,
   LoaderCircle,
   MessageSquareText,
   Sparkles,
@@ -114,6 +116,8 @@ export default function TrialPage() {
 
   const generated = Boolean(result);
   const hasReachedLimit = Boolean(usage && usage.remaining <= 0);
+  const isWorkspacePlan = Boolean(usage && isPaidWorkspacePlan(usage.plan));
+  const workspaceLabel = usage ? getWorkspacePlanLabel(usage.plan) : "Pro";
   const analysis = result?.analysis;
   const lead = result?.lead;
 
@@ -177,7 +181,7 @@ export default function TrialPage() {
     }
 
     if (hasReachedLimit) {
-      setError("Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead.");
+      setError(getLimitErrorMessage(usage));
       return;
     }
 
@@ -268,10 +272,21 @@ export default function TrialPage() {
                 </div>
 
                 <div>
-                  <p className="fc-label text-[var(--fc-accent)]">FlowCrew free trial</p>
-                  <h1 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-                    Analizza un lead gratis
-                  </h1>
+                  <p className="fc-label text-[var(--fc-accent)]">
+                    {isWorkspacePlan ? `FlowCrew ${workspaceLabel} workspace` : "FlowCrew free trial"}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <h1 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
+                      {isWorkspacePlan ? "Analizza messaggi cliente" : "Analizza un lead gratis"}
+                    </h1>
+
+                    {isWorkspacePlan ? (
+                      <span className="flow-mono inline-flex items-center gap-1.5 rounded-full border border-[rgba(139,255,197,0.24)] bg-[rgba(139,255,197,0.08)] px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-[var(--fc-mint)]">
+                        <Crown aria-hidden="true" className="h-3 w-3" />
+                        {workspaceLabel}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
 
@@ -281,7 +296,9 @@ export default function TrialPage() {
                   {isUsageLoading
                     ? "Controllo piano"
                     : usage
-                      ? `${usage.label} · ${usage.remaining} rimasti`
+                      ? isWorkspacePlan
+                        ? `${workspaceLabel} attivo - ${usage.used}/${usage.limit} lead`
+                        : `${usage.label} - ${usage.remaining} rimasti`
                       : "1 lead gratuito"}
                 </div>
 
@@ -290,8 +307,13 @@ export default function TrialPage() {
                   Home
                 </Link>
 
-                <Link href="/leads" className="fc-button">
+                <Link href="/dashboard" className="fc-button">
+                  <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
                   Dashboard
+                </Link>
+
+                <Link href="/leads" className="fc-button">
+                  Leads
                   <ArrowRight aria-hidden="true" className="h-4 w-4" />
                 </Link>
               </div>
@@ -305,23 +327,37 @@ export default function TrialPage() {
                   <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--fc-accent)] shadow-[0_0_18px_rgba(200,245,66,0.8)]" />
                     <span className="flow-mono text-xs uppercase tracking-[0.16em] text-[var(--fc-accent)]">
-                      Messaggio sporco → output operativo
+                      {isWorkspacePlan ? `${workspaceLabel} workspace -> output operativo` : "Messaggio sporco -> output operativo"}
                     </span>
                   </div>
 
                   <h2 className="text-5xl font-extrabold leading-[0.95] tracking-[-0.065em] text-[var(--fc-text)] sm:text-6xl lg:text-7xl">
-                    Trasforma un messaggio
-                    <br />
-                    in un <span className="flow-serif font-normal italic text-[var(--fc-accent)]">piano d’azione.</span>
+                    {isWorkspacePlan ? (
+                      <>
+                        Analizza messaggi cliente
+                        <br />
+                        nel tuo <span className="flow-serif font-normal italic text-[var(--fc-accent)]">workspace {workspaceLabel}.</span>
+                      </>
+                    ) : (
+                      <>
+                        Trasforma un messaggio
+                        <br />
+                        in un <span className="flow-serif font-normal italic text-[var(--fc-accent)]">piano d’azione.</span>
+                      </>
+                    )}
                   </h2>
 
                   <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--fc-text-muted)] sm:text-lg">
-                    Incolla una richiesta confusa di un cliente. FlowCrew ti restituisce summary, task, priorità,
-                    tag e una risposta pronta da copiare.
+                    {isWorkspacePlan
+                      ? "Incolla una richiesta cliente. FlowCrew analizza il messaggio, salva il lead nel workspace e prepara summary, task, priorita, tag e risposta pronta."
+                      : "Incolla una richiesta confusa di un cliente. FlowCrew ti restituisce summary, task, priorità, tag e una risposta pronta da copiare."}
                   </p>
 
                   <div className="mt-6 flex flex-wrap gap-2">
-                    {["Summary", "Task", "Priorità", "Risposta", "Tags"].map((item) => (
+                    {(isWorkspacePlan
+                      ? ["Summary", "Task", "Workspace", "Risposta", "Tags"]
+                      : ["Summary", "Task", "Priorità", "Risposta", "Tags"]
+                    ).map((item) => (
                       <span className="fc-pill fc-pill-success" key={item}>
                         {item}
                       </span>
@@ -444,8 +480,10 @@ export default function TrialPage() {
                         {isUsageLoading
                           ? "Controllo piano..."
                           : hasReachedLimit
-                            ? "Lead gratuito già usato"
-                            : "Analizza questo lead"}
+                            ? getLimitButtonLabel(usage)
+                            : isWorkspacePlan
+                              ? "Analizza e salva nel workspace"
+                              : "Analizza questo lead"}
                         <ArrowRight aria-hidden="true" className="h-5 w-5" />
                       </>
                     )}
@@ -484,7 +522,9 @@ export default function TrialPage() {
                       </div>
 
                       <p className="mt-2 text-xs font-medium leading-5 text-[var(--fc-text-muted)]">
-                        Questo è il tipo di output che puoi ottenere per ogni cliente con FlowCrew.
+                        {isWorkspacePlan
+                          ? `Lead aggiunto allo storico ${workspaceLabel}. Puoi ritrovarlo in dashboard e inbox.`
+                          : "Questo è il tipo di output che puoi ottenere per ogni cliente con FlowCrew."}
                       </p>
                     </div>
                   ) : null}
@@ -624,34 +664,57 @@ export default function TrialPage() {
 
               {generated ? (
                 <section className="rounded-[2rem] border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-5 shadow-2xl shadow-black/20 sm:p-6">
-                  <p className="fc-label text-[var(--fc-accent)]">Next step</p>
+                  <p className="fc-label text-[var(--fc-accent)]">
+                    {isWorkspacePlan ? `${workspaceLabel} workflow` : "Next step"}
+                  </p>
 
                   <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
-                    Vuoi analizzare altri lead e salvare lo storico?
+                    {isWorkspacePlan
+                      ? "Lead salvato. Continua dal workspace."
+                      : "Vuoi analizzare altri lead e salvare lo storico?"}
                   </h3>
 
                   <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">
-                    Con FlowCrew Pro puoi gestire più richieste, mantenere una dashboard clienti, personalizzare il tono delle risposte
-                    e usare modelli AI migliori.
+                    {isWorkspacePlan
+                      ? "Apri la dashboard per vedere priorita e follow-up, oppure entra nell'inbox per lavorare sul dettaglio del lead."
+                      : "Con FlowCrew Pro puoi gestire più richieste, mantenere una dashboard clienti, personalizzare il tono delle risposte e usare modelli AI migliori."}
                   </p>
 
                   <div className="mt-5 grid gap-2">
-                    <a href={manualProHref} className="fc-button fc-button-primary">
-                      Richiedi accesso Pro
-                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
-                    </a>
+                    {isWorkspacePlan ? (
+                      <>
+                        <Link href="/dashboard" className="fc-button fc-button-primary">
+                          Apri dashboard
+                          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                        </Link>
 
-                    <Link href="/leads" className="fc-button">
-                      Vai alla dashboard
-                    </Link>
+                        <Link href="/leads" className="fc-button">
+                          Vai ai lead
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <a href={manualProHref} className="fc-button fc-button-primary">
+                          Richiedi accesso Pro
+                          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                        </a>
+
+                        <Link href="/dashboard" className="fc-button">
+                          Vai alla dashboard
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </section>
               ) : (
                 <section className="rounded-[2rem] border border-white/[0.06] bg-white/[0.025] p-5 shadow-2xl shadow-black/20 sm:p-6">
-                  <p className="fc-label">Cosa ottieni</p>
+                  <p className="fc-label">{isWorkspacePlan ? "Nel workspace" : "Cosa ottieni"}</p>
 
                   <div className="mt-4 space-y-3">
-                    {["Riassunto chiaro della richiesta", "Task e prossima azione", "Risposta pronta da copiare", "Tag e priorità del lead"].map((item) => (
+                    {(isWorkspacePlan
+                      ? ["Lead salvati nello storico", "Dashboard con priorita e follow-up", "Risposta pronta da copiare", "Tag e prossima azione"]
+                      : ["Riassunto chiaro della richiesta", "Task e prossima azione", "Risposta pronta da copiare", "Tag e priorità del lead"]
+                    ).map((item) => (
                       <div className="flex gap-2 text-sm text-[var(--fc-text-muted)]" key={item}>
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fc-accent)]" />
                         {item}
@@ -687,6 +750,8 @@ function UsageCard({
   hasReachedLimit: boolean;
 }) {
   const progress = usage ? Math.min((usage.used / Math.max(usage.limit, 1)) * 100, 100) : 0;
+  const isWorkspace = Boolean(usage && isPaidWorkspacePlan(usage.plan));
+  const workspaceLabel = usage ? getWorkspacePlanLabel(usage.plan) : "Pro";
 
   return (
     <section className="rounded-[2rem] border border-white/[0.06] bg-[rgba(14,14,14,0.76)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
@@ -694,7 +759,11 @@ function UsageCard({
         <div>
           <p className="fc-label">Piano attuale</p>
           <h3 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-            {isUsageLoading ? "Caricamento..." : usage?.label ?? "Free"}
+            {isUsageLoading
+              ? "Caricamento..."
+              : isWorkspace
+                ? `${workspaceLabel} plan active`
+                : usage?.label ?? "Free"}
           </h3>
         </div>
 
@@ -705,7 +774,7 @@ function UsageCard({
               : "border border-[rgba(139,255,197,0.18)] bg-[rgba(139,255,197,0.07)] text-[var(--fc-mint)]"
           }`}
         >
-          {hasReachedLimit ? "Limit reached" : "Active"}
+          {hasReachedLimit ? (isWorkspace ? "Capacity full" : "Limit reached") : isWorkspace ? `${workspaceLabel} active` : "Active"}
         </span>
       </div>
 
@@ -713,7 +782,7 @@ function UsageCard({
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="text-[var(--fc-text-muted)]">Lead usati</span>
           <span className="flow-mono font-bold text-[var(--fc-text)]">
-            {usage ? `${usage.used}/${usage.limit}` : "—"}
+            {usage ? `${usage.used} / ${usage.limit} leads used` : "-"}
           </span>
         </div>
 
@@ -726,14 +795,16 @@ function UsageCard({
 
         <p className="mt-3 text-xs leading-5 text-[var(--fc-text-muted)]">
           {usage
-            ? usage.remaining > 0
-              ? `Ti restano ${usage.remaining} analisi nel piano ${usage.label}.`
-              : "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead."
+            ? isWorkspace
+              ? `${usage.remaining} remaining this period.`
+              : usage.remaining > 0
+                ? `Ti restano ${usage.remaining} analisi nel piano ${usage.label}.`
+                : "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead."
             : "Utilizzo non disponibile."}
         </p>
       </div>
 
-      {hasReachedLimit ? (
+      {hasReachedLimit && !isWorkspace ? (
         <a href={manualProHref} className="fc-button fc-button-primary mt-4 w-full">
           Richiedi accesso Pro
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
@@ -814,4 +885,28 @@ function getPlanLabel(plan: UsageResponse["plan"]) {
   if (plan === "pro") return "Pro";
   if (plan === "team") return "Team";
   return "Free";
+}
+
+function isPaidWorkspacePlan(plan: UsageResponse["plan"]) {
+  return plan === "pro" || plan === "team";
+}
+
+function getWorkspacePlanLabel(plan: UsageResponse["plan"]) {
+  if (plan === "team") return "Team";
+  if (plan === "pro") return "Pro";
+  return "Free";
+}
+
+function getLimitErrorMessage(usage: UsageResponse | null) {
+  if (usage && isPaidWorkspacePlan(usage.plan)) {
+    return "La capacita del periodo e esaurita. Le nuove analisi ripartono quando il piano viene aggiornato.";
+  }
+
+  return "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead.";
+}
+
+function getLimitButtonLabel(usage: UsageResponse | null) {
+  if (usage && isPaidWorkspacePlan(usage.plan)) return "Capacita del periodo esaurita";
+
+  return "Lead gratuito gia usato";
 }

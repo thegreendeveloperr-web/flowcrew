@@ -9,6 +9,7 @@ import {
   Plus,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import { DashboardPlanStatusCard } from "@/components/UsageWorkspaceStatus";
 import { agentOrder, agentRoles } from "@/lib/agent-roles";
 import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
@@ -104,7 +105,10 @@ export default async function DashboardPage() {
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
           <PriorityQueue leads={priorityLeads} totalCount={leads.length} />
-          <CrewActivity hasLeads={hasLeads} />
+          <div className="space-y-4">
+            <DashboardPlanStatusCard />
+            <CrewActivity hasLeads={hasLeads} />
+          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(320px,0.55fr)]">

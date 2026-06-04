@@ -8,12 +8,12 @@ import {
   MessageSquareText,
   Plus,
   Search,
-  Sparkles,
   Tags,
   Timer,
   Zap,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import { LeadsProStatusLine } from "@/components/UsageWorkspaceStatus";
 import { agentRoles } from "@/lib/agent-roles";
 import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
@@ -134,6 +134,8 @@ export default async function LeadsPage({
                 <p className="mt-4 max-w-2xl text-sm leading-6 text-[var(--fc-text-muted)]">
                   Tutte le richieste cliente analizzate da FlowCrew: priorità, prossimo passo, risposta pronta e tag operativi.
                 </p>
+
+                <LeadsProStatusLine />
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
