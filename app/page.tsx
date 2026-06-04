@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -23,23 +24,31 @@ const keywords = [
 const steps = [
   {
     number: "01",
-    title: "Inserisci qualsiasi messaggio",
-    body: "Copia una conversazione WhatsApp, una mail caotica o una richiesta cliente scritta male. FlowCrew parte dal casino reale, non da input perfetti.",
+    title: "Incolla il caos",
+    agent: "Input sporco",
+    body: "Prendi una chat WhatsApp, una mail, un DM o una richiesta scritta male. Non devi sistemarla prima: FlowCrew parte dal messaggio reale.",
+    output: "Messaggio cliente acquisito",
   },
   {
     number: "02",
-    title: "La crew AI lavora",
-    body: "Jackie, Milo, Nora e Dex analizzano il contenuto insieme: riassunto, task, risposta, priorità e categorie.",
+    title: "Jackie capisce il contesto",
+    agent: "Jackie · Summary",
+    body: "Jackie legge tutto, elimina il rumore e trasforma la conversazione in un riassunto chiaro: cosa vuole il cliente, cosa manca e cosa conta davvero.",
+    output: "Richiesta chiara",
   },
   {
     number: "03",
-    title: "Ricevi output strutturati",
-    body: "Capisci cosa vuole il cliente, cosa è urgente, cosa devi fare e cosa puoi rispondere subito.",
+    title: "La crew divide il lavoro",
+    agent: "Milo · Nora · Dex",
+    body: "Milo trova task e priorità, Nora prepara una risposta pronta, Dex assegna tag e categorie. Ogni agente fa una cosa precisa.",
+    output: "Task, risposta e tag",
   },
   {
     number: "04",
-    title: "Agisci prima di perdere il lead",
-    body: "Meno messaggi dimenticati, meno follow-up persi, meno clienti lasciati nel caos.",
+    title: "Tu agisci subito",
+    agent: "Output operativo",
+    body: "Non rileggi mille messaggi e non rimandi. Hai già prossima azione, urgenza, contesto e risposta da approvare.",
+    output: "Lead pronto da gestire",
   },
 ];
 
@@ -106,7 +115,14 @@ const plans = [
     name: "Pro",
     price: "€19/mese",
     body: "Per freelance che vogliono usare FlowCrew ogni giorno.",
-    features: ["Analisi giornaliere", "Modelli AI migliori", "Dashboard clienti", "Tone of voice personalizzato", "Storico richieste", "Supporto prioritario"],
+    features: [
+      "Analisi giornaliere",
+      "Modelli AI migliori",
+      "Dashboard clienti",
+      "Tone of voice personalizzato",
+      "Storico richieste",
+      "Supporto prioritario",
+    ],
     cta: "Inizia con Pro",
     href: "/trial",
     featured: true,
@@ -123,13 +139,19 @@ const plans = [
 
 export default function Home() {
   return (
-    <main className="flow-lime-glow min-h-screen overflow-hidden bg-[var(--fc-bg)] text-[var(--fc-text)]" id="main-content" tabIndex={-1}>
+    <main
+      className="flow-lime-glow min-h-screen overflow-hidden bg-[var(--fc-bg)] text-[var(--fc-text)]"
+      id="main-content"
+      tabIndex={-1}
+    >
       <div className="pointer-events-none fixed inset-0 flow-grid-dark opacity-70" />
 
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.06] bg-[#080808]/78 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link className="flex items-center gap-3" href="/">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--fc-accent)] text-sm font-extrabold text-[#080808]">F</span>
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--fc-accent)] text-sm font-extrabold text-[#080808]">
+              F
+            </span>
             <span className="text-lg font-bold tracking-[-0.03em]">FlowCrew</span>
           </Link>
 
@@ -140,7 +162,11 @@ export default function Home() {
               ["Demo", "#demo"],
               ["Prezzi", "#prezzi"],
             ].map(([label, href]) => (
-              <a className="text-sm font-medium text-[var(--fc-text-muted)] transition hover:text-[var(--fc-text)]" href={href} key={label}>
+              <a
+                className="text-sm font-medium text-[var(--fc-text-muted)] transition hover:text-[var(--fc-text)]"
+                href={href}
+                key={label}
+              >
                 {label}
               </a>
             ))}
@@ -174,6 +200,7 @@ export default function Home() {
             Prova un lead gratis
             <ArrowRight aria-hidden="true" className="h-5 w-5" />
           </Link>
+
           <a className="fc-button px-6 py-4 text-base" href="#demo">
             Guarda la demo
           </a>
@@ -194,33 +221,117 @@ export default function Home() {
         </div>
       </section>
 
-      <Section id="come-funziona" kicker="Come funziona" title={<>Incolla il caos.<br /><em className="flow-serif font-normal text-[var(--fc-accent)]">Ottieni chiarezza.</em></>}>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {steps.map((step) => (
-            <article className="fc-card p-6" key={step.number}>
-              <p className="flow-mono text-xs text-[var(--fc-accent)]">{step.number}</p>
-              <h3 className="mt-8 text-2xl font-bold tracking-[-0.045em]">{step.title}</h3>
-              <p className="mt-4 text-sm leading-7 text-[var(--fc-text-muted)]">{step.body}</p>
-            </article>
-          ))}
+      <Section
+        id="come-funziona"
+        kicker="Come funziona"
+        title={
+          <>
+            Dal messaggio sporco
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">all’azione chiara.</em>
+          </>
+        }
+      >
+        <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="fc-panel relative overflow-hidden p-5 sm:p-6">
+            <div className="pointer-events-none absolute right-[-5rem] top-[-5rem] h-56 w-56 rounded-full bg-[rgba(200,245,66,0.11)] blur-[80px]" />
+
+            <p className="fc-label">Prima</p>
+
+            <div className="relative mt-5 rounded-3xl border border-white/[0.06] bg-[#0e0e0e] p-5">
+              <p className="flow-mono mb-4 text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
+                Messaggio cliente
+              </p>
+
+              <p className="text-base leading-8 text-[var(--fc-text-muted)]">
+                “ciao, io e mio fratello dobbiamo fare una cosa per il negozio... sì voglio dire un sito,
+                ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo.
+                ah, e non abbiamo budget enorme, max 800€ forse. dimmi tu”
+              </p>
+            </div>
+
+            <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
+              {["Richiesta confusa", "Budget nascosto", "Deadline presente", "Scope da chiarire"].map((item) => (
+                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4" key={item}>
+                  <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {steps.map((step) => (
+              <article className="fc-card group relative overflow-hidden p-5 sm:p-6" key={step.number}>
+                <div className="pointer-events-none absolute right-[-4rem] top-[-4rem] h-40 w-40 rounded-full bg-[rgba(200,245,66,0.08)] blur-[70px] transition group-hover:bg-[rgba(200,245,66,0.14)]" />
+
+                <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start">
+                  <div className="flow-mono flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(200,245,66,0.18)] bg-[rgba(200,245,66,0.07)] text-sm font-bold text-[var(--fc-accent)]">
+                    {step.number}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="fc-pill fc-pill-success">{step.agent}</span>
+                      <span className="fc-pill">{step.output}</span>
+                    </div>
+
+                    <h3 className="mt-4 text-2xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
+                      {step.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-7 text-[var(--fc-text-muted)]">
+                      {step.body}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </Section>
 
-      <Section id="agenti" kicker="Tutti gli agenti operativi" title={<>Quattro agenti.<br /><em className="flow-serif font-normal text-[var(--fc-accent)]">Un sistema.</em></>}>
+      <Section
+        id="agenti"
+        kicker="Tutti gli agenti operativi"
+        title={
+          <>
+            Quattro agenti.
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">Un sistema.</em>
+          </>
+        }
+      >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {agents.map((agent) => (
             <article className="fc-card relative overflow-hidden p-6" key={agent.name}>
-              <div className="absolute right-[-4rem] top-[-4rem] h-40 w-40 rounded-full blur-[70px]" style={{ background: agent.accent, opacity: 0.12 }} />
+              <div
+                className="absolute right-[-4rem] top-[-4rem] h-40 w-40 rounded-full blur-[70px]"
+                style={{ background: agent.accent, opacity: 0.12 }}
+              />
+
               <div className="relative">
-                <div className="flow-mono mb-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm" style={{ color: agent.accent }}>
+                <div
+                  className="flow-mono mb-10 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm"
+                  style={{ color: agent.accent }}
+                >
                   {agent.name.slice(0, 2).toUpperCase()}
                 </div>
+
                 <h3 className="text-3xl font-extrabold tracking-[-0.055em]">{agent.name}</h3>
-                <p className="mt-1 text-sm font-bold" style={{ color: agent.accent }}>{agent.role}</p>
+
+                <p className="mt-1 text-sm font-bold" style={{ color: agent.accent }}>
+                  {agent.role}
+                </p>
+
                 <p className="mt-5 text-sm leading-7 text-[var(--fc-text-muted)]">{agent.body}</p>
+
                 <div className="mt-6 flex flex-wrap gap-2">
                   {agent.tags.map((tag) => (
-                    <span className="fc-pill" key={tag}>{tag}</span>
+                    <span className="fc-pill" key={tag}>
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -229,10 +340,21 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section id="demo" kicker="Demo" title={<>Vedi FlowCrew<br /><em className="flow-serif font-normal text-[var(--fc-accent)]">in azione.</em></>}>
+      <Section
+        id="demo"
+        kicker="Demo"
+        title={
+          <>
+            Vedi FlowCrew
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">in azione.</em>
+          </>
+        }
+      >
         <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
           <div className="fc-panel p-5 sm:p-6">
             <p className="fc-label">Messaggio incollato</p>
+
             <div className="mt-5 rounded-3xl border border-white/[0.06] bg-[#0e0e0e] p-5 text-base leading-8 text-[var(--fc-text-muted)]">
               “ciao, io e mio fratello dobbiamo fare una cosa per il negozio... sì voglio dire un sito, ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo. ah, e non abbiamo budget enorme, max 800€ forse. dimmi tu”
             </div>
@@ -240,7 +362,8 @@ export default function Home() {
 
           <div className="grid gap-4">
             <OutputCard badge="Urgente" title="Cosa vuole il cliente" icon={<Zap className="h-4 w-4" />}>
-              Sito web per negozio, con possibile gestione social. Scadenza entro fine mese. Budget massimo indicativo: 800€. Lead da qualificare subito.
+              Sito web per negozio, con possibile gestione social. Scadenza entro fine mese. Budget massimo indicativo:
+              800€. Lead da qualificare subito.
             </OutputCard>
 
             <OutputCard badge="Task - Milo" title="Prossimi passi" icon={<ClipboardList className="h-4 w-4" />}>
@@ -260,13 +383,17 @@ export default function Home() {
             </OutputCard>
 
             <OutputCard badge="Risposta - Nora" title="Messaggio pronto" icon={<MessageSquareText className="h-4 w-4" />}>
-              Ciao! Certo, possiamo parlarne. Per capire meglio: il sito deve essere solo vetrina o deve anche vendere online? E per i social pensavate a una gestione mensile o solo a un setup iniziale? Con queste info ti preparo una proposta chiara entro domani.
+              Ciao! Certo, possiamo parlarne. Per capire meglio: il sito deve essere solo vetrina o deve anche vendere
+              online? E per i social pensavate a una gestione mensile o solo a un setup iniziale? Con queste info ti
+              preparo una proposta chiara entro domani.
             </OutputCard>
 
             <OutputCard badge="Tags - Dex" title="Classificazione" icon={<Tags className="h-4 w-4" />}>
               <div className="flex flex-wrap gap-2">
                 {["lead-caldo", "sito-web", "social-tbd", "scadenza-urgente", "budget-limitato"].map((tag) => (
-                  <span className="fc-pill" key={tag}>{tag}</span>
+                  <span className="fc-pill" key={tag}>
+                    {tag}
+                  </span>
                 ))}
               </div>
             </OutputCard>
@@ -274,7 +401,16 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section kicker="Sistema" title={<>Non solo AI.<br /><em className="flow-serif font-normal text-[var(--fc-accent)]">Un sistema.</em></>}>
+      <Section
+        kicker="Sistema"
+        title={
+          <>
+            Non solo AI.
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">Un sistema.</em>
+          </>
+        }
+      >
         <div className="grid gap-4 md:grid-cols-2">
           {features.map((feature) => (
             <article className="fc-card p-6" key={feature.title}>
@@ -285,16 +421,33 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section id="prezzi" kicker="Prezzi" title={<>Semplice.<br /><em className="flow-serif font-normal text-[var(--fc-accent)]">Come deve essere.</em></>}>
+      <Section
+        id="prezzi"
+        kicker="Prezzi"
+        title={
+          <>
+            Semplice.
+            <br />
+            <em className="flow-serif font-normal text-[var(--fc-accent)]">Come deve essere.</em>
+          </>
+        }
+      >
         <div className="grid gap-4 lg:grid-cols-3">
           {plans.map((plan) => (
-            <article className={`fc-card p-6 ${plan.featured ? "border-[rgba(200,245,66,0.3)] shadow-[0_0_70px_rgba(200,245,66,0.08)]" : ""}`} key={plan.name}>
+            <article
+              className={`fc-card p-6 ${
+                plan.featured ? "border-[rgba(200,245,66,0.3)] shadow-[0_0_70px_rgba(200,245,66,0.08)]" : ""
+              }`}
+              key={plan.name}
+            >
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-2xl font-extrabold tracking-[-0.045em]">{plan.name}</h3>
                 {plan.featured ? <span className="fc-pill fc-pill-success">Popular</span> : null}
               </div>
+
               <p className="mt-6 text-4xl font-extrabold tracking-[-0.06em]">{plan.price}</p>
               <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">{plan.body}</p>
+
               <ul className="mt-6 space-y-3">
                 {plan.features.map((feature) => (
                   <li className="flex gap-2 text-sm text-[var(--fc-text-muted)]" key={feature}>
@@ -303,9 +456,16 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <Link className={`fc-button mt-8 w-full ${plan.featured ? "fc-button-primary" : ""}`} href={plan.href}>
-                {plan.cta}
-              </Link>
+
+              {plan.href.startsWith("mailto:") ? (
+                <a className={`fc-button mt-8 w-full ${plan.featured ? "fc-button-primary" : ""}`} href={plan.href}>
+                  {plan.cta}
+                </a>
+              ) : (
+                <Link className={`fc-button mt-8 w-full ${plan.featured ? "fc-button-primary" : ""}`} href={plan.href}>
+                  {plan.cta}
+                </Link>
+              )}
             </article>
           ))}
         </div>
@@ -317,12 +477,15 @@ export default function Home() {
             Il tuo team AI <br />
             <em className="flow-serif font-normal text-[var(--fc-accent)]">è già pronto.</em>
           </h2>
+
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[var(--fc-text-muted)]">
             Inizia con un lead gratuito. Nessuna carta di credito. Nessuna configurazione complicata.
           </p>
+
           <Link className="fc-button fc-button-primary mt-8 px-7 py-4 text-base" href="/trial">
             Prova FlowCrew gratis
           </Link>
+
           <p className="flow-mono mt-5 text-xs uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
             1 lead gratis · Nessuna carta di credito · Output immediato
           </p>
@@ -332,13 +495,22 @@ export default function Home() {
       <footer className="relative z-10 border-t border-white/[0.06] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
           <Link className="flex items-center gap-3" href="/">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--fc-accent)] text-xs font-extrabold text-[#080808]">F</span>
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--fc-accent)] text-xs font-extrabold text-[#080808]">
+              F
+            </span>
             <span className="font-bold">FlowCrew</span>
           </Link>
+
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-[var(--fc-text-muted)]">
-            <Link className="transition hover:text-[var(--fc-text)]" href="/privacy">Privacy</Link>
-            <Link className="transition hover:text-[var(--fc-text)]" href="/terms">Termini</Link>
-            <a className="transition hover:text-[var(--fc-text)]" href="mailto:hello@flowcrew.ai">Contatti</a>
+            <Link className="transition hover:text-[var(--fc-text)]" href="/privacy">
+              Privacy
+            </Link>
+            <Link className="transition hover:text-[var(--fc-text)]" href="/terms">
+              Termini
+            </Link>
+            <a className="transition hover:text-[var(--fc-text)]" href="mailto:hello@flowcrew.ai">
+              Contatti
+            </a>
             <span>© 2026 FlowCrew</span>
           </div>
         </div>
@@ -355,8 +527,8 @@ function Section({
 }: {
   id?: string;
   kicker: string;
-  title: React.ReactNode;
-  children: React.ReactNode;
+  title: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="relative z-10 px-4 py-20 sm:px-6 lg:px-8" id={id}>
@@ -367,6 +539,7 @@ function Section({
             {title}
           </h2>
         </div>
+
         {children}
       </div>
     </section>
@@ -381,8 +554,8 @@ function OutputCard({
 }: {
   badge: string;
   title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
+  icon: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <article className="fc-card p-5">
@@ -390,7 +563,9 @@ function OutputCard({
         <span className="fc-pill fc-pill-success">{badge}</span>
         <span className="text-[var(--fc-accent)]">{icon}</span>
       </div>
+
       <h3 className="mt-4 text-2xl font-bold tracking-[-0.045em]">{title}</h3>
+
       <div className="mt-3 text-sm leading-7 text-[var(--fc-text-muted)]">{children}</div>
     </article>
   );
