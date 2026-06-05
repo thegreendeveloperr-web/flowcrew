@@ -6,6 +6,21 @@ import {
   type FlowCrewChatMessage,
   type FlowCrewLanguage,
 } from "@/lib/flowcrew-types";
+import {
+  createUnavailableAgentReview,
+  createUnavailableDexReview,
+  isRecord,
+  normalizePriority,
+  normalizeStatus,
+  normalizeTags,
+  normalizeTemperature,
+  normalizeUrgency,
+  parseGeminiJsonObject,
+  readOptionalString,
+  readOptionalStringArray,
+  type AgentReviewResult,
+  type DexReviewResult,
+} from "./flowcrew-ai-utils";
 
 const defaultModel = "gemini-2.5-flash";
 const requestTimeoutMs = 25_000;
@@ -34,83 +49,6 @@ const demoRequests = [
     status: "new",
   },
 ] as const;
-
-const conversationAnalysisSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["jackie", "dex", "nora", "milo"],
-  properties: {
-    jackie: {
-      type: "object",
-      additionalProperties: false,
-      required: [
-        "cleanSummary",
-        "keyFacts",
-        "missingInfo",
-        "detectedTopics",
-        "suggestedAgent",
-      ],
-      properties: {
-        cleanSummary: { type: "string" },
-        keyFacts: { type: "array", maxItems: 5, items: { type: "string" } },
-        missingInfo: { type: "array", maxItems: 5, items: { type: "string" } },
-        detectedTopics: { type: "array", maxItems: 5, items: { type: "string" } },
-        suggestedAgent: { type: "string" },
-      },
-    },
-    dex: {
-      type: "object",
-      additionalProperties: false,
-      required: ["tags", "priority", "category", "status", "crmNote"],
-      properties: {
-        tags: { type: "array", maxItems: 6, items: { type: "string" } },
-        priority: { type: "string" },
-        category: { type: "string" },
-        status: { type: "string" },
-        crmNote: { type: "string" },
-      },
-    },
-    nora: {
-      type: "object",
-      additionalProperties: false,
-      required: [
-        "urgency",
-        "leadQuality",
-        "riskLevel",
-        "why",
-        "questions",
-        "nextSteps",
-      ],
-      properties: {
-        urgency: { type: "string" },
-        leadQuality: { type: "string" },
-        riskLevel: { type: "string" },
-        why: { type: "string" },
-        questions: { type: "array", maxItems: 4, items: { type: "string" } },
-        nextSteps: { type: "array", maxItems: 4, items: { type: "string" } },
-      },
-    },
-    milo: {
-      type: "object",
-      additionalProperties: false,
-      required: ["followUp", "replies"],
-      properties: {
-        followUp: { type: "string" },
-        replies: {
-          type: "object",
-          additionalProperties: false,
-          required: ["professional", "friendly", "short", "firmButPolite"],
-          properties: {
-            professional: { type: "string" },
-            friendly: { type: "string" },
-            short: { type: "string" },
-            firmButPolite: { type: "string" },
-          },
-        },
-      },
-    },
-  },
-} as const;
 
 let geminiClient: GoogleGenAI | null = null;
 
@@ -154,14 +92,10 @@ function withTimeout() {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function readString(
   value: unknown,
   field: string,
-  options: { max: number; required?: boolean },
+  options: { max: number; min?: number; required?: boolean },
 ) {
   if (typeof value !== "string") {
     throw new FlowCrewAIError("invalid_request", 400, `${field} non e valido.`);
@@ -181,43 +115,81 @@ function readString(
     );
   }
 
+  if (options.min && text.length > 0 && text.length < options.min) {
+    throw new FlowCrewAIError(
+      "invalid_request",
+      400,
+      `${field} deve contenere almeno ${options.min} caratteri utili.`,
+    );
+  }
+
   return text;
 }
 
-function readStringArray(value: unknown, field: string) {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
-    throw new FlowCrewAIError(
-      "invalid_ai_response",
-      502,
-      `Gemini ha restituito un formato non valido per ${field}.`,
-    );
-  }
+function textToFindings(text: string) {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*•\d.)\s]+/, "").trim())
+    .filter(Boolean)
+    .filter((line) => line.length > 12)
+    .slice(0, 5);
 
-  return value.map((item) => item.trim()).filter(Boolean);
+  if (lines.length) return lines;
+
+  const sentences = text
+    .split(/[.!?]\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 12)
+    .slice(0, 5);
+
+  return sentences.length ? sentences : ["Analisi generata dall'agente."];
 }
 
-function readObject(value: unknown, field: string) {
-  if (!isRecord(value)) {
-    throw new FlowCrewAIError(
-      "invalid_ai_response",
-      502,
-      `Gemini ha restituito un formato non valido per ${field}.`,
-    );
-  }
-
-  return value;
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return String(error);
 }
 
-function readAIString(value: unknown, field: string) {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new FlowCrewAIError(
-      "invalid_ai_response",
-      502,
-      `Gemini ha restituito un formato non valido per ${field}.`,
-    );
+function getErrorStatus(error: unknown) {
+  if (!isRecord(error)) return null;
+
+  const status = error.status ?? error.statusCode ?? error.code;
+
+  if (typeof status === "number") return status;
+
+  if (typeof status === "string") {
+    const parsed = Number(status);
+    if (Number.isFinite(parsed)) return parsed;
   }
 
-  return value.trim();
+  return null;
+}
+
+function getSafeErrorDetails(error: unknown) {
+  if (!isRecord(error)) return undefined;
+
+  return {
+    name: typeof error.name === "string" ? error.name : undefined,
+    code:
+      typeof error.code === "string" || typeof error.code === "number"
+        ? error.code
+        : undefined,
+    status: typeof error.status === "number" ? error.status : undefined,
+    statusCode:
+      typeof error.statusCode === "number" ? error.statusCode : undefined,
+  };
+}
+
+function logRawGeminiError(stage: string, error: unknown) {
+  console.error("Raw Gemini error before normalization", {
+    stage,
+    status: getErrorStatus(error),
+    name: error instanceof Error ? error.name : typeof error,
+    message: getErrorMessage(error),
+    cause: error instanceof Error ? error.cause : undefined,
+    details: getSafeErrorDetails(error),
+  });
 }
 
 export function parseConversationInput(value: unknown): ConversationInput {
@@ -234,6 +206,7 @@ export function parseConversationInput(value: unknown): ConversationInput {
       sourceType: "import",
       messyMessage: readString(value.text, "Messaggio", {
         max: 8_000,
+        min: 20,
         required: true,
       }),
       businessType: "Imported multi-channel client conversation",
@@ -263,6 +236,7 @@ export function parseConversationInput(value: unknown): ConversationInput {
     sourceType: sourceType as ConversationInput["sourceType"],
     messyMessage: readString(value.messyMessage, "Messaggio", {
       max: 8_000,
+      min: 20,
       required: true,
     }),
     businessType: readString(value.businessType, "Tipo attivita", { max: 160 }),
@@ -271,99 +245,591 @@ export function parseConversationInput(value: unknown): ConversationInput {
   };
 }
 
-function parseConversationAnalysis(value: unknown): ConversationAnalysis {
-  const analysis = readObject(value, "analysis");
-  const jackie = readObject(analysis.jackie, "jackie");
-  const dex = readObject(analysis.dex, "dex");
-  const nora = readObject(analysis.nora, "nora");
-  const milo = readObject(analysis.milo, "milo");
-  const replies = readObject(milo.replies, "milo.replies");
+type AgentReviewRequest = {
+  input: ConversationInput;
+  agentName: "Jackie" | "Milo" | "Nora";
+  role: string;
+  instruction: string;
+};
+
+function shouldSurfaceAIError(error: FlowCrewAIError) {
+  return error.code === "missing_api_key" || error.code === "invalid_api_key";
+}
+
+function compactWarnings(values: Array<string | undefined>) {
+  return Array.from(new Set(values.filter(Boolean) as string[]));
+}
+
+function readAgentReviewPayload(
+  text: string,
+  agentName: AgentReviewRequest["agentName"],
+): AgentReviewResult {
+  const parsed = parseGeminiJsonObject(text);
+  const warnings: string[] = [];
+
+  if (parsed.repaired) warnings.push("json_repaired");
+
+  if (!parsed.object) {
+    return {
+      message: `${agentName} ha restituito JSON non valido. Uso un fallback prudente basato sul testo ricevuto.`,
+      findings: textToFindings(text),
+      degraded: true,
+      fallbackReason: "invalid_agent_json",
+      warnings: compactWarnings(["invalid_agent_json", parsed.error]),
+    };
+  }
+
+  if (typeof parsed.object.message !== "string") warnings.push("message_fallback");
+  if (!Array.isArray(parsed.object.findings)) warnings.push("findings_fallback");
+
+  const message = readOptionalString(
+    parsed.object.message,
+    `${agentName} ha completato la revisione con dati parziali.`,
+  );
+  const findings = readOptionalStringArray(
+    parsed.object.findings,
+    textToFindings(message),
+    { maxItems: 5 },
+  );
 
   return {
-    jackie: {
-      cleanSummary: readAIString(jackie.cleanSummary, "jackie.cleanSummary"),
-      keyFacts: readStringArray(jackie.keyFacts, "jackie.keyFacts"),
-      missingInfo: readStringArray(jackie.missingInfo, "jackie.missingInfo"),
-      detectedTopics: readStringArray(
-        jackie.detectedTopics,
-        "jackie.detectedTopics",
-      ),
-      suggestedAgent: readAIString(jackie.suggestedAgent, "jackie.suggestedAgent"),
-    },
-    dex: {
-      tags: readStringArray(dex.tags, "dex.tags"),
-      priority: readAIString(dex.priority, "dex.priority"),
-      category: readAIString(dex.category, "dex.category"),
-      status: readAIString(dex.status, "dex.status"),
-      crmNote: readAIString(dex.crmNote, "dex.crmNote"),
-    },
-    nora: {
-      urgency: readAIString(nora.urgency, "nora.urgency"),
-      leadQuality: readAIString(nora.leadQuality, "nora.leadQuality"),
-      riskLevel: readAIString(nora.riskLevel, "nora.riskLevel"),
-      why: readAIString(nora.why, "nora.why"),
-      questions: readStringArray(nora.questions, "nora.questions"),
-      nextSteps: readStringArray(nora.nextSteps, "nora.nextSteps"),
-    },
-    milo: {
-      followUp: readAIString(milo.followUp, "milo.followUp"),
-      replies: {
-        professional: readAIString(replies.professional, "milo.replies.professional"),
-        friendly: readAIString(replies.friendly, "milo.replies.friendly"),
-        short: readAIString(replies.short, "milo.replies.short"),
-        firmButPolite: readAIString(
-          replies.firmButPolite,
-          "milo.replies.firmButPolite",
-        ),
-      },
-    },
+    message,
+    findings,
+    degraded: warnings.length > 0,
+    fallbackReason: warnings.length ? "partial_agent_json" : undefined,
+    warnings,
   };
 }
 
-export async function analyzeConversation(input: ConversationInput) {
+function readDexReviewPayload(text: string, language: FlowCrewLanguage): DexReviewResult {
+  const parsed = parseGeminiJsonObject(text);
+  const warnings: string[] = [];
+  const safeFallbackReply = createUnavailableDexReview(language).suggestedReply;
+
+  if (parsed.repaired) warnings.push("json_repaired");
+
+  if (!parsed.object) {
+    const fallbackReply = text.trim() || safeFallbackReply;
+
+    return {
+      message: "Dex ha restituito JSON non valido. Uso una risposta prudente basata sul testo ricevuto.",
+      suggestedReply: fallbackReply,
+      replies: {
+        professional: fallbackReply,
+        friendly: fallbackReply,
+        short: fallbackReply,
+        firmButPolite: fallbackReply,
+      },
+      degraded: true,
+      fallbackReason: "invalid_dex_json",
+      warnings: compactWarnings(["invalid_dex_json", parsed.error]),
+    };
+  }
+
+  if (typeof parsed.object.suggestedReply !== "string") warnings.push("suggested_reply_fallback");
+  if (typeof parsed.object.professional !== "string") warnings.push("professional_reply_fallback");
+  if (typeof parsed.object.friendly !== "string") warnings.push("friendly_reply_fallback");
+  if (typeof parsed.object.short !== "string") warnings.push("short_reply_fallback");
+  if (typeof parsed.object.firmButPolite !== "string") warnings.push("firm_reply_fallback");
+
+  const suggestedReply = readOptionalString(
+    parsed.object.suggestedReply,
+    readOptionalString(parsed.object.professional, safeFallbackReply),
+  );
+
+  return {
+    message: readOptionalString(
+      parsed.object.message,
+      "Dex ha preparato una risposta pronta da inviare.",
+    ),
+    suggestedReply,
+    replies: {
+      professional: readOptionalString(parsed.object.professional, suggestedReply),
+      friendly: readOptionalString(parsed.object.friendly, suggestedReply),
+      short: readOptionalString(parsed.object.short, suggestedReply),
+      firmButPolite: readOptionalString(
+        parsed.object.firmButPolite,
+        suggestedReply,
+      ),
+    },
+    degraded: warnings.length > 0,
+    fallbackReason: warnings.length ? "partial_dex_json" : undefined,
+    warnings,
+  };
+}
+
+async function runAgentReview({
+  input,
+  agentName,
+  role,
+  instruction,
+}: AgentReviewRequest): Promise<AgentReviewResult> {
   const timeout = withTimeout();
+  const languageName = input.language === "it" ? "Italian" : "English";
 
   try {
     const response = await getGeminiClient().models.generateContent({
       model: getModel(),
-      contents: JSON.stringify(input),
+      contents: JSON.stringify({
+        clientInput: input,
+        agent: agentName,
+        role,
+      }),
       config: {
         abortSignal: timeout.signal,
         systemInstruction: `
-You are the FlowCrew orchestrator. Analyze one raw client conversation through four specialist agents.
+You are ${agentName}, one specialist inside FlowCrew.
+
+Role:
+${role}
+
+Task:
+${instruction}
+
+Return a useful analysis of the real client message.
+
+Output contract:
+Return only one valid JSON object, with no Markdown fences and no text before or after it:
+{
+  "message": "your short analysis",
+  "findings": ["fact 1", "fact 2"]
+}
 
 Rules:
-- Return only the JSON object required by the schema.
-- Write every user-facing field in ${input.language === "it" ? "Italian" : "English"}.
-- Do not invent facts. When information is missing, say so clearly.
-- Jackie cleans and structures the conversation.
-- Dex assigns tags, category, priority, lead status, and a CRM-style note.
-- Nora evaluates urgency, lead quality, risk, clarification questions, and practical next actions.
-- Milo drafts a concise follow-up and four replies: professional, friendly, short, and firm but polite.
-- Never claim that a message was sent, a task was created, or a CRM was updated.
-- Keep each list focused and concise. Return no more items than the schema allows.
+- Write in ${languageName}.
+- Always return valid JSON matching the contract above.
+- Do not invent facts, prices, deadlines, availability, or promises.
+- If something is missing, say it clearly.
+- Do not claim that you sent messages, created tasks, updated a CRM, or contacted anyone.
 `,
         temperature: 0.35,
-        maxOutputTokens: 3_000,
+        maxOutputTokens: 900,
         responseMimeType: "application/json",
-        responseJsonSchema: conversationAnalysisSchema,
       },
     });
 
-    if (!response.text) {
+    if (!response.text?.trim()) {
       throw new FlowCrewAIError(
         "empty_ai_response",
         502,
-        "Gemini non ha restituito un'analisi valida. Riprova.",
+        `${agentName} non ha restituito una risposta valida. Riprova.`,
       );
     }
 
-    return parseConversationAnalysis(JSON.parse(response.text) as unknown);
+    return readAgentReviewPayload(response.text, agentName);
   } catch (error) {
+    logRawGeminiError(agentName, error);
     throw normalizeAIError(error);
   } finally {
     timeout.clear();
   }
+}
+
+async function runAgentReviewSafely(request: AgentReviewRequest) {
+  try {
+    return await runAgentReview(request);
+  } catch (error) {
+    const normalized = normalizeAIError(error);
+
+    if (shouldSurfaceAIError(normalized)) {
+      throw normalized;
+    }
+
+    console.warn("FlowCrew agent fallback used", {
+      agent: request.agentName,
+      code: normalized.code,
+      status: normalized.status,
+    });
+
+    return createUnavailableAgentReview(
+      request.agentName,
+      request.input.language,
+      normalized.publicMessage,
+    );
+  }
+}
+
+async function runDexReview(input: ConversationInput): Promise<DexReviewResult> {
+  const timeout = withTimeout();
+  const languageName = input.language === "it" ? "Italian" : "English";
+
+  try {
+    const response = await getGeminiClient().models.generateContent({
+      model: getModel(),
+      contents: JSON.stringify({
+        clientInput: input,
+        agent: "Dex",
+        role: "Reply assistant",
+      }),
+      config: {
+        abortSignal: timeout.signal,
+        systemInstruction: `
+You are Dex, FlowCrew's reply assistant.
+
+Analyze the real client message and draft replies the user could send.
+
+Output contract:
+Return only one valid JSON object, with no Markdown fences and no text before or after it:
+{
+  "message": "short explanation",
+  "suggestedReply": "best reply",
+  "professional": "professional reply",
+  "friendly": "friendly reply",
+  "short": "short reply",
+  "firmButPolite": "firm but polite reply"
+}
+
+Rules:
+- Write in ${languageName}.
+- Always return valid JSON matching the contract above.
+- Keep replies natural, useful, and ready to send.
+- Do not invent facts, prices, deadlines, availability, or promises.
+- Do not claim that a message was sent.
+`,
+        temperature: 0.4,
+        maxOutputTokens: 1_100,
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!response.text?.trim()) {
+      throw new FlowCrewAIError(
+        "empty_ai_response",
+        502,
+        "Dex non ha restituito una risposta valida. Riprova.",
+      );
+    }
+
+    return readDexReviewPayload(response.text, input.language);
+  } catch (error) {
+    logRawGeminiError("Dex", error);
+    throw normalizeAIError(error);
+  } finally {
+    timeout.clear();
+  }
+}
+
+async function runDexReviewSafely(input: ConversationInput) {
+  try {
+    return await runDexReview(input);
+  } catch (error) {
+    const normalized = normalizeAIError(error);
+
+    if (shouldSurfaceAIError(normalized)) {
+      throw normalized;
+    }
+
+    console.warn("FlowCrew Dex fallback used", {
+      code: normalized.code,
+      status: normalized.status,
+    });
+
+    return createUnavailableDexReview(input.language, normalized.publicMessage);
+  }
+}
+
+async function runFinalSummary({
+  input,
+  jackie,
+  milo,
+  nora,
+  dex,
+}: {
+  input: ConversationInput;
+  jackie: AgentReviewResult;
+  milo: AgentReviewResult;
+  nora: AgentReviewResult;
+  dex: DexReviewResult;
+}) {
+  const timeout = withTimeout();
+  const languageName = input.language === "it" ? "Italian" : "English";
+
+  const fallback = {
+    priority: "medium",
+    temperature: "warm",
+    nextAction:
+      nora.findings[0] ||
+      milo.findings[0] ||
+      "Rispondi al cliente e chiedi i dettagli mancanti.",
+    suggestedReply: dex.suggestedReply,
+    risks: milo.findings.slice(0, 3),
+    missingInfo: jackie.findings.slice(0, 3),
+    explanation: "FlowCrew ha combinato le analisi reali degli agenti in un piano operativo.",
+    tags: ["lead", "follow-up", "client-request"],
+    category: "Richiesta cliente",
+    status: "needs_qualification",
+    crmNote: jackie.message,
+    urgency: "medium",
+    leadQuality: "needs_qualification",
+    riskLevel: "medium",
+    detectedTopics: jackie.findings.slice(0, 5),
+    degraded: false,
+    fallbackReason: undefined as string | undefined,
+    warnings: [] as string[],
+  };
+
+  try {
+    const response = await getGeminiClient().models.generateContent({
+      model: getModel(),
+      contents: JSON.stringify({
+        clientInput: input,
+        agentReviews: {
+          jackie,
+          milo,
+          nora,
+          dex,
+        },
+      }),
+      config: {
+        abortSignal: timeout.signal,
+        systemInstruction: `
+You are FlowCrew Summary, the final coordinator.
+
+You receive real analysis from Jackie, Milo, Nora, and Dex.
+Create one final operational summary for the user.
+
+Output contract:
+Return only one valid JSON object, with no Markdown fences and no text before or after it:
+{
+  "priority": "low | medium | high",
+  "temperature": "cold | warm | hot",
+  "nextAction": "next action",
+  "suggestedReply": "reply",
+  "risks": ["risk"],
+  "missingInfo": ["missing info"],
+  "explanation": "short explanation",
+  "tags": ["tag"],
+  "category": "category",
+  "status": "new | needs_qualification | waiting_reply | follow_up | qualified | closed",
+  "crmNote": "crm note",
+  "urgency": "low | medium | high",
+  "leadQuality": "lead quality",
+  "riskLevel": "low | medium | high",
+  "detectedTopics": ["topic"]
+}
+
+Rules:
+- Write in ${languageName}.
+- Always return valid JSON matching the contract above.
+- Be practical and concise.
+- Do not invent facts, prices, deadlines, availability, or promises.
+- Do not claim that actions were executed.
+`,
+        temperature: 0.3,
+        maxOutputTokens: 1_200,
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!response.text?.trim()) {
+      return {
+        ...fallback,
+        degraded: true,
+        fallbackReason: "empty_summary_response",
+        warnings: ["empty_summary_response"],
+      };
+    }
+
+    const parsed = parseGeminiJsonObject(response.text);
+
+    if (!parsed.object) {
+      return {
+        ...fallback,
+        degraded: true,
+        fallbackReason: "invalid_summary_json",
+        warnings: compactWarnings(["invalid_summary_json", parsed.error]),
+      };
+    }
+
+    const warnings = compactWarnings([
+      parsed.repaired ? "json_repaired" : undefined,
+      typeof parsed.object.priority !== "string" ? "priority_fallback" : undefined,
+      typeof parsed.object.temperature !== "string" ? "temperature_fallback" : undefined,
+      typeof parsed.object.nextAction !== "string" ? "next_action_fallback" : undefined,
+      typeof parsed.object.suggestedReply !== "string" ? "suggested_reply_fallback" : undefined,
+      Array.isArray(parsed.object.risks) ? undefined : "risks_fallback",
+      Array.isArray(parsed.object.missingInfo) ? undefined : "missing_info_fallback",
+      typeof parsed.object.status !== "string" ? "status_fallback" : undefined,
+      Array.isArray(parsed.object.tags) ? undefined : "tags_fallback",
+    ]);
+
+    return {
+      priority: normalizePriority(parsed.object.priority, fallback.priority),
+      temperature: normalizeTemperature(parsed.object.temperature, fallback.temperature),
+      nextAction: readOptionalString(parsed.object.nextAction, fallback.nextAction),
+      suggestedReply: readOptionalString(
+        parsed.object.suggestedReply,
+        fallback.suggestedReply,
+      ),
+      risks: readOptionalStringArray(parsed.object.risks, fallback.risks, {
+        maxItems: 3,
+      }),
+      missingInfo: readOptionalStringArray(
+        parsed.object.missingInfo,
+        fallback.missingInfo,
+        { maxItems: 4 },
+      ),
+      explanation: readOptionalString(parsed.object.explanation, fallback.explanation),
+      tags: normalizeTags(parsed.object.tags, fallback.tags),
+      category: readOptionalString(parsed.object.category, fallback.category),
+      status: normalizeStatus(parsed.object.status, fallback.status),
+      crmNote: readOptionalString(parsed.object.crmNote, fallback.crmNote),
+      urgency: normalizeUrgency(parsed.object.urgency, fallback.urgency),
+      leadQuality: readOptionalString(parsed.object.leadQuality, fallback.leadQuality),
+      riskLevel: normalizePriority(parsed.object.riskLevel, fallback.riskLevel),
+      detectedTopics: readOptionalStringArray(
+        parsed.object.detectedTopics,
+        fallback.detectedTopics,
+        { maxItems: 5 },
+      ),
+      degraded: warnings.length > 0,
+      fallbackReason: warnings.length ? "partial_summary_json" : undefined,
+      warnings,
+    };
+  } catch (error) {
+    logRawGeminiError("FlowCrew Summary", error);
+    const normalized = normalizeAIError(error);
+
+    if (shouldSurfaceAIError(normalized)) {
+      throw normalized;
+    }
+
+    return {
+      ...fallback,
+      degraded: true,
+      fallbackReason: normalized.code,
+      warnings: [normalized.publicMessage],
+    };
+  } finally {
+    timeout.clear();
+  }
+}
+
+export async function analyzeConversation(input: ConversationInput) {
+  const [jackie, milo, nora, dex] = await Promise.all([
+    runAgentReviewSafely({
+      input,
+      agentName: "Jackie",
+      role: "Lead extraction specialist",
+      instruction: `
+Extract the client's real request, service needed, urgency, budget hints, deadline, missing information, and lead quality.
+Explain what the message really means in a clean way.
+`,
+    }),
+    runAgentReviewSafely({
+      input,
+      agentName: "Milo",
+      role: "Commercial strategist",
+      instruction: `
+Evaluate the commercial opportunity, conversion potential, priority, risks, and the best next commercial move.
+Think like someone trying to turn this lead into a real client without sounding pushy.
+`,
+    }),
+    runAgentReviewSafely({
+      input,
+      agentName: "Nora",
+      role: "Task and follow-up manager",
+      instruction: `
+Extract practical tasks, follow-up actions, deadlines, calendar signals, clarification questions, and what the user should do next.
+`,
+    }),
+    runDexReviewSafely(input),
+  ]);
+
+  const summary = await runFinalSummary({
+    input,
+    jackie,
+    milo,
+    nora,
+    dex,
+  });
+  const agentHealth = [
+    { name: "Jackie", review: jackie },
+    { name: "Milo", review: milo },
+    { name: "Nora", review: nora },
+    { name: "Dex", review: dex },
+    { name: "FlowCrew Summary", review: summary },
+  ];
+  const degradedAgents = agentHealth
+    .filter(({ review }) => Boolean(review.degraded))
+    .map(({ name }) => name);
+  const warnings = agentHealth.flatMap(({ name, review }) =>
+    (review.warnings ?? []).map((warning) => `${name}: ${warning}`),
+  );
+
+  return {
+    jackie: {
+      cleanSummary: jackie.message,
+      keyFacts: jackie.findings,
+      missingInfo: summary.missingInfo,
+      detectedTopics: summary.detectedTopics,
+      suggestedAgent: "FlowCrew Summary",
+    },
+    dex: {
+      tags: summary.tags,
+      priority: summary.priority,
+      category: summary.category,
+      status: summary.status,
+      crmNote: summary.crmNote,
+    },
+    nora: {
+      urgency: summary.urgency,
+      leadQuality: summary.leadQuality,
+      riskLevel: summary.riskLevel,
+      why: nora.message,
+      questions: summary.missingInfo,
+      nextSteps: [summary.nextAction, ...nora.findings].slice(0, 4),
+    },
+    milo: {
+      followUp: milo.message,
+      replies: dex.replies,
+    },
+    crewReview: {
+      jackie: {
+        name: "Jackie",
+        role: "Lead extraction",
+        message: jackie.message,
+        findings: jackie.findings,
+      },
+      milo: {
+        name: "Milo",
+        role: "Commercial strategy",
+        message: milo.message,
+        findings: milo.findings,
+        nextCommercialMove: summary.nextAction,
+        risk: summary.risks[0] || summary.riskLevel,
+      },
+      nora: {
+        name: "Nora",
+        role: "Task manager",
+        message: nora.message,
+        tasks: [summary.nextAction, ...nora.findings].slice(0, 4),
+        questions: summary.missingInfo,
+      },
+      dex: {
+        name: "Dex",
+        role: "Reply assistant",
+        message: dex.message,
+        suggestedReply: dex.suggestedReply,
+      },
+      summary: {
+        priority: summary.priority,
+        temperature: summary.temperature,
+        nextAction: summary.nextAction,
+        suggestedReply: summary.suggestedReply,
+        risks: summary.risks,
+        missingInfo: summary.missingInfo,
+        explanation: summary.explanation,
+      },
+    },
+    analysisMeta: {
+      status: degradedAgents.length ? "partial" : "complete",
+      degraded: degradedAgents.length > 0,
+      degradedAgents,
+      warnings,
+      model: getModel(),
+    },
+  } satisfies ConversationAnalysis;
 }
 
 export function parseChatRequest(value: unknown) {
@@ -448,6 +914,7 @@ ${JSON.stringify(demoRequests, null, 2)}
 
     return response.text.trim();
   } catch (error) {
+    logRawGeminiError("FlowCrew Chat", error);
     throw normalizeAIError(error);
   } finally {
     timeout.clear();
@@ -456,6 +923,9 @@ ${JSON.stringify(demoRequests, null, 2)}
 
 export function normalizeAIError(error: unknown) {
   if (error instanceof FlowCrewAIError) return error;
+
+  const status = getErrorStatus(error);
+  const message = getErrorMessage(error).toLowerCase();
 
   if (error instanceof SyntaxError) {
     return new FlowCrewAIError(
@@ -470,7 +940,7 @@ export function normalizeAIError(error: unknown) {
       return new FlowCrewAIError(
         "rate_limited",
         503,
-        "Gemini e momentaneamente occupato. Riprova tra poco.",
+        "Gemini e momentaneamente occupato o hai raggiunto il limite quota. Riprova tra poco.",
       );
     }
 
@@ -481,6 +951,43 @@ export function normalizeAIError(error: unknown) {
         "Il motore AI non e configurato correttamente.",
       );
     }
+
+    if (error.status === 400) {
+      return new FlowCrewAIError(
+        "bad_ai_request",
+        502,
+        "La richiesta inviata a Gemini non e valida. Controlla il terminale per il dettaglio tecnico.",
+      );
+    }
+  }
+
+  if (status === 429 || message.includes("quota") || message.includes("rate limit")) {
+    return new FlowCrewAIError(
+      "rate_limited",
+      503,
+      "Gemini e momentaneamente occupato o hai raggiunto il limite quota. Riprova tra poco.",
+    );
+  }
+
+  if (
+    status === 401 ||
+    status === 403 ||
+    message.includes("api key") ||
+    message.includes("permission")
+  ) {
+    return new FlowCrewAIError(
+      "invalid_api_key",
+      500,
+      "Il motore AI non e configurato correttamente.",
+    );
+  }
+
+  if (status === 400 || message.includes("bad request")) {
+    return new FlowCrewAIError(
+      "bad_ai_request",
+      502,
+      "La richiesta inviata a Gemini non e valida. Controlla il terminale per il dettaglio tecnico.",
+    );
   }
 
   if (error instanceof Error && error.name === "AbortError") {
@@ -500,8 +1007,15 @@ export function normalizeAIError(error: unknown) {
 
 export function logAIError(error: unknown) {
   const normalized = normalizeAIError(error);
+
   console.error("FlowCrew AI request failed", {
     code: normalized.code,
     status: normalized.status,
+    publicMessage: normalized.publicMessage,
+    rawName: error instanceof Error ? error.name : typeof error,
+    rawMessage: getErrorMessage(error),
+    rawStatus: getErrorStatus(error),
+    rawCause: error instanceof Error ? error.cause : undefined,
+    rawDetails: getSafeErrorDetails(error),
   });
 }

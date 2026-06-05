@@ -57,6 +57,26 @@ type ErrorPayload = {
   remaining?: number;
   label?: string;
 };
+async function readApiPayload(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  const text = await response.text();
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text) as IngestResponse | ErrorPayload;
+    } catch {
+      throw new Error("L'API ha risposto con JSON non valido. Controlla il terminale Next.js.");
+    }
+  }
+
+  if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+    throw new Error(
+      "L'API ha restituito una pagina HTML invece di JSON. Controlla il terminale Next.js: probabilmente /api/ingest-message sta andando in errore.",
+    );
+  }
+
+  throw new Error(text || "Risposta API non valida.");
+}
 
 const sourceOptions: Array<{ value: ConversationSource; label: string }> = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -203,7 +223,7 @@ export default function TrialPage() {
         }),
       });
 
-      const payload = (await response.json()) as IngestResponse | ErrorPayload;
+      const payload = await readApiPayload(response);
 
       if (!response.ok) {
         const errorPayload = payload as ErrorPayload;

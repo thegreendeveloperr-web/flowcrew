@@ -20,6 +20,45 @@ export type ConversationInput = {
   language: FlowCrewLanguage;
 };
 
+export type CrewReview = {
+  jackie: {
+    name: "Jackie";
+    role: string;
+    message: string;
+    findings: string[];
+  };
+  milo: {
+    name: "Milo";
+    role: string;
+    message: string;
+    findings: string[];
+    nextCommercialMove: string;
+    risk: string;
+  };
+  nora: {
+    name: "Nora";
+    role: string;
+    message: string;
+    tasks: string[];
+    questions: string[];
+  };
+  dex: {
+    name: "Dex";
+    role: string;
+    message: string;
+    suggestedReply: string;
+  };
+  summary: {
+    priority: string;
+    temperature: string;
+    nextAction: string;
+    suggestedReply: string;
+    risks: string[];
+    missingInfo: string[];
+    explanation: string;
+  };
+};
+
 export type ConversationAnalysis = {
   jackie: {
     cleanSummary: string;
@@ -51,6 +90,14 @@ export type ConversationAnalysis = {
       short: string;
       firmButPolite: string;
     };
+  };
+  crewReview?: CrewReview;
+  analysisMeta?: {
+    status: "complete" | "partial";
+    degraded: boolean;
+    degradedAgents: string[];
+    warnings: string[];
+    model: string;
   };
 };
 

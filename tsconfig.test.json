@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": false,
+    "incremental": false,
+    "isolatedModules": false,
+    "lib": ["es2022", "dom"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": false,
+    "outDir": ".test-output",
+    "sourceMap": false,
+    "target": "ES2022"
+  },
+  "include": ["lib/flowcrew-ai-utils.ts", "tests/**/*.test.ts"]
+}
