@@ -10,12 +10,14 @@ import {
   Copy,
   Crown,
   Database,
+  FileText,
   Home,
   LayoutDashboard,
-  LoaderCircle,
+  ListChecks,
   MessageSquareText,
+  RefreshCw,
+  ShieldCheck,
   Sparkles,
-  Tags,
   Zap,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
@@ -25,13 +27,13 @@ import { trialDraftStorageKey } from "@/lib/trial-draft";
 
 const manualProHref = "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
 
-const sample = `ciao, io e mio fratello dobbiamo fare una cosa per il negozio... si voglio dire un sito, ma magari anche la gestione social? non lo so ancora bene. comunque ci serviva entro fine mese tipo. ah, e non abbiamo budget enorme, max 800 euro forse. dimmi tu`;
+const sample = `Ciao, sono Marco di Studio Verde. Vorremmo rifare il sito e forse collegarlo anche a una piccola campagna social, ma non sappiamo ancora bene lo scope. Ci servirebbe qualcosa entro fine mese per presentarlo a un partner. Budget indicativo 800-1.200 euro. Mi dici cosa consigli e quali sono i prossimi passaggi?`;
 
 const loadingSteps = [
-  "Jackie sta capendo cosa vuole il cliente",
-  "Milo sta cercando task, urgenze e prossimi passi",
-  "Nora sta preparando una risposta pronta",
-  "Dex sta assegnando tag e contesto",
+  "Jackie sta leggendo il messaggio",
+  "Nora sta preparando la proposta",
+  "Milo sta valutando il follow-up",
+  "Dex sta ordinando i task",
 ];
 
 type UsageResponse = {
@@ -57,25 +59,46 @@ type ErrorPayload = {
   remaining?: number;
   label?: string;
 };
+
+type UsageError = {
+  code: string;
+  message: string;
+};
+
+type TrialError = {
+  code: string;
+  title: string;
+  message: string;
+  action?: "login" | "retry" | "pro";
+};
+
 async function readApiPayload(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   const text = await response.text();
+  const trimmed = text.trim();
 
-  if (contentType.includes("application/json")) {
+  if (!trimmed) {
+    return {
+      code: "empty_response",
+      error: "La risposta del server e vuota.",
+    } satisfies ErrorPayload;
+  }
+
+  if (contentType.includes("application/json") || trimmed.startsWith("{") || trimmed.startsWith("[")) {
     try {
       return JSON.parse(text) as IngestResponse | ErrorPayload;
     } catch {
-      throw new Error("L'API ha risposto con JSON non valido. Controlla il terminale Next.js.");
+      return {
+        code: "invalid_response",
+        error: "La risposta del server non e leggibile.",
+      } satisfies ErrorPayload;
     }
   }
 
-  if (text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
-    throw new Error(
-      "L'API ha restituito una pagina HTML invece di JSON. Controlla il terminale Next.js: probabilmente /api/ingest-message sta andando in errore.",
-    );
-  }
-
-  throw new Error(text || "Risposta API non valida.");
+  return {
+    code: "invalid_response",
+    error: "La risposta del server non e leggibile.",
+  } satisfies ErrorPayload;
 }
 
 const sourceOptions: Array<{ value: ConversationSource; label: string }> = [
@@ -88,17 +111,18 @@ const sourceOptions: Array<{ value: ConversationSource; label: string }> = [
 ];
 
 export default function TrialPage() {
-  const [clientName, setClientName] = useState("Cliente demo");
+  const [clientName, setClientName] = useState("");
   const [sourceType, setSourceType] = useState<ConversationSource>("whatsapp");
   const [businessType, setBusinessType] = useState("Freelance / piccolo team");
-  const [goal, setGoal] = useState("Riassunto, priorita, task, tag e risposta pronta.");
+  const [goal, setGoal] = useState("Richiesta cliente, priorita, proposta, follow-up e task.");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<IngestResponse | null>(null);
   const [usage, setUsage] = useState<UsageResponse | null>(null);
+  const [usageError, setUsageError] = useState<UsageError | null>(null);
   const [isUsageLoading, setIsUsageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedReply, setCopiedReply] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<TrialError | null>(null);
 
   useEffect(() => {
     try {
@@ -120,12 +144,31 @@ export default function TrialPage() {
           headers: { "Content-Type": "application/json" },
         });
 
-        if (!response.ok) return;
+        const payload = (await response.json().catch(() => null)) as (UsageResponse & ErrorPayload) | null;
 
-        const payload = (await response.json()) as UsageResponse;
+        if (!response.ok) {
+          setUsageError({
+            code: payload?.code ?? "usage_unavailable",
+            message: payload?.error ?? "Non riesco a leggere il tuo piano in questo momento.",
+          });
+          return;
+        }
+
+        if (!payload || typeof payload.remaining !== "number") {
+          setUsageError({
+            code: "usage_unavailable",
+            message: "Non riesco a leggere il tuo piano in questo momento.",
+          });
+          return;
+        }
+
         setUsage(payload);
+        setUsageError(null);
       } catch {
-        // Usage info is helpful, but the trial page can still render without it.
+        setUsageError({
+          code: "usage_unavailable",
+          message: "Non riesco a leggere il tuo piano in questo momento.",
+        });
       } finally {
         setIsUsageLoading(false);
       }
@@ -140,20 +183,42 @@ export default function TrialPage() {
   const workspaceLabel = usage ? getWorkspacePlanLabel(usage.plan) : "Pro";
   const analysis = result?.analysis;
   const lead = result?.lead;
+  const isPartialAnalysis = Boolean(analysis?.analysisMeta?.degraded || analysis?.analysisMeta?.status === "partial");
+  const friendlyPriority = formatSignal(analysis?.dex.priority ?? lead?.urgency, "Da qualificare");
+  const friendlyUrgency = formatSignal(analysis?.nora.urgency ?? lead?.urgency, "Da qualificare");
+  const friendlyStatus = formatStatus(analysis?.dex.status ?? lead?.status);
+  const leadQuality = formatSignal(analysis?.nora.leadQuality, "Da qualificare");
+  const requestSummary = lead?.summary ?? analysis?.jackie.cleanSummary;
+  const proposalText =
+    analysis?.crewReview?.nora.message ??
+    analysis?.nora.why ??
+    "La proposta, il rischio e lo scope consigliato compariranno qui dopo l'analisi.";
+  const followUpText =
+    analysis?.milo.followUp ??
+    lead?.follow_up ??
+    analysis?.crewReview?.milo.nextCommercialMove ??
+    "Il follow-up consigliato comparira qui dopo l'analisi.";
+  const handoffText =
+    lead?.next_action ??
+    analysis?.crewReview?.summary.nextAction ??
+    "La prossima azione operativa comparira qui dopo l'analisi.";
 
   const detectedTags = useMemo(() => {
     if (analysis?.dex.tags.length) return analysis.dex.tags;
-    return generated ? ["lead-caldo", "sito-web", "scadenza-urgente", "budget-limitato"] : ["lead", "task", "reply"];
-  }, [analysis, generated]);
+    if (lead?.tags?.length) return lead.tags;
+    return generated ? ["lead", "da-qualificare"] : [];
+  }, [analysis, generated, lead?.tags]);
 
   const detectedBudget = useMemo(() => {
     const text = `${message} ${lead?.summary ?? ""}`;
+    const normalizedEuroMatch = text.match(/(?:€\s?|\bmax\s?)?(\d{2,5})\s?(?:€|euro|eur)?/i);
     const euroMatch = text.match(/(?:€\s?|\bmax\s?)?(\d{2,5})\s?(?:€|euro|eur)?/i);
 
     if (!generated) return "In attesa";
+    if (normalizedEuroMatch) return `Circa ${normalizedEuroMatch[1]} euro`;
     if (!euroMatch) return "Non rilevato";
 
-    return `Circa ${euroMatch[1]}€`;
+    return `Circa ${euroMatch[1]} euro`;
   }, [generated, lead?.summary, message]);
 
   const detectedDeadline = useMemo(() => {
@@ -171,7 +236,7 @@ export default function TrialPage() {
     if (!generated) {
       return [
         "Incolla una richiesta cliente e avvia l'analisi.",
-        "FlowCrew la dividerà in summary, task, risposta e tag.",
+        "FlowCrew la dividera in richiesta, proposta, follow-up e task.",
       ];
     }
 
@@ -195,18 +260,26 @@ export default function TrialPage() {
   async function generateLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!message.trim() || isLoading) {
-      setError("Incolla un messaggio cliente prima di avviare l'analisi.");
+    const cleanMessage = message.trim();
+
+    if (!cleanMessage || isLoading) {
+      setError(createTrialError("invalid_input"));
+      return;
+    }
+
+    if (cleanMessage.length < 20) {
+      setError(createTrialError("invalid_input_short"));
       return;
     }
 
     if (hasReachedLimit) {
-      setError(getLimitErrorMessage(usage));
+      setError(createTrialError("quota_exceeded"));
       return;
     }
 
     setIsLoading(true);
     setError(null);
+    setResult(null);
     setCopiedReply(false);
 
     try {
@@ -216,7 +289,7 @@ export default function TrialPage() {
         body: JSON.stringify({
           clientName,
           sourceType,
-          messyMessage: message,
+          messyMessage: cleanMessage,
           businessType,
           goal,
           language: "it",
@@ -237,29 +310,30 @@ export default function TrialPage() {
             plan: errorPayload.plan,
             used: errorPayload.used,
             limit: errorPayload.limit,
-            remaining: Math.max(errorPayload.limit - errorPayload.used, 0),
+            remaining:
+              typeof errorPayload.remaining === "number"
+                ? errorPayload.remaining
+                : Math.max(errorPayload.limit - errorPayload.used, 0),
             label: errorPayload.label ?? getPlanLabel(errorPayload.plan),
           });
         }
 
-        if (response.status === 401) {
-          throw new Error("Accedi per salvare un lead nel tuo workspace.");
-        }
-
-        throw new Error(
-          errorPayload.error ??
-            "Non siamo riusciti ad analizzare il messaggio. Riprova tra poco.",
-        );
+        throw createTrialException(getTrialErrorFromPayload(errorPayload, response.status));
       }
 
       const ingestPayload = payload as IngestResponse;
+      if (!isIngestPayload(ingestPayload)) {
+        throw createTrialException(createTrialError("invalid_response"));
+      }
+
       setResult(ingestPayload);
 
       if (ingestPayload.usage) {
         setUsage(ingestPayload.usage);
+        setUsageError(null);
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Errore sconosciuto.");
+      setError(getTrialErrorFromException(requestError));
     } finally {
       setIsLoading(false);
     }
@@ -273,7 +347,7 @@ export default function TrialPage() {
       setCopiedReply(true);
       window.setTimeout(() => setCopiedReply(false), 1800);
     } catch {
-      setError("Non sono riuscito a copiare la risposta. Puoi selezionarla manualmente.");
+      setError(createTrialError("copy_failed"));
     }
   }
 
@@ -293,11 +367,11 @@ export default function TrialPage() {
 
                 <div>
                   <p className="fc-label text-[var(--fc-accent)]">
-                    {isWorkspacePlan ? `FlowCrew ${workspaceLabel} workspace` : "FlowCrew free trial"}
+                    {isWorkspacePlan ? `FlowCrew ${workspaceLabel} workspace` : "FlowCrew trial"}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <h1 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-                      {isWorkspacePlan ? "Analizza messaggi cliente" : "Analizza un lead gratis"}
+                      {isWorkspacePlan ? "Analizza messaggi cliente" : "Analizza 1 lead gratis"}
                     </h1>
 
                     {isWorkspacePlan ? (
@@ -319,7 +393,9 @@ export default function TrialPage() {
                       ? isWorkspacePlan
                         ? `${workspaceLabel} attivo - ${usage.used}/${usage.limit} lead`
                         : `${usage.label} - ${usage.remaining} rimasti`
-                      : "1 lead gratuito"}
+                      : usageError
+                        ? "Utilizzo non disponibile"
+                        : "Account richiesto"}
                 </div>
 
                 <Link href="/" className="fc-button">
@@ -347,7 +423,7 @@ export default function TrialPage() {
                   <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-[var(--fc-accent)] shadow-[0_0_18px_rgba(200,245,66,0.8)]" />
                     <span className="flow-mono text-xs uppercase tracking-[0.16em] text-[var(--fc-accent)]">
-                      {isWorkspacePlan ? `${workspaceLabel} workspace -> output operativo` : "Messaggio sporco -> output operativo"}
+                      {isWorkspacePlan ? `${workspaceLabel} workspace -> output operativo` : "1 lead gratuito -> output operativo"}
                     </span>
                   </div>
 
@@ -360,23 +436,23 @@ export default function TrialPage() {
                       </>
                     ) : (
                       <>
-                        Trasforma un messaggio
+                        Da messaggio confuso
                         <br />
-                        in un <span className="flow-serif font-normal italic text-[var(--fc-accent)]">piano d’azione.</span>
+                        a <span className="flow-serif font-normal italic text-[var(--fc-accent)]">lead strutturato.</span>
                       </>
                     )}
                   </h2>
 
                   <p className="mt-6 max-w-2xl text-base leading-7 text-[var(--fc-text-muted)] sm:text-lg">
                     {isWorkspacePlan
-                      ? "Incolla una richiesta cliente. FlowCrew analizza il messaggio, salva il lead nel workspace e prepara summary, task, priorita, tag e risposta pronta."
-                      : "Incolla una richiesta confusa di un cliente. FlowCrew ti restituisce summary, task, priorità, tag e una risposta pronta da copiare."}
+                      ? "Incolla una richiesta cliente. FlowCrew analizza il messaggio, salva il lead nel workspace e prepara richiesta, proposta, follow-up, task e tag."
+                      : "Analizza 1 lead gratis: serve un account per salvare il risultato nel workspace. Incolla un messaggio WhatsApp, Gmail o DM e FlowCrew lo trasforma in richiesta, proposta, follow-up e task."}
                   </p>
 
                   <div className="mt-6 flex flex-wrap gap-2">
                     {(isWorkspacePlan
-                      ? ["Summary", "Task", "Workspace", "Risposta", "Tags"]
-                      : ["Summary", "Task", "Priorità", "Risposta", "Tags"]
+                      ? ["Richiesta", "Proposta", "Follow-up", "Task", "Tags"]
+                      : ["1 lead gratis", "Account richiesto", "Risposta pronta", "Task", "Tags"]
                     ).map((item) => (
                       <span className="fc-pill fc-pill-success" key={item}>
                         {item}
@@ -408,7 +484,7 @@ export default function TrialPage() {
                       }}
                       type="button"
                     >
-                      Usa esempio
+                      Carica esempio realistico
                     </button>
                   </div>
                 </div>
@@ -419,6 +495,7 @@ export default function TrialPage() {
                       <input
                         className="fc-input"
                         name="clientName"
+                        placeholder="Es. Marco Rossi"
                         type="text"
                         value={clientName}
                         onChange={(event) => setClientName(event.target.value)}
@@ -446,6 +523,7 @@ export default function TrialPage() {
                       <input
                         className="fc-input"
                         name="businessType"
+                        placeholder="Es. studio creativo, consulente, agenzia"
                         type="text"
                         value={businessType}
                         onChange={(event) => setBusinessType(event.target.value)}
@@ -456,6 +534,7 @@ export default function TrialPage() {
                       <input
                         className="fc-input"
                         name="goal"
+                        placeholder="Cosa vuoi ottenere dall'analisi"
                         type="text"
                         value={goal}
                         onChange={(event) => setGoal(event.target.value)}
@@ -468,20 +547,31 @@ export default function TrialPage() {
                       Conversazione
                     </label>
 
-                    <textarea
-                      className="fc-textarea mt-2 min-h-[21rem] text-base leading-7"
-                      id="client-conversation"
-                      name="messyMessage"
-                      onChange={(event) => {
-                        setMessage(event.target.value);
-                        if (error) setError(null);
-                      }}
-                      placeholder="Incolla qui una chat WhatsApp, una mail o una richiesta confusa..."
-                      value={message}
-                    />
+                    <div className="mt-2 overflow-hidden rounded-3xl border border-white/[0.08] bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-[rgba(200,245,66,0.36)]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
+                          Incolla qui un messaggio WhatsApp, Gmail o DM di un cliente
+                        </p>
+                        <span className="flow-mono text-[11px] text-[var(--fc-text-soft)]">
+                          {message.trim().length} caratteri
+                        </span>
+                      </div>
+
+                      <textarea
+                        className="min-h-[21rem] w-full resize-y border-0 bg-transparent px-4 py-4 text-base leading-7 text-[var(--fc-text)] outline-none placeholder:text-[var(--fc-text-soft)]"
+                        id="client-conversation"
+                        name="messyMessage"
+                        onChange={(event) => {
+                          setMessage(event.target.value);
+                          if (error) setError(null);
+                        }}
+                        placeholder="Esempio: Ciao, avremmo bisogno di capire se puoi aiutarci con un sito e magari anche una campagna..."
+                        value={message}
+                      />
+                    </div>
 
                     <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">
-                      Non devi preparare nulla. Incolla il messaggio così com’è: anche se è scritto male, incompleto o pieno di dettagli sparsi.
+                      Dopo il click FlowCrew legge la richiesta, stima priorita e chiarezza, prepara una proposta, suggerisce il follow-up e ordina i task operativi.
                     </p>
                   </div>
 
@@ -492,8 +582,11 @@ export default function TrialPage() {
                   >
                     {isLoading ? (
                       <>
-                        <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />
-                        La crew sta lavorando...
+                        <span aria-hidden="true" className="relative flex h-5 w-5 items-center justify-center">
+                          <span className="absolute h-5 w-5 animate-ping rounded-full bg-black/25" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-black" />
+                        </span>
+                        Analisi in corso
                       </>
                     ) : (
                       <>
@@ -510,28 +603,11 @@ export default function TrialPage() {
                   </button>
 
                   {isLoading ? (
-                    <div aria-live="polite" className="rounded-3xl border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-5" role="status">
-                      <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-accent)]">
-                        <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
-                        Analisi in corso
-                      </div>
-
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        {loadingSteps.map((step) => (
-                          <p className="flex items-center gap-2 text-xs font-medium text-[var(--fc-text-muted)]" key={step}>
-                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--fc-accent)]" />
-                            {step}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
+                    <LoadingProgress />
                   ) : null}
 
                   {error ? (
-                    <div className="flex gap-3 rounded-3xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-medium leading-6 text-red-100" role="alert">
-                      <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
-                      {error}
-                    </div>
+                    <ErrorCallout error={error} />
                   ) : null}
 
                   {lead ? (
@@ -544,7 +620,7 @@ export default function TrialPage() {
                       <p className="mt-2 text-xs font-medium leading-5 text-[var(--fc-text-muted)]">
                         {isWorkspacePlan
                           ? `Lead aggiunto allo storico ${workspaceLabel}. Puoi ritrovarlo in dashboard e inbox.`
-                          : "Questo è il tipo di output che puoi ottenere per ogni cliente con FlowCrew."}
+                          : "Risultato salvato: puoi copiarlo ora o passare a Pro per continuare con altri lead."}
                       </p>
                     </div>
                   ) : null}
@@ -564,55 +640,73 @@ export default function TrialPage() {
                     </div>
 
                     <span className={`flow-mono rounded-full px-3 py-1 text-xs ${generated ? "bg-[rgba(139,255,197,0.08)] text-[var(--fc-mint)]" : "bg-white/[0.04] text-[var(--fc-text-soft)]"}`}>
-                      {generated ? "Ready" : "Idle"}
+                      {generated ? "Completato" : "In attesa"}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-4 p-5 sm:p-6">
+                  {isPartialAnalysis ? <PartialAnalysisNotice /> : null}
+
                   <AgentOutputCard
                     active={generated}
                     agent="Jackie"
                     color="lime"
                     icon={<ClipboardList className="h-4 w-4" />}
-                    label="Summary"
-                    title="Cosa vuole il cliente"
+                    label="Richiesta"
+                    title="Richiesta cliente"
                   >
                     <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
-                      {lead?.summary ?? "Il riassunto chiaro della richiesta cliente comparirà qui."}
+                      {requestSummary ?? "Il riassunto chiaro della richiesta cliente comparira qui."}
                     </p>
-                  </AgentOutputCard>
 
-                  <AgentOutputCard
-                    active={generated}
-                    agent="Milo"
-                    color="mint"
-                    icon={<CheckCircle2 className="h-4 w-4" />}
-                    label="Tasks"
-                    title="Prossime azioni"
-                  >
-                    <ul className="space-y-2">
-                      {taskItems.map((task) => (
-                        <li className="flex gap-2 text-sm leading-6 text-[var(--fc-text-muted)]" key={task}>
-                          <CheckCircle2 aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[var(--fc-accent)]" />
-                          <span>{task}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      <CompactSignal label="Priorita" value={generated ? friendlyPriority : "In attesa"} />
+                      <CompactSignal label="Urgenza" value={generated ? friendlyUrgency : "In attesa"} />
+                      <CompactSignal label="Chiarezza" value={generated ? leadQuality : "In attesa"} />
+                    </div>
                   </AgentOutputCard>
 
                   <AgentOutputCard
                     active={generated}
                     agent="Nora"
                     color="orange"
-                    icon={<MessageSquareText className="h-4 w-4" />}
-                    label="Reply"
-                    title="Risposta pronta"
+                    icon={<FileText className="h-4 w-4" />}
+                    label="Proposta"
+                    title="Proposta, range e scope"
                   >
+                    <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
+                      {generated ? proposalText : "Nora mostrera proposta consigliata, range economico rilevato e punti da chiarire prima di vendere."}
+                    </p>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      <CompactSignal label="Range" value={detectedBudget} />
+                      <CompactSignal label="Deadline" value={detectedDeadline} />
+                      <CompactSignal label="Scope" value={generated ? formatSignal(analysis?.nora.riskLevel, "Da chiarire") : "In attesa"} />
+                    </div>
+                  </AgentOutputCard>
+
+                  <AgentOutputCard
+                    active={generated}
+                    agent="Milo"
+                    color="mint"
+                    icon={<MessageSquareText className="h-4 w-4" />}
+                    label="Follow-up"
+                    title="Risposta e quando rispondere"
+                  >
+                    <p className="mb-3 text-sm leading-6 text-[var(--fc-text-muted)]">
+                      {generated ? followUpText : "Milo suggerira tono, follow-up e momento di risposta."}
+                    </p>
+
                     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.035] p-4">
                       <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--fc-text-muted)]">
-                        {lead?.suggested_reply ?? "La risposta pronta da approvare comparirà qui dopo l'analisi."}
+                        {lead?.suggested_reply ?? "La risposta pronta da approvare comparira qui dopo l'analisi."}
                       </p>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      <CompactSignal label="Tono" value={generated ? formatSignal(analysis?.crewReview?.summary.temperature, "Professionale") : "In attesa"} />
+                      <CompactSignal label="Quando" value={generated ? (friendlyUrgency === "Alta" ? "Oggi" : "Prossimo slot utile") : "In attesa"} />
                     </div>
 
                     <button
@@ -639,16 +733,36 @@ export default function TrialPage() {
                     active={generated}
                     agent="Dex"
                     color="purple"
-                    icon={<Tags className="h-4 w-4" />}
-                    label="Tags"
-                    title="Classificazione"
+                    icon={<ListChecks className="h-4 w-4" />}
+                    label="Handoff"
+                    title="Task, tag e handoff operativo"
                   >
-                    <div className="flex flex-wrap gap-2">
-                      {detectedTags.map((tag) => (
-                        <span className="fc-pill" key={tag}>
-                          {tag}
-                        </span>
+                    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
+                      <p className="text-sm font-bold text-[var(--fc-text)]">Prossima azione</p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
+                        {generated ? handoffText : "Dex trasformera l'analisi in task, tag e handoff operativo."}
+                      </p>
+                    </div>
+
+                    <ul className="mt-4 space-y-2">
+                      {taskItems.map((task) => (
+                        <li className="flex gap-2 text-sm leading-6 text-[var(--fc-text-muted)]" key={task}>
+                          <CheckCircle2 aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-[var(--fc-accent)]" />
+                          <span>{task}</span>
+                        </li>
                       ))}
+                    </ul>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {detectedTags.length ? (
+                        detectedTags.map((tag) => (
+                          <span className="fc-pill" key={tag}>
+                            {formatTag(tag)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="fc-pill">Tag in attesa</span>
+                      )}
                     </div>
                   </AgentOutputCard>
                 </div>
@@ -657,6 +771,7 @@ export default function TrialPage() {
               <UsageCard
                 hasReachedLimit={hasReachedLimit}
                 isUsageLoading={isUsageLoading}
+                usageError={usageError}
                 usage={usage}
               />
 
@@ -676,7 +791,7 @@ export default function TrialPage() {
                   </span>
 
                   <div>
-                    <p className="fc-label">Priority scan</p>
+                    <p className="fc-label">Segnali lead</p>
                     <h3 className="text-lg font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
                       Segnali rilevati
                     </h3>
@@ -684,17 +799,17 @@ export default function TrialPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <SignalCard label="Urgenza" value={generated ? lead?.urgency ?? "Media" : "In attesa"} />
+                  <SignalCard label="Urgenza" value={generated ? friendlyUrgency : "In attesa"} />
                   <SignalCard label="Budget" value={detectedBudget} />
                   <SignalCard label="Deadline" value={detectedDeadline} />
-                  <SignalCard label="Status" value={generated ? "Da qualificare" : "Idle"} />
+                  <SignalCard label="Status" value={generated ? friendlyStatus : "In attesa"} />
                 </div>
               </section>
 
               {generated ? (
                 <section className="rounded-[2rem] border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-5 shadow-2xl shadow-black/20 sm:p-6">
                   <p className="fc-label text-[var(--fc-accent)]">
-                    {isWorkspacePlan ? `${workspaceLabel} workflow` : "Next step"}
+                    {isWorkspacePlan ? `${workspaceLabel} workflow` : "Prossimo passo"}
                   </p>
 
                   <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.05em] text-[var(--fc-text)]">
@@ -706,7 +821,7 @@ export default function TrialPage() {
                   <p className="mt-3 text-sm leading-6 text-[var(--fc-text-muted)]">
                     {isWorkspacePlan
                       ? "Apri la dashboard per vedere priorita e follow-up, oppure entra nell'inbox per lavorare sul dettaglio del lead."
-                      : "Con FlowCrew Pro puoi gestire più richieste, mantenere una dashboard clienti, personalizzare il tono delle risposte e usare modelli AI migliori."}
+                      : "Con FlowCrew Pro puoi gestire piu richieste, mantenere una dashboard clienti, personalizzare il tono delle risposte e usare modelli AI migliori."}
                   </p>
 
                   <div className="mt-5 grid gap-2">
@@ -742,7 +857,7 @@ export default function TrialPage() {
                   <div className="mt-4 space-y-3">
                     {(isWorkspacePlan
                       ? ["Lead salvati nello storico", "Dashboard con priorita e follow-up", "Risposta pronta da copiare", "Tag e prossima azione"]
-                      : ["Riassunto chiaro della richiesta", "Task e prossima azione", "Risposta pronta da copiare", "Tag e priorità del lead"]
+                      : ["Riassunto chiaro della richiesta", "Task e prossima azione", "Risposta pronta da copiare", "Tag e priorita del lead"]
                     ).map((item) => (
                       <div className="flex gap-2 text-sm text-[var(--fc-text-muted)]" key={item}>
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fc-accent)]" />
@@ -769,6 +884,98 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function LoadingProgress() {
+  return (
+    <div aria-live="polite" className="rounded-3xl border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-5" role="status">
+      <div className="flex items-center gap-2 text-sm font-bold text-[var(--fc-accent)]">
+        <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+        Analisi in corso
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {loadingSteps.map((step, index) => (
+          <p className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-black/20 px-3 py-2 text-xs font-medium text-[var(--fc-text-muted)]" key={step}>
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--fc-accent)]"
+              style={{ animationDelay: `${index * 160}ms` }}
+            />
+            {step}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ErrorCallout({ error }: { error: TrialError }) {
+  return (
+    <div className="rounded-3xl border border-red-400/20 bg-red-400/10 p-4 text-sm leading-6 text-red-100" role="alert">
+      <div className="flex gap-3">
+        <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+        <div>
+          <p className="font-extrabold text-white">{error.title}</p>
+          <p className="mt-1 font-medium">{error.message}</p>
+        </div>
+      </div>
+
+      {error.action ? (
+        <div className="mt-4 flex flex-wrap gap-2 pl-8">
+          {error.action === "login" ? (
+            <Link href="/login" className="fc-button fc-button-primary">
+              Accedi
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
+          ) : null}
+
+          {error.action === "pro" ? (
+            <a href={manualProHref} className="fc-button fc-button-primary">
+              Richiedi accesso Pro
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </a>
+          ) : null}
+
+          {error.action === "retry" ? (
+            <button type="submit" className="fc-button">
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              Riprova
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PartialAnalysisNotice() {
+  return (
+    <div className="rounded-3xl border border-[rgba(255,196,87,0.22)] bg-[rgba(255,196,87,0.08)] p-4 text-sm leading-6 text-[#ffd79a]">
+      <div className="flex gap-3">
+        <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
+        <div>
+          <p className="font-extrabold text-white">Analisi parziale</p>
+          <p className="mt-1 text-[var(--fc-text-muted)]">
+            FlowCrew ha salvato il miglior risultato disponibile, ma una parte dell'analisi e stata ricostruita. Controlla i dettagli prima di inviare la risposta.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactSignal({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] px-3 py-2">
+      <p className="flow-mono text-[10px] uppercase tracking-[0.12em] text-[var(--fc-text-soft)]">
+        {label}
+      </p>
+      <p className="mt-1 text-xs font-extrabold text-[var(--fc-text)]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function AIDiagnosticCard({
   analysis,
   lead,
@@ -784,8 +991,8 @@ function AIDiagnosticCard({
   detectedDeadline: string;
   detectedTags: string[];
 }) {
-  const missingInfo = analysis?.jackie.missingInfo.filter(Boolean).slice(0, 2).join(" · ");
-  const nextSteps = analysis?.nora.nextSteps.filter(Boolean).slice(0, 2).join(" · ");
+  const missingInfo = analysis?.jackie.missingInfo.filter(Boolean).slice(0, 2).join(" - ");
+  const nextSteps = analysis?.nora.nextSteps.filter(Boolean).slice(0, 2).join(" - ");
 
   const diagnosticRows = [
     {
@@ -799,7 +1006,7 @@ function AIDiagnosticCard({
       label: "Decisione",
       title: "Quanto va seguito subito",
       value: generated
-        ? `${lead?.urgency ?? analysis?.nora.urgency ?? "Media"} · ${analysis?.nora.leadQuality ?? "lead da qualificare"}`
+        ? `${lead?.urgency ?? analysis?.nora.urgency ?? "Media"} - ${analysis?.nora.leadQuality ?? "lead da qualificare"}`
         : "Urgenza, qualita lead e rischio vengono stimati prima della risposta.",
     },
     {
@@ -813,7 +1020,7 @@ function AIDiagnosticCard({
       label: "Output",
       title: "Cosa finisce nel workspace",
       value: generated
-        ? `${detectedTags.slice(0, 3).join(", ")} · ${detectedBudget} · ${detectedDeadline}`
+        ? `${detectedTags.slice(0, 3).join(", ")} - ${detectedBudget} - ${detectedDeadline}`
         : "Tag, status, prossima azione e risposta pronta sono salvati sul lead.",
     },
   ];
@@ -826,7 +1033,7 @@ function AIDiagnosticCard({
         </span>
 
         <div>
-          <p className="fc-label text-[var(--fc-accent)]">AI reasoning</p>
+          <p className="fc-label text-[var(--fc-accent)]">Lettura AI</p>
           <h3 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
             Come FlowCrew legge il lead
           </h3>
@@ -883,14 +1090,34 @@ function UsageCard({
   usage,
   isUsageLoading,
   hasReachedLimit,
+  usageError,
 }: {
   usage: UsageResponse | null;
   isUsageLoading: boolean;
   hasReachedLimit: boolean;
+  usageError: UsageError | null;
 }) {
   const progress = usage ? Math.min((usage.used / Math.max(usage.limit, 1)) * 100, 100) : 0;
   const isWorkspace = Boolean(usage && isPaidWorkspacePlan(usage.plan));
   const workspaceLabel = usage ? getWorkspacePlanLabel(usage.plan) : "Pro";
+  const title = isUsageLoading
+    ? "Controllo piano..."
+    : usageError
+      ? "Piano non disponibile"
+      : isWorkspace
+        ? `${workspaceLabel} attivo`
+        : usage?.remaining === 0
+          ? "Lead gratuito usato"
+          : "Lead gratuito disponibile";
+  const status = isUsageLoading
+    ? "Verifica"
+    : usageError
+      ? "Da verificare"
+      : hasReachedLimit
+        ? "Terminato"
+        : isWorkspace
+          ? `${workspaceLabel} attivo`
+          : "Disponibile";
 
   return (
     <section className="rounded-[2rem] border border-white/[0.06] bg-[rgba(14,14,14,0.76)] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
@@ -898,22 +1125,18 @@ function UsageCard({
         <div>
           <p className="fc-label">Piano attuale</p>
           <h3 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-            {isUsageLoading
-              ? "Caricamento..."
-              : isWorkspace
-                ? `${workspaceLabel} plan active`
-                : usage?.label ?? "Free"}
+            {title}
           </h3>
         </div>
 
         <span
           className={`flow-mono rounded-full px-3 py-1 text-xs ${
-            hasReachedLimit
+            hasReachedLimit || usageError
               ? "border border-red-400/20 bg-red-400/10 text-red-100"
               : "border border-[rgba(139,255,197,0.18)] bg-[rgba(139,255,197,0.07)] text-[var(--fc-mint)]"
           }`}
         >
-          {hasReachedLimit ? (isWorkspace ? "Capacity full" : "Limit reached") : isWorkspace ? `${workspaceLabel} active` : "Active"}
+          {status}
         </span>
       </div>
 
@@ -921,7 +1144,7 @@ function UsageCard({
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="text-[var(--fc-text-muted)]">Lead usati</span>
           <span className="flow-mono font-bold text-[var(--fc-text)]">
-            {usage ? `${usage.used} / ${usage.limit} leads used` : "-"}
+            {usage ? `${usage.used} / ${usage.limit}` : "-"}
           </span>
         </div>
 
@@ -933,13 +1156,15 @@ function UsageCard({
         </div>
 
         <p className="mt-3 text-xs leading-5 text-[var(--fc-text-muted)]">
-          {usage
-            ? isWorkspace
-              ? `${usage.remaining} remaining this period.`
-              : usage.remaining > 0
-                ? `Ti restano ${usage.remaining} analisi nel piano ${usage.label}.`
-                : "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead."
-            : "Utilizzo non disponibile."}
+          {usageError
+            ? getUsageErrorMessage(usageError)
+            : usage
+              ? isWorkspace
+                ? `${usage.remaining} analisi disponibili in questo periodo.`
+                : usage.remaining > 0
+                  ? "Puoi analizzare 1 lead gratis. Per continuare dopo il primo risultato serve accesso Pro."
+                  : "Hai usato il tuo lead gratuito. Passa a Pro per continuare."
+              : "Accedi per verificare il tuo lead gratuito e salvare il risultato nel workspace."}
         </p>
       </div>
 
@@ -987,7 +1212,7 @@ function AgentOutputCard({
 
           <div>
             <p className="flow-mono text-[11px] uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
-              {agent} · {label}
+              {agent} - {label}
             </p>
 
             <h4 className="mt-1 text-base font-extrabold tracking-[-0.035em] text-[var(--fc-text)]">
@@ -997,7 +1222,7 @@ function AgentOutputCard({
         </div>
 
         <span className={`flow-mono rounded-full px-2 py-0.5 text-[11px] ${active ? "bg-[rgba(139,255,197,0.08)] text-[var(--fc-mint)]" : "bg-white/[0.04] text-[var(--fc-text-soft)]"}`}>
-          {active ? "Ready" : "Idle"}
+          {active ? "Pronto" : "In attesa"}
         </span>
       </div>
 
@@ -1020,6 +1245,198 @@ function SignalCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function isIngestPayload(payload: IngestResponse | ErrorPayload): payload is IngestResponse {
+  return Boolean(
+    payload &&
+      typeof payload === "object" &&
+      "analysis" in payload &&
+      "lead" in payload &&
+      payload.analysis &&
+      payload.lead,
+  );
+}
+
+function createTrialException(error: TrialError) {
+  const exception = new Error(error.message) as Error & { trialError?: TrialError };
+  exception.trialError = error;
+  return exception;
+}
+
+function getTrialErrorFromException(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "trialError" in error &&
+    (error as { trialError?: TrialError }).trialError
+  ) {
+    return (error as { trialError: TrialError }).trialError;
+  }
+
+  return createTrialError("generic");
+}
+
+function getTrialErrorFromPayload(payload: ErrorPayload, status: number) {
+  const code = payload.code ?? "";
+
+  if (status === 401 || code === "auth_required") return createTrialError("auth_required");
+
+  if (status === 403 || code === "quota_exceeded" || code === "plan_limit_reached") {
+    return createTrialError("quota_exceeded");
+  }
+
+  if (code === "supabase_unconfigured") return createTrialError("supabase_unconfigured");
+  if (code === "usage_unavailable") return createTrialError("usage_unavailable");
+  if (code === "invalid_input" || code === "invalid_request" || code === "invalid_json") {
+    return createTrialError("invalid_input");
+  }
+
+  if (status === 429 || code === "rate_limited" || code === "gemini_rate_limited") {
+    return createTrialError("rate_limited");
+  }
+
+  if (code.includes("ai") || code.includes("gemini") || code === "invalid_response") {
+    return createTrialError("ai_unavailable");
+  }
+
+  return createTrialError("generic");
+}
+
+function createTrialError(code: string): TrialError {
+  switch (code) {
+    case "auth_required":
+      return {
+        code,
+        title: "Accedi per analizzare il lead",
+        message: "FlowCrew deve collegare il risultato al tuo workspace prima di salvarlo.",
+        action: "login",
+      };
+    case "usage_unavailable":
+      return {
+        code,
+        title: "Non riesco a verificare il piano",
+        message: "Riprova tra poco: non voglio consumare o salvare un lead senza conoscere il tuo limite.",
+        action: "retry",
+      };
+    case "quota_exceeded":
+      return {
+        code,
+        title: "Hai usato il tuo lead gratuito",
+        message: "Passa a Pro per continuare ad analizzare messaggi cliente e mantenere lo storico.",
+        action: "pro",
+      };
+    case "supabase_unconfigured":
+      return {
+        code,
+        title: "Workspace non disponibile",
+        message: "In questo ambiente l'area account non e pronta. Puoi riprovare quando il workspace e configurato.",
+      };
+    case "invalid_input_short":
+      return {
+        code,
+        title: "Messaggio troppo breve",
+        message: "Incolla qualche dettaglio in piu: richiesta, obiettivo, budget, deadline o contesto cliente.",
+      };
+    case "invalid_input":
+      return {
+        code,
+        title: "Aggiungi un messaggio cliente",
+        message: "Incolla una chat, una mail o un DM reale prima di avviare l'analisi.",
+      };
+    case "rate_limited":
+      return {
+        code,
+        title: "Analisi temporaneamente non disponibile",
+        message: "Il motore AI e sotto carico. Aspetta qualche secondo e riprova.",
+        action: "retry",
+      };
+    case "ai_unavailable":
+    case "invalid_response":
+    case "empty_response":
+      return {
+        code,
+        title: "Non sono riuscito a completare l'analisi",
+        message: "Il messaggio non e stato salvato come risultato valido. Riprova tra poco.",
+        action: "retry",
+      };
+    case "copy_failed":
+      return {
+        code,
+        title: "Copia non riuscita",
+        message: "Puoi selezionare manualmente la risposta dalla card Milo.",
+      };
+    default:
+      return {
+        code: "generic",
+        title: "Qualcosa non ha funzionato",
+        message: "Riprova tra poco. Se il problema continua, richiedi supporto Pro.",
+        action: "retry",
+      };
+  }
+}
+
+function getUsageErrorMessage(error: UsageError) {
+  if (error.code === "auth_required") {
+    return "Accedi per verificare il lead gratuito e salvare il risultato nel workspace.";
+  }
+
+  if (error.code === "supabase_unconfigured") {
+    return "Il workspace non e disponibile in questo ambiente.";
+  }
+
+  return error.message || "Utilizzo non disponibile in questo momento.";
+}
+
+function formatSignal(value: string | null | undefined, fallback: string) {
+  const normalized = value?.trim();
+  if (!normalized) return fallback;
+
+  const lower = normalized.toLowerCase();
+  const labels: Record<string, string> = {
+    high: "Alta",
+    medium: "Media",
+    low: "Bassa",
+    hot: "Caldo",
+    warm: "Tiepido",
+    cold: "Freddo",
+    urgent: "Urgente",
+    unclear: "Da chiarire",
+    clear: "Chiaro",
+    qualified: "Qualificato",
+    "needs-qualification": "Da qualificare",
+    needs_qualification: "Da qualificare",
+  };
+
+  return labels[lower] ?? toDisplayLabel(normalized);
+}
+
+function formatStatus(value: string | null | undefined) {
+  const normalized = value?.trim();
+  if (!normalized) return "Da qualificare";
+
+  const labels: Record<string, string> = {
+    new: "Nuovo",
+    needs_qualification: "Da qualificare",
+    waiting_reply: "In attesa risposta",
+    follow_up: "Follow-up",
+    qualified: "Qualificato",
+    closed: "Chiuso",
+  };
+
+  return labels[normalized.toLowerCase()] ?? toDisplayLabel(normalized);
+}
+
+function formatTag(tag: string) {
+  return toDisplayLabel(tag).toLowerCase();
+}
+
+function toDisplayLabel(value: string) {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function getPlanLabel(plan: UsageResponse["plan"]) {
   if (plan === "pro") return "Pro";
   if (plan === "team") return "Team";
@@ -1034,14 +1451,6 @@ function getWorkspacePlanLabel(plan: UsageResponse["plan"]) {
   if (plan === "team") return "Team";
   if (plan === "pro") return "Pro";
   return "Free";
-}
-
-function getLimitErrorMessage(usage: UsageResponse | null) {
-  if (usage && isPaidWorkspacePlan(usage.plan)) {
-    return "La capacita del periodo e esaurita. Le nuove analisi ripartono quando il piano viene aggiornato.";
-  }
-
-  return "Hai finito il lead gratuito. Richiedi accesso Pro per analizzare altri lead.";
 }
 
 function getLimitButtonLabel(usage: UsageResponse | null) {
