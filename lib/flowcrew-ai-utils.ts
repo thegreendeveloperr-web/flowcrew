@@ -1,4 +1,4 @@
-import type { FlowCrewLanguage } from "./flowcrew-types";
+import type { ConversationInput, FlowCrewLanguage } from "./flowcrew-types";
 
 export type AgentReviewResult = {
   message: string;
@@ -316,6 +316,233 @@ export function normalizeTags(value: unknown, fallback: string[] = ["lead"]) {
     .filter(Boolean);
 
   return Array.from(new Set(tags)).slice(0, 6);
+}
+
+type RecoveryOptions = {
+  fallbackReason?: string;
+  warnings?: string[];
+  degraded?: boolean;
+};
+
+const sourceLabels: Record<ConversationInput["sourceType"], string> = {
+  import: "import",
+  whatsapp: "WhatsApp",
+  gmail: "Gmail",
+  instagram: "DM",
+  email: "email",
+  notes: "notes",
+  other: "message",
+};
+
+function compactSnippet(text: string, max = 190) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, max - 1).trim()}...`;
+}
+
+function hasAny(text: string, words: string[]) {
+  return words.some((word) => text.includes(word));
+}
+
+function buildDetectedRequest(input: ConversationInput) {
+  const text = input.messyMessage.toLowerCase();
+
+  if (hasAny(text, ["sito", "website", "pagina servizi", "galleria", "modulo"])) {
+    return input.language === "it"
+      ? "un sito semplice e professionale con pagine, contenuti e contatto da definire"
+      : "a simple professional website with pages, content, and contact flow to define";
+  }
+
+  if (hasAny(text, ["preventivo", "quote", "proposal", "quanto costa", "costo"])) {
+    return input.language === "it"
+      ? "un preventivo con scope e tempi da chiarire"
+      : "a quote with scope and timeline to clarify";
+  }
+
+  return input.language === "it"
+    ? "una richiesta cliente da qualificare"
+    : "a client request to qualify";
+}
+
+function buildLeadSignals(input: ConversationInput) {
+  const text = input.messyMessage.toLowerCase();
+  const request = buildDetectedRequest(input);
+  const source = sourceLabels[input.sourceType] ?? input.sourceType;
+  const findings: string[] = [];
+
+  if (input.language === "it") {
+    findings.push(`Richiesta principale: ${request}.`);
+
+    if (hasAny(text, ["preventivo", "quanto costa", "costo", "prezzo", "budget"])) {
+      findings.push("Il cliente chiede costo indicativo o preventivo.");
+    }
+
+    if (hasAny(text, ["entro fine mese", "fine mese", "tempo", "tempistiche", "quando", "online entro", "scadenza"])) {
+      findings.push("C'e una scadenza o un timing da confermare.");
+    }
+
+    if (hasAny(text, ["testi", "foto", "immagini", "galleria", "materiali", "contenuti"])) {
+      findings.push("Materiali e contenuti non sono ancora completamente pronti.");
+    }
+
+    findings.push(`Canale: ${source}. Estratto: "${compactSnippet(input.messyMessage)}"`);
+
+    return Array.from(new Set(findings)).slice(0, 5);
+  }
+
+  findings.push(`Main request: ${request}.`);
+
+  if (hasAny(text, ["quote", "cost", "price", "budget", "proposal"])) {
+    findings.push("The client is asking for indicative cost or a quote.");
+  }
+
+  if (hasAny(text, ["end of month", "timeline", "timing", "when", "deadline", "online by"])) {
+    findings.push("There is a deadline or timing signal to confirm.");
+  }
+
+  if (hasAny(text, ["copy", "texts", "photos", "images", "gallery", "assets", "content"])) {
+    findings.push("Materials and content are not fully ready yet.");
+  }
+
+  findings.push(`Source: ${source}. Excerpt: "${compactSnippet(input.messyMessage)}"`);
+
+  return Array.from(new Set(findings)).slice(0, 5);
+}
+
+export function createRecoveredAgentReview(
+  agentName: "Jackie" | "Milo" | "Nora",
+  input: ConversationInput,
+  options: RecoveryOptions = {},
+): AgentReviewResult {
+  const signals = buildLeadSignals(input);
+  const fallbackReason = options.fallbackReason ?? "recovered_agent_json";
+  const warnings = options.warnings?.length ? options.warnings : [fallbackReason];
+
+  if (input.language === "it") {
+    if (agentName === "Milo") {
+      return {
+        message:
+          "Milo suggerisce una risposta con stima preliminare, domande di qualifica e prossimo step chiaro.",
+        findings: [
+          "Opportunita concreta: il cliente chiede un preventivo e tempistiche.",
+          "Priorita medio-alta se la scadenza entro fine mese e reale.",
+          "Rischio: scope, materiali, contenuti e budget non sono ancora definiti.",
+          "Mossa successiva: chiedere dettagli essenziali e proporre una breve call o mini-brief.",
+          ...signals,
+        ].slice(0, 5),
+        degraded: options.degraded ?? false,
+        fallbackReason,
+        warnings,
+      };
+    }
+
+    if (agentName === "Nora") {
+      return {
+        message:
+          "Nora converte la richiesta in azioni: chiarire scope, materiali, tempi e dati mancanti.",
+        findings: [
+          "Confermare pagine richieste, obiettivo del sito e priorita.",
+          "Chiedere foto, esempi, testi disponibili e tono desiderato.",
+          "Verificare la scadenza di fine mese prima di promettere tempi.",
+          "Preparare una stima solo dopo i dettagli minimi di scope.",
+          ...signals,
+        ].slice(0, 5),
+        degraded: options.degraded ?? false,
+        fallbackReason,
+        warnings,
+      };
+    }
+
+    return {
+      message:
+        "Jackie ha isolato richiesta, dettagli disponibili e informazioni mancanti dal messaggio.",
+      findings: signals,
+      degraded: options.degraded ?? false,
+      fallbackReason,
+      warnings,
+    };
+  }
+
+  if (agentName === "Milo") {
+    return {
+      message:
+        "Milo recommends replying with an initial estimate path, qualification questions, and a clear next step.",
+      findings: [
+        "Concrete opportunity: the client is asking for a quote and timeline.",
+        "Priority is medium-high if the end-of-month deadline is real.",
+        "Risk: scope, materials, content, and budget are not fully defined.",
+        "Next move: ask for essential details and suggest a short call or mini brief.",
+        ...signals,
+      ].slice(0, 5),
+      degraded: options.degraded ?? false,
+      fallbackReason,
+      warnings,
+    };
+  }
+
+  if (agentName === "Nora") {
+    return {
+      message:
+        "Nora turns the request into actions: clarify scope, materials, timing, and missing details.",
+      findings: [
+        "Confirm requested pages, website goal, and priority.",
+        "Ask for photos, examples, available copy, and preferred tone.",
+        "Verify the deadline before promising timing.",
+        "Prepare an estimate only after the minimum scope details are clear.",
+        ...signals,
+      ].slice(0, 5),
+      degraded: options.degraded ?? false,
+      fallbackReason,
+      warnings,
+    };
+  }
+
+  return {
+    message:
+      "Jackie isolated the request, available details, and missing information from the message.",
+    findings: signals,
+    degraded: options.degraded ?? false,
+    fallbackReason,
+    warnings,
+  };
+}
+
+export function createRecoveredDexReview(
+  input: ConversationInput,
+  options: RecoveryOptions = {},
+): DexReviewResult {
+  const fallbackReason = options.fallbackReason ?? "recovered_dex_json";
+  const warnings = options.warnings?.length ? options.warnings : [fallbackReason];
+  const suggestedReply =
+    input.language === "it"
+      ? "Ciao, grazie per avermi scritto. Posso aiutarti volentieri: per darti un preventivo sensato mi servirebbero alcuni dettagli in piu su attivita, pagine da includere, materiali gia disponibili e obiettivo della scadenza. Se vuoi, facciamo un breve mini-brief e poi ti mando un range di costo e tempi realistici."
+      : "Hi, thanks for reaching out. I can help with this. To give you a useful quote, I would need a few more details about the business, pages needed, available materials, and the deadline goal. If you want, we can do a short mini brief and I will send a realistic cost and timeline range.";
+
+  return {
+    message:
+      input.language === "it"
+        ? "Dex ha preparato una risposta prudente e pronta da adattare."
+        : "Dex prepared a cautious reply ready to adapt.",
+    suggestedReply,
+    replies: {
+      professional: suggestedReply,
+      friendly:
+        input.language === "it"
+          ? "Ciao! Grazie per il messaggio, il progetto sembra chiaro come direzione. Per stimare bene costo e tempi mi servirebbero solo alcuni dettagli: attivita, pagine, materiali disponibili e deadline. Ti va se facciamo un mini-brief veloce e poi ti mando una proposta realistica?"
+          : "Hi! Thanks for the message, the direction sounds clear. To estimate cost and timing properly, I just need a few details: business, pages, available materials, and deadline. Want to do a quick mini brief and I will send a realistic proposal?",
+      short:
+        input.language === "it"
+          ? "Ciao, grazie! Posso aiutarti. Mandami qualche dettaglio su attivita, pagine, materiali e deadline: poi ti preparo range di costo e tempi."
+          : "Hi, thanks! I can help. Send me a few details on business, pages, materials, and deadline, then I will prepare a cost and timing range.",
+      firmButPolite:
+        input.language === "it"
+          ? "Ciao, grazie per la richiesta. Prima di indicare costo e tempi ho bisogno di confermare scope, materiali disponibili e scadenza. Con questi dettagli posso prepararti una stima seria e realistica."
+          : "Hi, thanks for the request. Before giving cost and timing, I need to confirm scope, available materials, and deadline. With those details I can prepare a serious, realistic estimate.",
+    },
+    degraded: options.degraded ?? false,
+    fallbackReason,
+    warnings,
+  };
 }
 
 export function createUnavailableAgentReview(

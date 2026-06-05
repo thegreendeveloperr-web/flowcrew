@@ -7,7 +7,8 @@ import {
   type FlowCrewLanguage,
 } from "@/lib/flowcrew-types";
 import {
-  createUnavailableAgentReview,
+  createRecoveredAgentReview,
+  createRecoveredDexReview,
   createUnavailableDexReview,
   isRecord,
   normalizePriority,
@@ -263,6 +264,7 @@ function compactWarnings(values: Array<string | undefined>) {
 function readAgentReviewPayload(
   text: string,
   agentName: AgentReviewRequest["agentName"],
+  input: ConversationInput,
 ): AgentReviewResult {
   const parsed = parseGeminiJsonObject(text);
   const warnings: string[] = [];
@@ -270,13 +272,10 @@ function readAgentReviewPayload(
   if (parsed.repaired) warnings.push("json_repaired");
 
   if (!parsed.object) {
-    return {
-      message: `${agentName} ha restituito JSON non valido. Uso un fallback prudente basato sul testo ricevuto.`,
-      findings: textToFindings(text),
-      degraded: true,
-      fallbackReason: "invalid_agent_json",
-      warnings: compactWarnings(["invalid_agent_json", parsed.error]),
-    };
+    return createRecoveredAgentReview(agentName, input, {
+      fallbackReason: "recovered_agent_json",
+      warnings: compactWarnings(["recovered_agent_json", parsed.error]),
+    });
   }
 
   if (typeof parsed.object.message !== "string") warnings.push("message_fallback");
@@ -295,35 +294,24 @@ function readAgentReviewPayload(
   return {
     message,
     findings,
-    degraded: warnings.length > 0,
+    degraded: false,
     fallbackReason: warnings.length ? "partial_agent_json" : undefined,
     warnings,
   };
 }
 
-function readDexReviewPayload(text: string, language: FlowCrewLanguage): DexReviewResult {
+function readDexReviewPayload(text: string, input: ConversationInput): DexReviewResult {
   const parsed = parseGeminiJsonObject(text);
   const warnings: string[] = [];
-  const safeFallbackReply = createUnavailableDexReview(language).suggestedReply;
+  const safeFallbackReply = createUnavailableDexReview(input.language).suggestedReply;
 
   if (parsed.repaired) warnings.push("json_repaired");
 
   if (!parsed.object) {
-    const fallbackReply = text.trim() || safeFallbackReply;
-
-    return {
-      message: "Dex ha restituito JSON non valido. Uso una risposta prudente basata sul testo ricevuto.",
-      suggestedReply: fallbackReply,
-      replies: {
-        professional: fallbackReply,
-        friendly: fallbackReply,
-        short: fallbackReply,
-        firmButPolite: fallbackReply,
-      },
-      degraded: true,
-      fallbackReason: "invalid_dex_json",
-      warnings: compactWarnings(["invalid_dex_json", parsed.error]),
-    };
+    return createRecoveredDexReview(input, {
+      fallbackReason: "recovered_dex_json",
+      warnings: compactWarnings(["recovered_dex_json", parsed.error]),
+    });
   }
 
   if (typeof parsed.object.suggestedReply !== "string") warnings.push("suggested_reply_fallback");
@@ -352,7 +340,7 @@ function readDexReviewPayload(text: string, language: FlowCrewLanguage): DexRevi
         suggestedReply,
       ),
     },
-    degraded: warnings.length > 0,
+    degraded: false,
     fallbackReason: warnings.length ? "partial_dex_json" : undefined,
     warnings,
   };
@@ -416,7 +404,7 @@ Rules:
       );
     }
 
-    return readAgentReviewPayload(response.text, agentName);
+    return readAgentReviewPayload(response.text, agentName, input);
   } catch (error) {
     logRawGeminiError(agentName, error);
     throw normalizeAIError(error);
@@ -441,11 +429,10 @@ async function runAgentReviewSafely(request: AgentReviewRequest) {
       status: normalized.status,
     });
 
-    return createUnavailableAgentReview(
-      request.agentName,
-      request.input.language,
-      normalized.publicMessage,
-    );
+    return createRecoveredAgentReview(request.agentName, request.input, {
+      fallbackReason: normalized.code,
+      warnings: [normalized.publicMessage],
+    });
   }
 }
 
@@ -500,7 +487,7 @@ Rules:
       );
     }
 
-    return readDexReviewPayload(response.text, input.language);
+    return readDexReviewPayload(response.text, input);
   } catch (error) {
     logRawGeminiError("Dex", error);
     throw normalizeAIError(error);
@@ -524,7 +511,10 @@ async function runDexReviewSafely(input: ConversationInput) {
       status: normalized.status,
     });
 
-    return createUnavailableDexReview(input.language, normalized.publicMessage);
+    return createRecoveredDexReview(input, {
+      fallbackReason: normalized.code,
+      warnings: [normalized.publicMessage],
+    });
   }
 }
 
@@ -554,7 +544,7 @@ async function runFinalSummary({
     suggestedReply: dex.suggestedReply,
     risks: milo.findings.slice(0, 3),
     missingInfo: jackie.findings.slice(0, 3),
-    explanation: "FlowCrew ha combinato le analisi reali degli agenti in un piano operativo.",
+    explanation: "FlowCrew ha combinato i segnali degli agenti in un piano operativo.",
     tags: ["lead", "follow-up", "client-request"],
     category: "Richiesta cliente",
     status: "needs_qualification",
@@ -624,9 +614,9 @@ Rules:
     if (!response.text?.trim()) {
       return {
         ...fallback,
-        degraded: true,
-        fallbackReason: "empty_summary_response",
-        warnings: ["empty_summary_response"],
+        degraded: false,
+        fallbackReason: "recovered_summary_empty",
+        warnings: ["recovered_summary_empty"],
       };
     }
 
@@ -635,9 +625,9 @@ Rules:
     if (!parsed.object) {
       return {
         ...fallback,
-        degraded: true,
-        fallbackReason: "invalid_summary_json",
-        warnings: compactWarnings(["invalid_summary_json", parsed.error]),
+        degraded: false,
+        fallbackReason: "recovered_summary_json",
+        warnings: compactWarnings(["recovered_summary_json", parsed.error]),
       };
     }
 
@@ -682,7 +672,7 @@ Rules:
         fallback.detectedTopics,
         { maxItems: 5 },
       ),
-      degraded: warnings.length > 0,
+      degraded: false,
       fallbackReason: warnings.length ? "partial_summary_json" : undefined,
       warnings,
     };
@@ -696,7 +686,7 @@ Rules:
 
     return {
       ...fallback,
-      degraded: true,
+      degraded: false,
       fallbackReason: normalized.code,
       warnings: [normalized.publicMessage],
     };

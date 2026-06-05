@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createRecoveredAgentReview,
+  createRecoveredDexReview,
   createUnavailableAgentReview,
   createUnavailableDexReview,
   getErrorStatus,
@@ -13,6 +15,17 @@ import {
   textToFindings,
   tryParseGeminiJson,
 } from "../lib/flowcrew-ai-utils";
+import type { ConversationInput } from "../lib/flowcrew-types";
+
+const websiteQuoteInput = {
+  clientName: "",
+  sourceType: "whatsapp",
+  messyMessage:
+    "Ciao, ho visto il tuo profilo su Instagram e volevo chiederti un preventivo. Mi servirebbe un sito semplice ma professionale con pagina servizi, galleria immagini e modulo per essere contattata. Non ho ancora testi pronti, posso mandarti foto. Vorrei capire costo e tempi per averlo online entro fine mese.",
+  businessType: "Freelance / piccolo team",
+  goal: "Richiesta cliente, priorita, proposta, follow-up e task.",
+  language: "it",
+} satisfies ConversationInput;
 
 test("tryParseGeminiJson parses fenced JSON", () => {
   assert.deepEqual(tryParseGeminiJson('```json\n{"message":"ok"}\n```'), {
@@ -108,6 +121,28 @@ test("agent fallback keeps a useful review shape", () => {
   assert.equal(review.message.includes("Nora"), true);
   assert.equal(review.findings.length, 3);
   assert.equal(review.findings[0], "Motivo: timeout");
+});
+
+test("recovered agent review avoids technical JSON copy", () => {
+  const review = createRecoveredAgentReview("Milo", websiteQuoteInput, {
+    warnings: ["recovered_agent_json", "Unexpected token"],
+  });
+
+  assert.equal(review.degraded, false);
+  assert.equal(review.message.includes("JSON"), false);
+  assert.equal(review.findings.some((finding) => finding.includes("preventivo")), true);
+  assert.deepEqual(review.warnings, ["recovered_agent_json", "Unexpected token"]);
+});
+
+test("recovered Dex review creates ready-to-send replies", () => {
+  const review = createRecoveredDexReview(websiteQuoteInput, {
+    warnings: ["recovered_dex_json"],
+  });
+
+  assert.equal(review.degraded, false);
+  assert.equal(review.message.includes("JSON"), false);
+  assert.equal(review.suggestedReply.includes("preventivo"), true);
+  assert.equal(review.replies.short.length > 30, true);
 });
 
 test("Dex fallback fills every reply variant", () => {
