@@ -10,7 +10,7 @@ export default function LanguageSelector() {
   return (
     <div
       aria-label={copy.languageLabel}
-      className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.045] p-1 shadow-[0_10px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+      className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.025] p-1"
       role="group"
     >
       {languages.map((option) => {
@@ -19,10 +19,10 @@ export default function LanguageSelector() {
         return (
           <button
             aria-pressed={isActive}
-            className={`rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.18em] transition ${
+            className={`flow-mono rounded-full px-2.5 py-1.5 text-[10px] font-medium tracking-[0.14em] transition ${
               isActive
-                ? "bg-cyan-300 text-slate-950 shadow-[0_0_18px_rgba(103,232,249,0.28)]"
-                : "text-slate-400 hover:text-white"
+                ? "bg-[var(--fc-accent)] text-[#080808]"
+                : "text-[var(--fc-text-muted)] hover:text-[var(--fc-text)]"
             }`}
             key={option}
             onClick={() => setLanguage(option)}

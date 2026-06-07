@@ -1,58 +1,138 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, Sparkles } from "lucide-react";
+import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const manualProHref =
   "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
 
-const plans = [
-  {
-    name: "Free trial",
-    price: "0",
-    period: "one lead",
-    description: "For testing FlowCrew with one real client message.",
-    features: [
-      "1 lead analysis",
-      "Jackie, Nora, Milo and Dex",
-      "Lead summary, tags and reply",
-      "No card required",
+const pricingCopy = {
+  it: {
+    home: "Home",
+    label: "Prezzi",
+    titleLineOne: "Inizia gratis.",
+    titleLineTwo: "Fai upgrade quando FlowCrew funziona per te.",
+    body:
+      "La homepage resta concentrata sulla promessa del prodotto. Dettagli dei piani, limiti della prova e checkout vivono qui.",
+    popular: "Consigliato",
+    customPrice: "Su misura",
+    checkoutNote:
+      "Il checkout resta separato dalla landing. Prima capisci FlowCrew, poi provi un lead reale, poi confronti i piani quando sei pronto.",
+    plans: [
+      {
+        name: "Prova gratuita",
+        price: "0",
+        period: "un lead",
+        description: "Per testare FlowCrew con un vero messaggio cliente.",
+        features: [
+          "1 analisi lead",
+          "Jackie, Nora, Milo e Dex",
+          "Riepilogo, tag e risposta",
+          "Nessuna carta richiesta",
+        ],
+        cta: "Analizza 1 lead gratis",
+        href: "/trial",
+      },
+      {
+        name: "Pro",
+        price: "19",
+        period: "al mese",
+        description: "Per freelance che ricevono richieste clienti ogni settimana.",
+        features: [
+          "Più analisi lead",
+          "Storico clienti salvato",
+          "Dashboard e record lead",
+          "Passaggi e risposte migliori",
+          "Supporto prioritario in beta",
+        ],
+        cta: "Passa a Pro",
+        href: "/api/stripe/checkout",
+        featured: true,
+      },
+      {
+        name: "Team",
+        price: "Custom",
+        period: "beta",
+        description: "Per piccoli team che hanno bisogno di workflow condivisi e setup dedicato.",
+        features: [
+          "Workspace condiviso",
+          "Setup guidato",
+          "Feedback loop sul workflow",
+          "Accesso anticipato alle integrazioni",
+          "Limiti d'uso personalizzati",
+        ],
+        cta: "Richiedi accesso",
+        href: manualProHref,
+      },
     ],
-    cta: "Analyze 1 lead free",
-    href: "/trial",
   },
-  {
-    name: "Pro",
-    price: "19",
-    period: "per month",
-    description: "For freelancers who receive client requests every week.",
-    features: [
-      "More lead analyses",
-      "Saved client history",
-      "Dashboard and lead records",
-      "Better handoff and replies",
-      "Priority support in beta",
+  en: {
+    home: "Home",
+    label: "Pricing",
+    titleLineOne: "Start free.",
+    titleLineTwo: "Upgrade when FlowCrew fits.",
+    body:
+      "The homepage stays focused on the product promise. Plan details, trial limits and checkout live here.",
+    popular: "Popular",
+    customPrice: "Custom",
+    checkoutNote:
+      "Checkout is intentionally separate from the landing. Users first understand FlowCrew, then test one real lead, then compare plans when they are ready.",
+    plans: [
+      {
+        name: "Free trial",
+        price: "0",
+        period: "one lead",
+        description: "For testing FlowCrew with one real client message.",
+        features: [
+          "1 lead analysis",
+          "Jackie, Nora, Milo and Dex",
+          "Lead summary, tags and reply",
+          "No card required",
+        ],
+        cta: "Analyze 1 lead free",
+        href: "/trial",
+      },
+      {
+        name: "Pro",
+        price: "19",
+        period: "per month",
+        description: "For freelancers who receive client requests every week.",
+        features: [
+          "More lead analyses",
+          "Saved client history",
+          "Dashboard and lead records",
+          "Better handoff and replies",
+          "Priority support in beta",
+        ],
+        cta: "Upgrade to Pro",
+        href: "/api/stripe/checkout",
+        featured: true,
+      },
+      {
+        name: "Team",
+        price: "Custom",
+        period: "beta",
+        description: "For small teams that need shared workflows and custom setup.",
+        features: [
+          "Shared workspace",
+          "Guided setup",
+          "Workflow feedback loop",
+          "Early access to integrations",
+          "Custom usage limits",
+        ],
+        cta: "Request access",
+        href: manualProHref,
+      },
     ],
-    cta: "Upgrade to Pro",
-    href: "/api/stripe/checkout",
-    featured: true,
   },
-  {
-    name: "Team",
-    price: "Custom",
-    period: "beta",
-    description: "For small teams that need shared workflows and custom setup.",
-    features: [
-      "Shared workspace",
-      "Guided setup",
-      "Workflow feedback loop",
-      "Early access to integrations",
-      "Custom usage limits",
-    ],
-    cta: "Request access",
-    href: manualProHref,
-  },
-];
+} as const;
 
 export default function PricingPage() {
+  const { language } = useLanguage();
+  const copy = pricingCopy[language];
+
   return (
     <main
       className="flow-lime-glow min-h-screen overflow-hidden bg-[var(--fc-bg)] text-[var(--fc-text)]"
@@ -70,10 +150,13 @@ export default function PricingPage() {
             <span className="text-lg font-bold tracking-[-0.03em]">FlowCrew</span>
           </Link>
 
-          <Link className="fc-button" href="/">
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-            Home
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <Link className="fc-button" href="/">
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              {copy.home}
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -84,27 +167,29 @@ export default function PricingPage() {
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-4 py-2">
             <CreditCard aria-hidden="true" className="h-4 w-4 text-[var(--fc-accent)]" />
             <span className="flow-mono text-xs uppercase tracking-[0.14em] text-[var(--fc-text-soft)]">
-              Pricing
+              {copy.label}
             </span>
           </div>
 
           <h1 className="text-5xl font-extrabold leading-[0.95] tracking-[-0.06em] sm:text-7xl">
-            Start free.
+            {copy.titleLineOne}
             <br />
-            Upgrade when FlowCrew fits.
+            {copy.titleLineTwo}
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--fc-text-muted)]">
-            The homepage stays focused on the product promise. Plan details, trial limits
-            and checkout live here.
+            {copy.body}
           </p>
         </div>
 
         <div className="relative mt-12 grid gap-4 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {copy.plans.map((plan) => {
+            const isFeatured = "featured" in plan && plan.featured;
+
+            return (
             <article
               className={`rounded-[2rem] border bg-[rgba(14,14,14,0.74)] p-6 shadow-2xl shadow-black/20 backdrop-blur-xl ${
-                plan.featured
+                isFeatured
                   ? "border-[rgba(200,245,66,0.32)] shadow-[0_0_80px_rgba(200,245,66,0.08)]"
                   : "border-white/[0.07]"
               }`}
@@ -112,17 +197,17 @@ export default function PricingPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <h2 className="text-2xl font-extrabold tracking-[-0.045em]">{plan.name}</h2>
-                {plan.featured ? (
+                {isFeatured ? (
                   <span className="fc-pill fc-pill-success">
                     <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
-                    Popular
+                    {copy.popular}
                   </span>
                 ) : null}
               </div>
 
               <div className="mt-7 flex items-end gap-2">
                 <p className="text-5xl font-extrabold tracking-[-0.06em]">
-                  {plan.price === "Custom" ? "Custom" : `EUR ${plan.price}`}
+                  {plan.price === "Custom" ? copy.customPrice : `EUR ${plan.price}`}
                 </p>
                 <p className="pb-2 text-sm font-medium text-[var(--fc-text-soft)]">
                   {plan.period}
@@ -147,7 +232,7 @@ export default function PricingPage() {
 
               {plan.href.startsWith("mailto:") ? (
                 <a
-                  className={`fc-button mt-8 w-full ${plan.featured ? "fc-button-primary" : ""}`}
+                  className={`fc-button mt-8 w-full ${isFeatured ? "fc-button-primary" : ""}`}
                   href={plan.href}
                 >
                   {plan.cta}
@@ -155,7 +240,7 @@ export default function PricingPage() {
                 </a>
               ) : (
                 <Link
-                  className={`fc-button mt-8 w-full ${plan.featured ? "fc-button-primary" : ""}`}
+                  className={`fc-button mt-8 w-full ${isFeatured ? "fc-button-primary" : ""}`}
                   href={plan.href}
                 >
                   {plan.cta}
@@ -163,14 +248,12 @@ export default function PricingPage() {
                 </Link>
               )}
             </article>
-          ))}
+            );
+          })}
         </div>
 
         <div className="relative mt-8 rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-5 text-sm leading-7 text-[var(--fc-text-muted)]">
-          <p>
-            Checkout is intentionally separate from the landing. Users first understand
-            FlowCrew, then test one real lead, then compare plans when they are ready.
-          </p>
+          <p>{copy.checkoutNote}</p>
         </div>
       </section>
     </main>

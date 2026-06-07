@@ -20,27 +20,273 @@ import {
   Tags,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { ConversationAnalysis, ConversationSource } from "@/lib/flowcrew-types";
 import type { StoredLead } from "@/lib/leads";
 import { trialDraftStorageKey } from "@/lib/trial-draft";
 
 const manualProHref = "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
-const defaultClientName = "";
-const defaultBusinessType = "Freelance / piccolo team";
-const defaultGoal = "Richiesta cliente, priorita, proposta, follow-up e task.";
-
-const loadingSteps = [
-  "Jackie is extracting the request",
-  "Nora is checking scope",
-  "Milo is planning follow-up",
-  "Dex is preparing the handoff",
-];
 
 const sourceChips: Array<{ value: ConversationSource; label: string }> = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "email", label: "Email" },
   { value: "instagram", label: "DM" },
 ];
+
+const trialCopy = {
+  it: {
+    defaultBusinessType: "Freelance / piccolo team",
+    defaultGoal: "Richiesta cliente, priorità, proposta, follow-up e task.",
+    emptyResponse: "La risposta del server è vuota.",
+    invalidResponse: "La risposta del server non è leggibile.",
+    usageUnavailable: "Non riesco a leggere il tuo piano in questo momento.",
+    priorityFallback: "Da qualificare",
+    urgencyFallback: "Da qualificare",
+    qualityFallback: "Da qualificare",
+    proposalFallback: "Nora segnalerà qui scope, rischio e dettagli mancanti.",
+    followUpFallback: "Milo suggerirà qui il prossimo momento di risposta.",
+    handoffFallback: "Dex trasformerà il risultato nel prossimo passo operativo.",
+    pending: "In attesa",
+    notDetected: "Non rilevato",
+    aroundBudget: "Circa",
+    deadlineEndMonth: "Entro fine mese",
+    deadlineTomorrow: "Domani",
+    deadlineThisWeek: "Questa settimana",
+    deadlineClarify: "Da chiarire",
+    urgentTask: "Rispondi velocemente: la richiesta contiene una scadenza.",
+    budgetTask: "Verifica se il budget copre lo scope richiesto.",
+    fallbackTask: "Qualifica il contatto e chiedi i dettagli mancanti.",
+    checkingPlan: "Controllo piano",
+    analyzing: "Analisi in corso",
+    analyzeMessage: "Analizza messaggio",
+    formTitle: "Incolla un messaggio cliente",
+    formBody: "FlowCrew trasforma messaggi cliente confusi in un lead strutturato.",
+    clientNameAria: "Nome cliente opzionale",
+    clientNamePlaceholder: "Nome cliente (opzionale)",
+    composerPlaceholder: "Incolla un WhatsApp, una email o un DM da un cliente...",
+    freeIncluded: "1 lead gratis incluso",
+    heroTrialLabel: "FlowCrew trial",
+    heroTagline: "Analizza una richiesta in pochi secondi.",
+    usageChecking: "Controllo piano",
+    usageUsed: "usati",
+    usageFreeLeft: "gratis rimasti",
+    usagePlanUnavailable: "Piano non disponibile",
+    usageAccountRequired: "Account richiesto",
+    activityLabel: "Attività agenti",
+    activityTitle: "Costruisco il workspace",
+    loadingSteps: [
+      "Jackie sta estraendo la richiesta",
+      "Nora sta controllando lo scope",
+      "Milo sta pianificando il follow-up",
+      "Dex sta preparando il passaggio operativo",
+    ],
+    resultLeadSummary: "Riepilogo lead",
+    noSummary: "Nessun riepilogo restituito.",
+    tagsPriority: "Tag / priorità",
+    priority: "Priorità",
+    urgency: "Urgenza",
+    status: "Stato",
+    quality: "Qualità",
+    noTags: "Nessun tag",
+    suggestedReply: "Risposta suggerita",
+    noReply: "Nessuna risposta restituita.",
+    copied: "Copiato",
+    copy: "Copia",
+    handoff: "Passaggio operativo",
+    nextAction: "Prossima azione",
+    budget: "Budget",
+    deadline: "Scadenza",
+    owner: "Owner",
+    ready: "Pronto",
+    nextStep: "Prossimo passo",
+    continueWorkspace: "Continua dal tuo workspace.",
+    saveMore: "Salva le prossime conversazioni con Pro.",
+    savedToPrefix: "Salvato in",
+    savedToWorkspace: "Salvato nel workspace",
+    open: "Apri",
+    openSavedLead: "Apri lead salvato",
+    dashboard: "Dashboard",
+    proAccess: "Accesso Pro",
+    periodDone: "Periodo esaurito",
+    freeUsed: "Lead gratuito già usato",
+    periodLimitBody: "Il workspace ha raggiunto il limite del periodo.",
+    upgradeBody: "Passa a Pro per continuare ad analizzare conversazioni.",
+    requestPro: "Richiedi accesso Pro",
+    signIn: "Accedi",
+    retry: "Riprova",
+    partialTitle: "Analisi parziale",
+    partialBody:
+      "FlowCrew ha salvato il miglior risultato disponibile, ma una parte dell'analisi è stata ricostruita.",
+    errors: {
+      auth_required: {
+        title: "Accedi per analizzare il lead",
+        message: "FlowCrew deve collegare il risultato al tuo workspace prima di salvarlo.",
+      },
+      usage_unavailable: {
+        title: "Non riesco a verificare il piano",
+        message: "Riprova tra poco: non voglio consumare o salvare un lead senza conoscere il tuo limite.",
+      },
+      quota_exceeded: {
+        title: "Hai usato il tuo lead gratuito",
+        message: "Passa a Pro per continuare ad analizzare messaggi cliente e mantenere lo storico.",
+      },
+      supabase_unconfigured: {
+        title: "Workspace non disponibile",
+        message: "In questo ambiente l'area account non è pronta. Puoi riprovare quando il workspace è configurato.",
+      },
+      invalid_input_short: {
+        title: "Messaggio troppo breve",
+        message: "Incolla qualche dettaglio in più: richiesta, obiettivo, budget, deadline o contesto cliente.",
+      },
+      invalid_input: {
+        title: "Aggiungi un messaggio cliente",
+        message: "Incolla una chat, una mail o un DM reale prima di avviare l'analisi.",
+      },
+      rate_limited: {
+        title: "Analisi temporaneamente non disponibile",
+        message: "Il motore AI è sotto carico. Aspetta qualche secondo e riprova.",
+      },
+      ai_unavailable: {
+        title: "Non sono riuscito a completare l'analisi",
+        message: "Il messaggio non è stato salvato come risultato valido. Riprova tra poco.",
+      },
+      copy_failed: {
+        title: "Copia non riuscita",
+        message: "Puoi selezionare manualmente la risposta dalla card Milo.",
+      },
+      generic: {
+        title: "Qualcosa non ha funzionato",
+        message: "Riprova tra poco. Se il problema continua, richiedi supporto Pro.",
+      },
+    },
+  },
+  en: {
+    defaultBusinessType: "Freelance / small team",
+    defaultGoal: "Client request, priority, proposal, follow-up and tasks.",
+    emptyResponse: "The server response is empty.",
+    invalidResponse: "The server response is not readable.",
+    usageUnavailable: "I can't read your plan right now.",
+    priorityFallback: "Needs qualification",
+    urgencyFallback: "Needs qualification",
+    qualityFallback: "Needs qualification",
+    proposalFallback: "Nora will flag the scope, risk and missing details here.",
+    followUpFallback: "Milo will suggest the next reply moment here.",
+    handoffFallback: "Dex will turn the result into the next operational step here.",
+    pending: "Pending",
+    notDetected: "Not detected",
+    aroundBudget: "Around",
+    deadlineEndMonth: "By end of month",
+    deadlineTomorrow: "Tomorrow",
+    deadlineThisWeek: "This week",
+    deadlineClarify: "To clarify",
+    urgentTask: "Reply quickly: the request includes a deadline.",
+    budgetTask: "Check whether the budget covers the requested scope.",
+    fallbackTask: "Qualify the contact and ask for the missing details.",
+    checkingPlan: "Checking plan",
+    analyzing: "Analyzing",
+    analyzeMessage: "Analyze message",
+    formTitle: "Paste a client message",
+    formBody: "FlowCrew turns messy client messages into a structured lead.",
+    clientNameAria: "Optional client name",
+    clientNamePlaceholder: "Client name (optional)",
+    composerPlaceholder: "Paste a WhatsApp, email or DM from a client...",
+    freeIncluded: "1 free lead included",
+    heroTrialLabel: "FlowCrew trial",
+    heroTagline: "Analyze one request in a few seconds.",
+    usageChecking: "Checking plan",
+    usageUsed: "used",
+    usageFreeLeft: "free left",
+    usagePlanUnavailable: "Plan unavailable",
+    usageAccountRequired: "Account required",
+    activityLabel: "Agent activity",
+    activityTitle: "Building the workspace",
+    loadingSteps: [
+      "Jackie is extracting the request",
+      "Nora is checking scope",
+      "Milo is planning follow-up",
+      "Dex is preparing the handoff",
+    ],
+    resultLeadSummary: "Lead summary",
+    noSummary: "No summary returned.",
+    tagsPriority: "Tags / priority",
+    priority: "Priority",
+    urgency: "Urgency",
+    status: "Status",
+    quality: "Quality",
+    noTags: "No tags",
+    suggestedReply: "Suggested reply",
+    noReply: "No reply returned.",
+    copied: "Copied",
+    copy: "Copy",
+    handoff: "Handoff",
+    nextAction: "Next action",
+    budget: "Budget",
+    deadline: "Deadline",
+    owner: "Owner",
+    ready: "Ready",
+    nextStep: "Next step",
+    continueWorkspace: "Continue from your workspace.",
+    saveMore: "Save the next conversations with Pro.",
+    savedToPrefix: "Saved to",
+    savedToWorkspace: "Saved to workspace",
+    open: "Open",
+    openSavedLead: "Open saved lead",
+    dashboard: "Dashboard",
+    proAccess: "Pro access",
+    periodDone: "Period exhausted",
+    freeUsed: "Free lead already used",
+    periodLimitBody: "The workspace has reached this period's limit.",
+    upgradeBody: "Upgrade to Pro to keep analyzing conversations.",
+    requestPro: "Request Pro access",
+    signIn: "Sign in",
+    retry: "Try again",
+    partialTitle: "Partial analysis",
+    partialBody:
+      "FlowCrew saved the best available result, but part of the analysis was reconstructed.",
+    errors: {
+      auth_required: {
+        title: "Sign in to analyze the lead",
+        message: "FlowCrew needs to connect the result to your workspace before saving it.",
+      },
+      usage_unavailable: {
+        title: "I can't verify the plan",
+        message: "Try again shortly: I don't want to consume or save a lead without knowing your limit.",
+      },
+      quota_exceeded: {
+        title: "You used your free lead",
+        message: "Upgrade to Pro to keep analyzing client messages and preserve history.",
+      },
+      supabase_unconfigured: {
+        title: "Workspace unavailable",
+        message: "The account area is not ready in this environment. Try again when the workspace is configured.",
+      },
+      invalid_input_short: {
+        title: "Message too short",
+        message: "Paste a little more detail: request, goal, budget, deadline, or client context.",
+      },
+      invalid_input: {
+        title: "Add a client message",
+        message: "Paste a real chat, email, or DM before starting the analysis.",
+      },
+      rate_limited: {
+        title: "Analysis temporarily unavailable",
+        message: "The AI engine is under load. Wait a few seconds and try again.",
+      },
+      ai_unavailable: {
+        title: "I couldn't complete the analysis",
+        message: "The message was not saved as a valid result. Try again shortly.",
+      },
+      copy_failed: {
+        title: "Copy failed",
+        message: "You can manually select the reply from Milo's card.",
+      },
+      generic: {
+        title: "Something went wrong",
+        message: "Try again shortly. If the problem continues, request Pro support.",
+      },
+    },
+  },
+} as const;
 
 type UsageResponse = {
   plan: "free" | "pro" | "team";
@@ -53,6 +299,7 @@ type UsageResponse = {
 type IngestResponse = {
   analysis: ConversationAnalysis;
   lead: StoredLead;
+  leadUrl?: string;
   usage?: UsageResponse;
 };
 
@@ -108,7 +355,10 @@ async function readApiPayload(response: Response) {
 }
 
 export default function TrialPage() {
+  const { language } = useLanguage();
+  const copy = trialCopy[language];
   const [sourceType, setSourceType] = useState<ConversationSource>("whatsapp");
+  const [clientName, setClientName] = useState("");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<IngestResponse | null>(null);
   const [usage, setUsage] = useState<UsageResponse | null>(null);
@@ -129,7 +379,7 @@ export default function TrialPage() {
     } catch {
       // The composer remains usable when storage is unavailable.
     }
-  }, []);
+  }, [copy.usageUnavailable]);
 
   useEffect(() => {
     async function loadUsage() {
@@ -144,7 +394,7 @@ export default function TrialPage() {
         if (!response.ok) {
           setUsageError({
             code: payload?.code ?? "usage_unavailable",
-            message: payload?.error ?? "Non riesco a leggere il tuo piano in questo momento.",
+            message: payload?.error ?? copy.usageUnavailable,
           });
           return;
         }
@@ -152,7 +402,7 @@ export default function TrialPage() {
         if (!payload || typeof payload.remaining !== "number") {
           setUsageError({
             code: "usage_unavailable",
-            message: "Non riesco a leggere il tuo piano in questo momento.",
+            message: copy.usageUnavailable,
           });
           return;
         }
@@ -162,7 +412,7 @@ export default function TrialPage() {
       } catch {
         setUsageError({
           code: "usage_unavailable",
-          message: "Non riesco a leggere il tuo piano in questo momento.",
+          message: copy.usageUnavailable,
         });
       } finally {
         setIsUsageLoading(false);
@@ -170,7 +420,7 @@ export default function TrialPage() {
     }
 
     void loadUsage();
-  }, []);
+  }, [copy.usageUnavailable]);
 
   const generated = Boolean(result);
   const workspaceOpen = hasSubmitted || isLoading || generated;
@@ -180,24 +430,24 @@ export default function TrialPage() {
   const analysis = result?.analysis;
   const lead = result?.lead;
   const isPartialAnalysis = Boolean(analysis?.analysisMeta?.degraded || analysis?.analysisMeta?.status === "partial");
-  const friendlyPriority = formatSignal(analysis?.dex.priority ?? lead?.urgency, "Da qualificare");
-  const friendlyUrgency = formatSignal(analysis?.nora.urgency ?? lead?.urgency, "Da qualificare");
-  const friendlyStatus = formatStatus(analysis?.dex.status ?? lead?.status);
-  const leadQuality = formatSignal(analysis?.nora.leadQuality, "Da qualificare");
+  const friendlyPriority = formatSignal(analysis?.dex.priority ?? lead?.urgency, copy.priorityFallback);
+  const friendlyUrgency = formatSignal(analysis?.nora.urgency ?? lead?.urgency, copy.urgencyFallback);
+  const friendlyStatus = formatStatus(analysis?.dex.status ?? lead?.status, language);
+  const leadQuality = formatSignal(analysis?.nora.leadQuality, copy.qualityFallback);
   const requestSummary = lead?.summary ?? analysis?.jackie.cleanSummary;
   const proposalText =
     analysis?.crewReview?.nora.message ??
     analysis?.nora.why ??
-    "Nora will flag the scope, risk and missing details here.";
+    copy.proposalFallback;
   const followUpText =
     analysis?.milo.followUp ??
     lead?.follow_up ??
     analysis?.crewReview?.milo.nextCommercialMove ??
-    "Milo will suggest the next reply moment here.";
+    copy.followUpFallback;
   const handoffText =
     lead?.next_action ??
     analysis?.crewReview?.summary.nextAction ??
-    "Dex will turn the result into the next operational step here.";
+    copy.handoffFallback;
 
   const detectedTags = useMemo(() => {
     if (analysis?.dex.tags.length) return analysis.dex.tags;
@@ -209,50 +459,52 @@ export default function TrialPage() {
     const text = `${message} ${lead?.summary ?? ""}`;
     const euroMatch = text.match(/(?:\u20ac\s?|\bmax\s?)?(\d{2,5})\s?(?:\u20ac|euro|eur)?/i);
 
-    if (!generated) return "In attesa";
-    if (!euroMatch) return "Non rilevato";
+    if (!generated) return copy.pending;
+    if (!euroMatch) return copy.notDetected;
 
-    return `Circa ${euroMatch[1]} euro`;
-  }, [generated, lead?.summary, message]);
+    return `${copy.aroundBudget} ${euroMatch[1]} euro`;
+  }, [copy.aroundBudget, copy.notDetected, copy.pending, generated, lead?.summary, message]);
 
   const detectedDeadline = useMemo(() => {
     const text = `${message} ${lead?.summary ?? ""}`.toLowerCase();
 
-    if (!generated) return "In attesa";
-    if (text.includes("fine mese")) return "Entro fine mese";
-    if (text.includes("domani")) return "Domani";
-    if (text.includes("settimana")) return "Questa settimana";
+    if (!generated) return copy.pending;
+    if (text.includes("fine mese")) return copy.deadlineEndMonth;
+    if (text.includes("domani")) return copy.deadlineTomorrow;
+    if (text.includes("settimana")) return copy.deadlineThisWeek;
 
-    return "Da chiarire";
-  }, [generated, lead?.summary, message]);
+    return copy.deadlineClarify;
+  }, [copy.deadlineClarify, copy.deadlineEndMonth, copy.deadlineThisWeek, copy.deadlineTomorrow, copy.pending, generated, lead?.summary, message]);
 
   const taskItems = useMemo(() => {
     if (!generated) return [];
 
     const tasks = [lead?.next_action].filter(Boolean) as string[];
 
-    if (detectedDeadline !== "Da chiarire" && detectedDeadline !== "In attesa") {
-      tasks.push("Rispondi velocemente: la richiesta contiene una scadenza.");
+    if (detectedDeadline !== copy.deadlineClarify && detectedDeadline !== copy.pending) {
+      tasks.push(copy.urgentTask);
     }
 
-    if (detectedBudget !== "Non rilevato" && detectedBudget !== "In attesa") {
-      tasks.push("Verifica se il budget copre lo scope richiesto.");
+    if (detectedBudget !== copy.notDetected && detectedBudget !== copy.pending) {
+      tasks.push(copy.budgetTask);
     }
 
     if (tasks.length === 0) {
-      return ["Qualifica il contatto e chiedi i dettagli mancanti."];
+      return [copy.fallbackTask];
     }
 
     return tasks;
-  }, [detectedBudget, detectedDeadline, generated, lead?.next_action]);
+  }, [copy.budgetTask, copy.deadlineClarify, copy.fallbackTask, copy.notDetected, copy.pending, copy.urgentTask, detectedBudget, detectedDeadline, generated, lead?.next_action]);
 
   const sendLabel = isUsageLoading
-    ? "Checking plan"
+    ? copy.checkingPlan
     : hasReachedLimit
-      ? getLimitButtonLabel(usage)
+      ? usage && isPaidWorkspacePlan(usage.plan)
+        ? copy.periodDone
+        : copy.freeUsed
       : isLoading
-        ? "Analyzing"
-        : "Analyze message";
+        ? copy.analyzing
+        : copy.analyzeMessage;
 
   async function generateLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -285,12 +537,12 @@ export default function TrialPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientName: defaultClientName,
+          clientName: clientName.trim(),
           sourceType,
           messyMessage: cleanMessage,
-          businessType: defaultBusinessType,
-          goal: defaultGoal,
-          language: "it",
+          businessType: copy.defaultBusinessType,
+          goal: copy.defaultGoal,
+          language,
         }),
       });
 
@@ -389,14 +641,14 @@ export default function TrialPage() {
                   workspaceOpen ? "text-2xl sm:text-3xl" : "text-2xl sm:text-5xl"
                 }`}
               >
-                Paste a client message
+                {copy.formTitle}
               </h1>
               <p
                 className={`mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--fc-text-muted)] sm:text-base ${
                   workspaceOpen ? "sm:mx-0" : ""
                 }`}
               >
-                FlowCrew turns messy client messages into a structured lead.
+                {copy.formBody}
               </p>
             </div>
 
@@ -412,12 +664,21 @@ export default function TrialPage() {
                   if (error) setError(null);
                 }}
                 onKeyDown={handleComposerKeyDown}
-                placeholder="Paste a WhatsApp, email or DM from a client..."
+                placeholder={copy.composerPlaceholder}
                 value={message}
               />
 
               <div className="flex flex-col gap-3 border-t border-white/[0.06] px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    aria-label={copy.clientNameAria}
+                    className="h-8 w-44 rounded-full border border-white/[0.07] bg-white/[0.025] px-3 text-xs text-[var(--fc-text)] outline-none transition placeholder:text-[var(--fc-text-soft)] focus:border-[rgba(200,245,66,0.4)]"
+                    maxLength={120}
+                    onChange={(event) => setClientName(event.target.value)}
+                    placeholder={copy.clientNamePlaceholder}
+                    value={clientName}
+                  />
+
                   {sourceChips.map((source) => {
                     const selected = sourceType === source.value;
 
@@ -444,7 +705,7 @@ export default function TrialPage() {
 
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
                   <p className="flow-mono text-[11px] text-[var(--fc-text-soft)]">
-                    {isWorkspacePlan ? `${workspaceLabel} workspace` : "1 free lead included"}
+                    {isWorkspacePlan ? `${workspaceLabel} workspace` : copy.freeIncluded}
                   </p>
 
                   <button
@@ -515,6 +776,16 @@ export default function TrialPage() {
   );
 }
 
+function useTrialCopy() {
+  const { language } = useLanguage();
+  return trialCopy[language];
+}
+
+function getTrialErrorText(error: TrialError, copy: (typeof trialCopy)[keyof typeof trialCopy]) {
+  const key = error.code in copy.errors ? error.code as keyof typeof copy.errors : "generic";
+  return copy.errors[key] ?? { title: error.title, message: error.message };
+}
+
 function MiniHero({
   usage,
   usageError,
@@ -530,6 +801,8 @@ function MiniHero({
   workspaceLabel: string;
   workspaceOpen: boolean;
 }) {
+  const copy = useTrialCopy();
+
   return (
     <div
       className={`mx-auto flex w-full max-w-4xl flex-col items-center gap-3 text-center transition-all duration-300 ${
@@ -543,10 +816,10 @@ function MiniHero({
 
         <div>
           <p className="fc-label text-[var(--fc-accent)]">
-            {isWorkspacePlan ? `FlowCrew ${workspaceLabel}` : "FlowCrew trial"}
+            {isWorkspacePlan ? `FlowCrew ${workspaceLabel}` : copy.heroTrialLabel}
           </p>
           <p className="mt-1 text-sm font-bold text-[var(--fc-text)]">
-            Analyze one request in a few seconds.
+            {copy.heroTagline}
           </p>
         </div>
       </div>
@@ -575,15 +848,16 @@ function UsageBadge({
   isWorkspacePlan: boolean;
   workspaceLabel: string;
 }) {
+  const copy = useTrialCopy();
   const text = isUsageLoading
-    ? "Checking plan"
+    ? copy.usageChecking
     : usage
       ? isWorkspacePlan
-        ? `${usage.used}/${usage.limit} used`
-        : `${usage.remaining} free left`
+        ? `${usage.used}/${usage.limit} ${copy.usageUsed}`
+        : `${usage.remaining} ${copy.usageFreeLeft}`
       : usageError
-        ? "Plan unavailable"
-        : "Account required";
+        ? copy.usagePlanUnavailable
+        : copy.usageAccountRequired;
 
   return (
     <div className="flow-mono inline-flex items-center gap-2 rounded-full border border-[rgba(139,255,197,0.18)] bg-[rgba(139,255,197,0.07)] px-3.5 py-2 text-[11px] text-[var(--fc-mint)]">
@@ -598,6 +872,8 @@ function UsageBadge({
 }
 
 function AgentActivity() {
+  const copy = useTrialCopy();
+
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
@@ -615,15 +891,15 @@ function AgentActivity() {
         </span>
 
         <div>
-          <p className="fc-label text-[var(--fc-accent)]">Agent activity</p>
+          <p className="fc-label text-[var(--fc-accent)]">{copy.activityLabel}</p>
           <h2 className="text-xl font-extrabold tracking-[-0.04em] text-[var(--fc-text)]">
-            Building the workspace
+            {copy.activityTitle}
           </h2>
         </div>
       </div>
 
       <div className="mt-5 space-y-3">
-        {loadingSteps.map((step, index) => (
+        {copy.loadingSteps.map((step, index) => (
           <motion.div
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3 rounded-3xl border border-white/[0.06] bg-white/[0.025] px-4 py-3 text-sm text-[var(--fc-text-muted)]"
@@ -688,6 +964,8 @@ function WorkspaceResults({
   isWorkspacePlan: boolean;
   workspaceLabel: string;
 }) {
+  const copy = useTrialCopy();
+
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
@@ -706,10 +984,10 @@ function WorkspaceResults({
           delay={0}
           icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
           tone="lime"
-          title="Lead summary"
+          title={copy.resultLeadSummary}
         >
           <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
-            {requestSummary ?? "No summary returned."}
+            {requestSummary ?? copy.noSummary}
           </p>
 
           {analysis.jackie.keyFacts.length ? (
@@ -729,13 +1007,13 @@ function WorkspaceResults({
           delay={0.08}
           icon={<Tags aria-hidden="true" className="h-4 w-4" />}
           tone="mint"
-          title="Tags / priority"
+          title={copy.tagsPriority}
         >
           <div className="grid gap-2 sm:grid-cols-2">
-            <MiniMetric label="Priority" value={friendlyPriority} />
-            <MiniMetric label="Urgency" value={friendlyUrgency} />
-            <MiniMetric label="Status" value={friendlyStatus} />
-            <MiniMetric label="Quality" value={leadQuality} />
+            <MiniMetric label={copy.priority} value={friendlyPriority} />
+            <MiniMetric label={copy.urgency} value={friendlyUrgency} />
+            <MiniMetric label={copy.status} value={friendlyStatus} />
+            <MiniMetric label={copy.quality} value={leadQuality} />
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -746,7 +1024,7 @@ function WorkspaceResults({
                 </span>
               ))
             ) : (
-              <span className="fc-pill">No tags</span>
+              <span className="fc-pill">{copy.noTags}</span>
             )}
           </div>
         </ResultCard>
@@ -757,7 +1035,7 @@ function WorkspaceResults({
           delay={0.16}
           icon={<MessageSquareText aria-hidden="true" className="h-4 w-4" />}
           tone="orange"
-          title="Suggested reply"
+          title={copy.suggestedReply}
         >
           <p className="text-sm leading-6 text-[var(--fc-text-muted)]">
             {followUpText}
@@ -765,7 +1043,7 @@ function WorkspaceResults({
 
           <div className="mt-4 rounded-3xl border border-white/[0.06] bg-white/[0.035] p-4">
             <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--fc-text)]">
-              {lead.suggested_reply ?? "No reply returned."}
+              {lead.suggested_reply ?? copy.noReply}
             </p>
           </div>
 
@@ -783,12 +1061,12 @@ function WorkspaceResults({
               {copiedReply ? (
                 <>
                   <CheckCircle2 aria-hidden="true" className="h-4 w-4 text-[var(--fc-mint)]" />
-                  Copied
+                  {copy.copied}
                 </>
               ) : (
                 <>
                   <Copy aria-hidden="true" className="h-4 w-4" />
-                  Copy
+                  {copy.copy}
                 </>
               )}
             </button>
@@ -801,11 +1079,11 @@ function WorkspaceResults({
           delay={0.24}
           icon={<ListChecks aria-hidden="true" className="h-4 w-4" />}
           tone="purple"
-          title="Handoff"
+          title={copy.handoff}
         >
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
             <div className="rounded-3xl border border-white/[0.06] bg-white/[0.025] p-4">
-              <p className="text-sm font-extrabold text-[var(--fc-text)]">Next action</p>
+              <p className="text-sm font-extrabold text-[var(--fc-text)]">{copy.nextAction}</p>
               <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
                 {handoffText}
               </p>
@@ -821,9 +1099,9 @@ function WorkspaceResults({
             </div>
 
             <div className="grid gap-2">
-              <MiniMetric label="Budget" value={detectedBudget} />
-              <MiniMetric label="Deadline" value={detectedDeadline} />
-              <MiniMetric label="Owner" value={analysis.jackie.suggestedAgent || "Jackie"} />
+              <MiniMetric label={copy.budget} value={detectedBudget} />
+              <MiniMetric label={copy.deadline} value={detectedDeadline} />
+              <MiniMetric label={copy.owner} value={analysis.jackie.suggestedAgent || "Jackie"} />
             </div>
           </div>
         </ResultCard>
@@ -837,30 +1115,29 @@ function WorkspaceResults({
       >
         <div>
           <p className="fc-label text-[var(--fc-accent)]">
-            {isWorkspacePlan ? `${workspaceLabel} workspace` : "Next step"}
+            {isWorkspacePlan ? `${workspaceLabel} workspace` : copy.nextStep}
           </p>
           <p className="mt-1 text-sm font-bold text-[var(--fc-text)]">
-            {isWorkspacePlan ? "Continue from your workspace." : "Save the next conversations with Pro."}
+            {isWorkspacePlan ? copy.continueWorkspace : copy.saveMore}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Link href="/dashboard" className="fc-button fc-button-primary">
-            <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
-            Dashboard
+          <Link href={`/leads/${lead.id}`} className="fc-button fc-button-primary">
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            {copy.openSavedLead}
           </Link>
 
-          {isWorkspacePlan ? (
-            <Link href="/leads" className="fc-button">
-              Leads
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </Link>
-          ) : (
+          <Link href="/dashboard" className="fc-button">
+            <LayoutDashboard aria-hidden="true" className="h-4 w-4" />
+            {copy.dashboard}
+          </Link>
+
+          {!isWorkspacePlan ? (
             <a href={manualProHref} className="fc-button">
-              Pro access
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              {copy.proAccess}
             </a>
-          )}
+          ) : null}
         </div>
       </motion.div>
     </motion.section>
@@ -884,6 +1161,7 @@ function ResultCard({
   className?: string;
   children: ReactNode;
 }) {
+  const copy = useTrialCopy();
   const toneClasses = {
     lime: "border-[rgba(200,245,66,0.14)] bg-[rgba(200,245,66,0.045)] text-[var(--fc-accent)]",
     mint: "border-[rgba(139,255,197,0.14)] bg-[rgba(139,255,197,0.045)] text-[var(--fc-mint)]",
@@ -915,7 +1193,7 @@ function ResultCard({
         </div>
 
         <span className="flow-mono rounded-full bg-[rgba(139,255,197,0.08)] px-2 py-0.5 text-[11px] text-[var(--fc-mint)]">
-          Ready
+          {copy.ready}
         </span>
       </div>
 
@@ -933,6 +1211,8 @@ function SavedLeadNotice({
   isWorkspacePlan: boolean;
   workspaceLabel: string;
 }) {
+  const copy = useTrialCopy();
+
   return (
     <motion.div
       animate={{ opacity: 1, y: 0 }}
@@ -943,9 +1223,15 @@ function SavedLeadNotice({
       <div className="flex flex-wrap items-center gap-2">
         <Database aria-hidden="true" className="h-5 w-5" />
         <span>
-          {isWorkspacePlan ? `Saved to ${workspaceLabel}` : "Saved to workspace"}
+          {isWorkspacePlan ? `${copy.savedToPrefix} ${workspaceLabel}` : copy.savedToWorkspace}
         </span>
         <span className="flow-mono text-xs">{lead.id.slice(0, 8)}</span>
+        <Link
+          className="ml-auto text-xs font-extrabold text-[var(--fc-text)] underline decoration-white/25 underline-offset-4"
+          href={`/leads/${lead.id}`}
+        >
+          {copy.open}
+        </Link>
       </div>
     </motion.div>
   );
@@ -965,21 +1251,22 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 }
 
 function LimitNotice({ usage }: { usage: UsageResponse | null }) {
+  const copy = useTrialCopy();
   const isWorkspace = Boolean(usage && isPaidWorkspacePlan(usage.plan));
 
   return (
     <div className="mt-4 rounded-3xl border border-red-400/20 bg-red-400/10 p-4 text-sm leading-6 text-red-100">
       <p className="font-extrabold text-white">
-        {isWorkspace ? "Periodo esaurito" : "Lead gratuito gia usato"}
+        {isWorkspace ? copy.periodDone : copy.freeUsed}
       </p>
       <p className="mt-1">
         {isWorkspace
-          ? "Il workspace ha raggiunto il limite del periodo."
-          : "Passa a Pro per continuare ad analizzare conversazioni."}
+          ? copy.periodLimitBody
+          : copy.upgradeBody}
       </p>
       {!isWorkspace ? (
         <a href={manualProHref} className="fc-button fc-button-primary mt-4">
-          Richiedi accesso Pro
+          {copy.requestPro}
           <ArrowRight aria-hidden="true" className="h-4 w-4" />
         </a>
       ) : null}
@@ -988,13 +1275,16 @@ function LimitNotice({ usage }: { usage: UsageResponse | null }) {
 }
 
 function ErrorCallout({ error }: { error: TrialError }) {
+  const copy = useTrialCopy();
+  const localizedError = getTrialErrorText(error, copy);
+
   return (
     <div className="mt-4 rounded-3xl border border-red-400/20 bg-red-400/10 p-4 text-sm leading-6 text-red-100" role="alert">
       <div className="flex gap-3">
         <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
-          <p className="font-extrabold text-white">{error.title}</p>
-          <p className="mt-1 font-medium">{error.message}</p>
+          <p className="font-extrabold text-white">{localizedError.title}</p>
+          <p className="mt-1 font-medium">{localizedError.message}</p>
         </div>
       </div>
 
@@ -1002,14 +1292,14 @@ function ErrorCallout({ error }: { error: TrialError }) {
         <div className="mt-4 flex flex-wrap gap-2 pl-8">
           {error.action === "login" ? (
             <Link href="/login" className="fc-button fc-button-primary">
-              Accedi
+              {copy.signIn}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
           ) : null}
 
           {error.action === "pro" ? (
             <a href={manualProHref} className="fc-button fc-button-primary">
-              Richiedi accesso Pro
+              {copy.requestPro}
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </a>
           ) : null}
@@ -1017,7 +1307,7 @@ function ErrorCallout({ error }: { error: TrialError }) {
           {error.action === "retry" ? (
             <button type="submit" className="fc-button">
               <RefreshCw aria-hidden="true" className="h-4 w-4" />
-              Riprova
+              {copy.retry}
             </button>
           ) : null}
         </div>
@@ -1027,14 +1317,16 @@ function ErrorCallout({ error }: { error: TrialError }) {
 }
 
 function PartialAnalysisNotice() {
+  const copy = useTrialCopy();
+
   return (
     <div className="rounded-3xl border border-[rgba(255,196,87,0.22)] bg-[rgba(255,196,87,0.08)] p-4 text-sm leading-6 text-[#ffd79a]">
       <div className="flex gap-3">
         <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
         <div>
-          <p className="font-extrabold text-white">Analisi parziale</p>
+          <p className="font-extrabold text-white">{copy.partialTitle}</p>
           <p className="mt-1 text-[var(--fc-text-muted)]">
-            FlowCrew ha salvato il miglior risultato disponibile, ma una parte della analisi e stata ricostruita.
+            {copy.partialBody}
           </p>
         </div>
       </div>
@@ -1194,20 +1486,30 @@ function formatSignal(value: string | null | undefined, fallback: string) {
   return labels[lower] ?? toDisplayLabel(normalized);
 }
 
-function formatStatus(value: string | null | undefined) {
+function formatStatus(value: string | null | undefined, language: "en" | "it" = "it") {
   const normalized = value?.trim();
-  if (!normalized) return "Da qualificare";
+  if (!normalized) return language === "it" ? "Da qualificare" : "Needs qualification";
 
-  const labels: Record<string, string> = {
-    new: "Nuovo",
-    needs_qualification: "Da qualificare",
-    waiting_reply: "In attesa risposta",
-    follow_up: "Follow-up",
-    qualified: "Qualificato",
-    closed: "Chiuso",
+  const labels: Record<"en" | "it", Record<string, string>> = {
+    it: {
+      new: "Nuovo",
+      needs_qualification: "Da qualificare",
+      waiting_reply: "In attesa risposta",
+      follow_up: "Follow-up",
+      qualified: "Qualificato",
+      closed: "Chiuso",
+    },
+    en: {
+      new: "New",
+      needs_qualification: "Needs qualification",
+      waiting_reply: "Waiting reply",
+      follow_up: "Follow-up",
+      qualified: "Qualified",
+      closed: "Closed",
+    },
   };
 
-  return labels[normalized.toLowerCase()] ?? toDisplayLabel(normalized);
+  return labels[language][normalized.toLowerCase()] ?? toDisplayLabel(normalized);
 }
 
 function formatTag(tag: string) {
@@ -1236,10 +1538,4 @@ function getWorkspacePlanLabel(plan: UsageResponse["plan"]) {
   if (plan === "team") return "Team";
   if (plan === "pro") return "Pro";
   return "Free";
-}
-
-function getLimitButtonLabel(usage: UsageResponse | null) {
-  if (usage && isPaidWorkspacePlan(usage.plan)) return "Capacita del periodo esaurita";
-
-  return "Lead gratuito gia usato";
 }

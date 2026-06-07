@@ -5,13 +5,14 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
 export type Language = "en" | "it";
 
 const storageKey = "flowcrew:language";
+const languageChangeEvent = "flowcrew:language-change";
 
 export const translations = {
   en: {
@@ -468,23 +469,54 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
+function readStoredLanguage(): Language {
+  if (typeof window === "undefined") {
+    return "it";
+  }
+
+  const storedLanguage = window.localStorage.getItem(storageKey);
+  return storedLanguage === "en" || storedLanguage === "it"
+    ? storedLanguage
+    : "it";
+}
+
+function subscribeLanguage(listener: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === storageKey) {
+      listener();
+    }
+  }
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(languageChangeEvent, listener);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(languageChangeEvent, listener);
+  };
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const language = useSyncExternalStore<Language>(
+    subscribeLanguage,
+    readStoredLanguage,
+    () => "it",
+  );
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem(storageKey);
-
-    if (storedLanguage === "en" || storedLanguage === "it") {
-      window.setTimeout(() => setLanguageState(storedLanguage), 0);
-    }
-  }, []);
+    document.documentElement.lang = language;
+  }, [language]);
 
   const value = useMemo(
     () => ({
       language,
       setLanguage: (nextLanguage: Language) => {
         window.localStorage.setItem(storageKey, nextLanguage);
-        setLanguageState(nextLanguage);
+        window.dispatchEvent(new window.Event(languageChangeEvent));
       },
       copy: translations[language],
     }),
