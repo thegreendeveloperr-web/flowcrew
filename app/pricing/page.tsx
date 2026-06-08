@@ -6,31 +6,30 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/components/LanguageProvider";
 
 const manualProHref =
-  "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
+  "mailto:hello@flowcrew.ai?subject=FlowCrew%20Team%20access";
 
 const pricingCopy = {
   it: {
     home: "Home",
     label: "Prezzi",
-    titleLineOne: "Inizia gratis.",
-    titleLineTwo: "Fai upgrade quando FlowCrew funziona per te.",
+    titleLineOne: "Inizia con un lead reale.",
+    titleLineTwo: "Fai upgrade quando il workflow ti serve.",
     body:
-      "La homepage resta concentrata sulla promessa del prodotto. Dettagli dei piani, limiti della prova e checkout vivono qui.",
+      "Prova come FlowCrew organizza una vera richiesta cliente, poi scegli il piano adatto al volume e al modo in cui lavora il tuo team.",
     popular: "Consigliato",
     customPrice: "Su misura",
     checkoutNote:
-      "Il checkout resta separato dalla landing. Prima capisci FlowCrew, poi provi un lead reale, poi confronti i piani quando sei pronto.",
+      "FlowCrew è un MVP iniziale per freelance e piccoli team. La prova gratuita include una vera analisi lead e non richiede carta.",
     plans: [
       {
         name: "Prova gratuita",
         price: "0",
         period: "un lead",
-        description: "Per testare FlowCrew con un vero messaggio cliente.",
+        description: "Per capire il workflow prima di fare upgrade.",
         features: [
-          "1 analisi lead",
-          "Jackie, Nora, Milo e Dex",
-          "Riepilogo, tag e risposta",
-          "Nessuna carta richiesta",
+          "Prova FlowCrew con 1 vero messaggio cliente",
+          "Guarda come la Crew AI struttura il lead",
+          "Capisci il workflow prima di fare upgrade",
         ],
         cta: "Analizza 1 lead gratis",
         href: "/trial",
@@ -39,13 +38,12 @@ const pricingCopy = {
         name: "Pro",
         price: "19",
         period: "al mese",
-        description: "Per freelance che ricevono richieste clienti ogni settimana.",
+        description: "Per organizzare richieste clienti in modo continuativo.",
         features: [
-          "Più analisi lead",
-          "Storico clienti salvato",
-          "Dashboard e record lead",
-          "Passaggi e risposte migliori",
-          "Supporto prioritario in beta",
+          "Organizza richieste clienti continuative",
+          "Salva più lead",
+          "Ottieni supporto più chiaro per follow-up e proposte",
+          "Continua a usare la Crew AI oltre il lead gratuito",
         ],
         cta: "Passa a Pro",
         href: "/api/stripe/checkout",
@@ -55,13 +53,11 @@ const pricingCopy = {
         name: "Team",
         price: "Custom",
         period: "beta",
-        description: "Per piccoli team che hanno bisogno di workflow condivisi e setup dedicato.",
+        description: "Per team che condividono intake e passaggi cliente.",
         features: [
-          "Workspace condiviso",
-          "Setup guidato",
-          "Feedback loop sul workflow",
-          "Accesso anticipato alle integrazioni",
-          "Limiti d'uso personalizzati",
+          "Gestisci un intake cliente condiviso",
+          "Crea passaggi chiari tra più persone",
+          "Tieni ordinate le richieste cliente in tutto il team",
         ],
         cta: "Richiedi accesso",
         href: manualProHref,
@@ -71,25 +67,24 @@ const pricingCopy = {
   en: {
     home: "Home",
     label: "Pricing",
-    titleLineOne: "Start free.",
-    titleLineTwo: "Upgrade when FlowCrew fits.",
+    titleLineOne: "Start with one real lead.",
+    titleLineTwo: "Upgrade when the workflow earns its place.",
     body:
-      "The homepage stays focused on the product promise. Plan details, trial limits and checkout live here.",
+      "See how FlowCrew organizes a real client request, then choose the plan that fits your volume and the way your team works.",
     popular: "Popular",
     customPrice: "Custom",
     checkoutNote:
-      "Checkout is intentionally separate from the landing. Users first understand FlowCrew, then test one real lead, then compare plans when they are ready.",
+      "FlowCrew is an early MVP for freelancers and small teams. The free trial includes one real lead analysis and requires no card.",
     plans: [
       {
         name: "Free trial",
         price: "0",
         period: "one lead",
-        description: "For testing FlowCrew with one real client message.",
+        description: "Understand the workflow before upgrading.",
         features: [
-          "1 lead analysis",
-          "Jackie, Nora, Milo and Dex",
-          "Lead summary, tags and reply",
-          "No card required",
+          "Test FlowCrew with 1 real client message",
+          "See how the AI crew structures the lead",
+          "Understand the workflow before upgrading",
         ],
         cta: "Analyze 1 lead free",
         href: "/trial",
@@ -98,13 +93,12 @@ const pricingCopy = {
         name: "Pro",
         price: "19",
         period: "per month",
-        description: "For freelancers who receive client requests every week.",
+        description: "For organizing ongoing client requests.",
         features: [
-          "More lead analyses",
-          "Saved client history",
-          "Dashboard and lead records",
-          "Better handoff and replies",
-          "Priority support in beta",
+          "Organize ongoing client requests",
+          "Save more leads",
+          "Get clearer follow-up and proposal support",
+          "Keep using the AI crew beyond the free lead",
         ],
         cta: "Upgrade to Pro",
         href: "/api/stripe/checkout",
@@ -114,13 +108,11 @@ const pricingCopy = {
         name: "Team",
         price: "Custom",
         period: "beta",
-        description: "For small teams that need shared workflows and custom setup.",
+        description: "For teams sharing client intake and handoffs.",
         features: [
-          "Shared workspace",
-          "Guided setup",
-          "Workflow feedback loop",
-          "Early access to integrations",
-          "Custom usage limits",
+          "Manage shared client intake",
+          "Create clean handoffs between multiple people",
+          "Keep client requests organized across the team",
         ],
         cta: "Request access",
         href: manualProHref,

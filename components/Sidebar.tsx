@@ -22,63 +22,67 @@ import { createClient } from "@/lib/supabase/client";
 const sidebarCopy = {
   it: {
     subtitle: "AI command center",
-    cta: "Prova gratis",
-    status: "AI server-side / dati privati",
+    cta: "Nuovo lead",
+    status: "Approval-first / dati privati",
     account: "Account",
     signOut: "Esci",
     signIn: "Accedi",
     landingLabel: "FlowCrew landing",
+    backToWebsite: "Torna al sito",
     navGroups: [
       {
         label: "Command",
         items: [
-          { href: "/dashboard", label: "Oggi", Icon: BarChart3 },
+          { href: "/dashboard", label: "Overview", Icon: BarChart3 },
           { href: "/leads", label: "Leads", Icon: Inbox },
           { href: "/trial", label: "Nuovo lead", Icon: WandSparkles },
         ],
       },
       {
-        label: "Sistema",
+        label: "Sources",
         items: [
-          { href: "/import", label: "Import", Icon: ClipboardList },
-          { href: "/integrations", label: "Canali", Icon: PlugZap },
-          { href: "/chat", label: "Demo", Icon: MessageSquareText, separatePage: true },
+          { href: "/import", label: "Manual import", Icon: ClipboardList },
+          { href: "/integrations", label: "Channels", Icon: PlugZap },
         ],
       },
       {
-        label: "Sito",
-        items: [{ href: "/", label: "Landing", Icon: Home }],
+        label: "Product",
+        items: [
+          { href: "/chat", label: "Static demo", Icon: MessageSquareText, separatePage: true },
+        ],
       },
     ],
   },
   en: {
     subtitle: "AI command center",
-    cta: "Try free",
-    status: "AI server-side / private data",
+    cta: "New lead",
+    status: "Approval-first / private data",
     account: "Account",
     signOut: "Sign out",
     signIn: "Sign in",
     landingLabel: "FlowCrew landing",
+    backToWebsite: "Back to website",
     navGroups: [
       {
         label: "Command",
         items: [
-          { href: "/dashboard", label: "Today", Icon: BarChart3 },
+          { href: "/dashboard", label: "Overview", Icon: BarChart3 },
           { href: "/leads", label: "Leads", Icon: Inbox },
           { href: "/trial", label: "New lead", Icon: WandSparkles },
         ],
       },
       {
-        label: "System",
+        label: "Sources",
         items: [
-          { href: "/import", label: "Import", Icon: ClipboardList },
+          { href: "/import", label: "Manual import", Icon: ClipboardList },
           { href: "/integrations", label: "Channels", Icon: PlugZap },
-          { href: "/chat", label: "Demo", Icon: MessageSquareText, separatePage: true },
         ],
       },
       {
-        label: "Website",
-        items: [{ href: "/", label: "Landing", Icon: Home }],
+        label: "Product",
+        items: [
+          { href: "/chat", label: "Static demo", Icon: MessageSquareText, separatePage: true },
+        ],
       },
     ],
   },
@@ -112,7 +116,7 @@ export default function Sidebar() {
   return (
     <aside className="relative z-20 flex w-full flex-col border-b border-white/[0.06] bg-[#0b0b0b]/92 backdrop-blur-xl lg:sticky lg:top-0 lg:h-screen lg:w-[260px] lg:shrink-0 lg:border-b-0 lg:border-r">
       <div className="flex items-center justify-between gap-3 px-4 py-3 lg:block lg:px-4 lg:py-5">
-        <Link href="/" className="flex min-w-0 items-center gap-3" aria-label={copy.landingLabel}>
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-3" aria-label="FlowCrew app">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--fc-accent)] text-sm font-extrabold tracking-[-0.04em] text-[#080808]">
             F
           </span>
@@ -140,8 +144,7 @@ export default function Sidebar() {
             </p>
             <div className="flex gap-1.5 lg:mt-2 lg:flex-col">
               {group.items.map((item) => {
-                const isActive =
-                  item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                const isActive = pathname.startsWith(item.href);
                 const Icon = item.Icon;
 
                 return (
@@ -180,6 +183,12 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+
+        <Link href="/" className="mb-3 flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-sm font-semibold text-[var(--fc-text-muted)] transition hover:border-white/[0.12] hover:bg-white/[0.04] hover:text-[var(--fc-text)]" aria-label={copy.landingLabel}>
+          <Home aria-hidden="true" className="h-4 w-4" />
+          <span>{copy.backToWebsite}</span>
+          <ExternalLink aria-hidden="true" className="ml-auto h-3.5 w-3.5 opacity-55" />
+        </Link>
 
         {userEmail ? (
           <div className="flex items-center justify-between gap-3 lg:block">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   CalendarClock,
@@ -10,25 +11,16 @@ import {
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { DashboardPlanStatusCard } from "@/components/UsageWorkspaceStatus";
-import { agentOrder, agentRoles } from "@/lib/agent-roles";
-import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
+import { getAuthContext } from "@/lib/auth";
+import {
+  getLeadDashboardMetrics,
+  getLeadDisplayName,
+  getStoredLeads,
+  scoreLead,
+  type StoredLead,
+} from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
-
-function urgentCount(leads: StoredLead[]) {
-  return leads.filter((lead) => {
-    const text = `${lead.urgency ?? ""} ${(lead.tags ?? []).join(" ")}`.toLowerCase();
-    return text.includes("alta") || text.includes("high") || text.includes("urgent");
-  }).length;
-}
-
-function replyCount(leads: StoredLead[]) {
-  return leads.filter((lead) => Boolean(lead.suggested_reply)).length;
-}
-
-function followUpCount(leads: StoredLead[]) {
-  return leads.filter((lead) => Boolean(lead.next_action || lead.follow_up)).length;
-}
 
 function formatDate(value?: string) {
   if (!value) return "Nessuna data";
@@ -42,15 +34,24 @@ function formatDate(value?: string) {
 }
 
 export default async function DashboardPage() {
-  const leads = await getStoredLeads(12);
+  const auth = await getAuthContext();
+
+  if (!auth) {
+    redirect("/login?next=/dashboard");
+  }
+
+  const [leads, metrics] = await Promise.all([
+    getStoredLeads(auth, 12),
+    getLeadDashboardMetrics(auth),
+  ]);
   const priorityLeads = [...leads].sort((a, b) => scoreLead(b) - scoreLead(a)).slice(0, 5);
   const recentLeads = leads.slice(0, 6);
-  const hasLeads = leads.length > 0;
+  const hasLeads = metrics.total > 0;
   const stats = [
-    { label: "Lead aperti", value: String(leads.length), detail: "Conversazioni salvate", Icon: Inbox },
-    { label: "Risposte pronte", value: String(replyCount(leads)), detail: "Da approvare", Icon: MessageSquareText },
-    { label: "Follow-up", value: String(followUpCount(leads)), detail: "Azioni successive", Icon: CalendarClock },
-    { label: "Urgenti", value: String(urgentCount(leads)), detail: "Segnali alti", Icon: Clock3 },
+    { label: "Lead aperti", value: String(metrics.total), detail: "Conversazioni salvate", Icon: Inbox },
+    { label: "Risposte pronte", value: String(metrics.replies), detail: "Da approvare", Icon: MessageSquareText },
+    { label: "Follow-up", value: String(metrics.followUps), detail: "Azioni successive", Icon: CalendarClock },
+    { label: "Urgenti", value: String(metrics.urgent), detail: "Segnali alti", Icon: Clock3 },
   ];
 
   return (
@@ -104,10 +105,10 @@ export default async function DashboardPage() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
-          <PriorityQueue leads={priorityLeads} totalCount={leads.length} />
+          <PriorityQueue leads={priorityLeads} totalCount={metrics.total} />
           <div className="space-y-4">
             <DashboardPlanStatusCard />
-            <CrewActivity hasLeads={hasLeads} />
+            <RecentActivity leads={recentLeads.slice(0, 4)} />
           </div>
         </section>
 
@@ -156,7 +157,7 @@ function PriorityRow({ lead }: { lead: StoredLead }) {
 
   return (
     <Link
-      href={{ pathname: "/leads", query: { lead: lead.id } }}
+      href={`/leads/${lead.id}`}
       className="grid gap-3 px-4 py-3 transition hover:bg-white/[0.035] lg:grid-cols-[minmax(0,1fr)_100px_126px] lg:items-center"
     >
       <div className="min-w-0">
@@ -205,7 +206,7 @@ function RecentLeads({ leads }: { leads: StoredLead[] }) {
           {leads.map((lead) => (
             <Link
               key={lead.id}
-              href={{ pathname: "/leads", query: { lead: lead.id } }}
+              href={`/leads/${lead.id}`}
               className="grid gap-2 px-4 py-3 transition hover:bg-white/[0.035] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
             >
               <div className="min-w-0">
@@ -227,39 +228,45 @@ function RecentLeads({ leads }: { leads: StoredLead[] }) {
   );
 }
 
-function CrewActivity({ hasLeads }: { hasLeads: boolean }) {
-  const rows = agentOrder.map((id) => ({
-    name: agentRoles[id].name,
-    title: agentRoles[id].title,
-    action: agentRoles[id].workflowAction,
-  }));
-
+function RecentActivity({ leads }: { leads: StoredLead[] }) {
   return (
     <section className="fc-panel overflow-hidden">
       <div className="border-b border-white/[0.06] px-4 py-3">
-        <p className="fc-label">Crew activity</p>
+        <p className="fc-label">Recent activity</p>
         <h2 className="mt-1 text-xl font-bold tracking-[-0.035em] text-[var(--fc-text)]">
-          Log operativo
+          Analisi salvate
         </h2>
       </div>
-      <div className="divide-y divide-white/[0.05]">
-        {rows.map((row, index) => (
-          <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 px-4 py-3" key={row.name}>
-            <span className="flow-mono text-xs text-[var(--fc-text-soft)]">
-              {hasLeads ? `T-${index + 1}` : "Idle"}
-            </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-bold text-[var(--fc-text)]">{row.name}</p>
-                <span className="rounded-full border border-white/[0.06] bg-white/[0.035] px-2 py-0.5 text-xs text-[var(--fc-text-muted)]">
-                  {row.title}
-                </span>
+      {leads.length ? (
+        <div className="divide-y divide-white/[0.05]">
+          {leads.map((lead) => (
+            <Link
+              className="grid grid-cols-[82px_minmax(0,1fr)] gap-3 px-4 py-3 transition hover:bg-white/[0.035]"
+              href={`/leads/${lead.id}`}
+              key={lead.id}
+            >
+              <span className="flow-mono text-xs text-[var(--fc-text-soft)]">
+                {formatDate(lead.created_at)}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-bold text-[var(--fc-text)]">
+                    {getLeadDisplayName(lead)}
+                  </p>
+                  <span className="rounded-full border border-white/[0.06] bg-white/[0.035] px-2 py-0.5 text-xs capitalize text-[var(--fc-text-muted)]">
+                    {lead.source}
+                  </span>
+                </div>
+                <p className="mt-1 line-clamp-1 text-sm text-[var(--fc-text-muted)]">
+                  {lead.summary ?? "Lead analizzato e salvato nel workspace."}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-[var(--fc-text-muted)]">{row.action}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <EmptyQueue />
+      )}
     </section>
   );
 }

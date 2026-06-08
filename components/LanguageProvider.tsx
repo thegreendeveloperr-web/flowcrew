@@ -471,13 +471,13 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 function readStoredLanguage(): Language {
   if (typeof window === "undefined") {
-    return "it";
+    return "en";
   }
 
   const storedLanguage = window.localStorage.getItem(storageKey);
   return storedLanguage === "en" || storedLanguage === "it"
     ? storedLanguage
-    : "it";
+    : "en";
 }
 
 function subscribeLanguage(listener: () => void) {
@@ -504,7 +504,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const language = useSyncExternalStore<Language>(
     subscribeLanguage,
     readStoredLanguage,
-    () => "it",
+    () => "en",
   );
 
   useEffect(() => {

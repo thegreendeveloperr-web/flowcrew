@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import AppShell from "@/components/AppShell";
 import type { StoredLead } from "@/lib/leads";
 
-const sampleConversation = `[WhatsApp] Marco: Ciao, vorrei un preventivo per un sito...
-[Gmail] marco@email.it: Ti mando anche il logo...
-[Instagram] @marco_studio: Mi servirebbe una pagina prenotazioni.`;
+const sampleConversation = `[WhatsApp] Marco: Hi, I need a quote for a website for my shop...
+[Gmail] marco@email.it: I can also send the logo and some product photos.
+[Instagram] @marco_studio: I would need a booking page too.`;
 
 const importModes = [
-  { value: "single", label: "Single lead", description: "Una conversazione cliente" },
-  { value: "mixed", label: "Mixed channels", description: "Un cliente su piu canali" },
-  { value: "multiple", label: "Batch", description: "Messaggi incollati insieme" },
+  { value: "single", label: "Single lead", description: "One client conversation" },
+  { value: "mixed", label: "Mixed channels", description: "One client across channels" },
+  { value: "multiple", label: "Batch", description: "Several copied messages" },
 ] as const;
 
 type ImportMode = (typeof importModes)[number]["value"];
@@ -41,24 +41,32 @@ export default function ImportPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source: "import",
-          sender: "Imported conversation",
-          text,
+          clientName: "Imported conversation",
+          sourceType: "email",
+          messyMessage: text,
+          businessType: "Freelance / small team",
+          goal: `Manual import (${mode}): summarize the request, detect priority, draft a reply, and suggest the next action.`,
+          language: "en",
         }),
       });
 
-      const payload = (await response.json()) as IngestResponse | { error?: string };
+      const payload = (await response.json().catch(() => null)) as IngestResponse | { error?: string } | null;
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Accedi per salvare un lead nel tuo workspace.");
+          throw new Error("Sign in to save this lead in your workspace.");
         }
-        throw new Error("error" in payload && payload.error ? payload.error : "Import non riuscito. Riprova.");
+
+        throw new Error(payload && "error" in payload && payload.error ? payload.error : "Import failed. Try again.");
       }
 
-      setResult(payload as IngestResponse);
+      if (!payload || !("lead" in payload)) {
+        throw new Error("FlowCrew did not return a saved lead. Try again.");
+      }
+
+      setResult(payload);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Errore sconosciuto durante l'import.");
+      setError(requestError instanceof Error ? requestError.message : "Unknown import error.");
     } finally {
       setIsLoading(false);
     }
@@ -72,16 +80,19 @@ export default function ImportPage() {
           <div className="mt-2 grid gap-4 xl:grid-cols-[1fr_360px] xl:items-end">
             <div>
               <h1 className="text-4xl font-extrabold leading-none tracking-[-0.055em] text-[var(--fc-text)] sm:text-5xl">
-                Incolla conversazioni sparse.
+                Paste scattered conversations.
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--fc-text-muted)]">
-                WhatsApp, Gmail, Instagram, note o screenshot trascritti. FlowCrew parte dal caos reale.
+                WhatsApp, Gmail, Instagram, notes, or transcribed screenshots. FlowCrew starts from real client chaos.
               </p>
             </div>
+
             <div className="rounded-2xl border border-[rgba(200,245,66,0.16)] bg-[rgba(200,245,66,0.06)] p-4">
-              <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-accent)]">Current release</p>
+              <p className="flow-mono text-xs uppercase tracking-[0.12em] text-[var(--fc-accent)]">
+                Current release
+              </p>
               <p className="mt-2 text-sm leading-6 text-[var(--fc-text-muted)]">
-              L&apos;import manuale mantiene il messaggio originale e salva un lead strutturato.
+                FlowCrew currently works with manual import. Automatic integrations are planned, but not live yet.
               </p>
             </div>
           </div>
@@ -118,7 +129,7 @@ export default function ImportPage() {
                       }`}
                     >
                       <span className="block text-sm font-bold">{option.label}</span>
-                      <span className="mt-1 block text-xs opacity-70">{option.description}</span>
+                      <span className="mt-1 block text-xs opacity-75">{option.description}</span>
                     </button>
                   );
                 })}
@@ -126,7 +137,7 @@ export default function ImportPage() {
             </fieldset>
 
             <label className="mt-5 block text-sm font-bold text-[var(--fc-text)]">
-              Messaggi copiati
+              Copied messages
               <textarea
                 value={text}
                 onChange={(event) => setText(event.target.value)}
@@ -137,11 +148,11 @@ export default function ImportPage() {
             </label>
 
             <p className="mt-3 text-xs font-medium leading-5 text-[var(--fc-text-soft)]">
-              Ogni modalita viene organizzata come lead multi-canale. Lo split automatico multi-lead puo arrivare dopo.
+              FlowCrew keeps the original message and saves one structured lead. Automatic multi-lead splitting can come later.
             </p>
 
             <button type="submit" disabled={isLoading || !text.trim()} className="fc-button fc-button-primary mt-5 w-full">
-              {isLoading ? "Import in corso..." : "Importa e organizza"}
+              {isLoading ? "Importing..." : "Import and organize"}
             </button>
 
             {error ? (
@@ -154,7 +165,7 @@ export default function ImportPage() {
           <aside className="fc-panel p-5 sm:p-6">
             <p className="fc-label">Output</p>
             <h2 className="mt-1 text-2xl font-bold tracking-[-0.04em] text-[var(--fc-text)]">
-              {result ? "Salvato in Supabase" : "Pronto per il caos"}
+              {result ? "Saved to workspace" : "Ready for the chaos"}
             </h2>
 
             {result ? <SavedLeadCard lead={result.lead} /> : <EmptyResult />}
@@ -174,10 +185,10 @@ function SavedLeadCard({ lead }: { lead: StoredLead }) {
         <div>
           <p className="fc-label">Imported conversation</p>
           <h3 className="mt-1 text-xl font-bold tracking-[-0.04em] text-[var(--fc-text)]">
-            Lead strutturato
+            Structured lead
           </h3>
         </div>
-        <span className="fc-pill fc-pill-success">{lead.urgency ?? "Nuovo"}</span>
+        <span className="fc-pill fc-pill-success">{lead.urgency ?? "New"}</span>
       </div>
 
       <ResultSection label="Summary">
@@ -194,24 +205,24 @@ function SavedLeadCard({ lead }: { lead: StoredLead }) {
             ))}
           </div>
         ) : (
-          <p>Nessun tag rilevato.</p>
+          <p>No tags detected.</p>
         )}
       </ResultSection>
 
-      <ResultSection label="Risposta">
+      <ResultSection label="Suggested reply">
         <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-4 text-[var(--fc-text-muted)]">
-          {lead.suggested_reply ?? "Nessuna risposta disponibile."}
+          {lead.suggested_reply ?? "No reply available."}
         </div>
       </ResultSection>
 
       <ResultSection label="Next action">
-        <p>{lead.next_action ?? "Rivedi il lead importato."}</p>
+        <p>{lead.next_action ?? "Review the imported lead."}</p>
       </ResultSection>
     </article>
   );
 }
 
-function ResultSection({ label, children }: { label: string; children: React.ReactNode }) {
+function ResultSection({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="mt-4 border-t border-white/[0.06] pt-4">
       <p className="fc-label mb-2">{label}</p>
@@ -223,9 +234,9 @@ function ResultSection({ label, children }: { label: string; children: React.Rea
 function EmptyResult() {
   return (
     <div className="mt-5 grid gap-3">
-      {["Summary chiaro", "Priorita e tag", "Risposta pronta", "Prossima azione"].map((item, index) => (
-        <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
-          <span className="flow-mono grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white/[0.05] text-xs text-[var(--fc-accent)]">
+      {["Clear summary", "Priority and tags", "Reply draft", "Next action"].map((item, index) => (
+        <div key={item} className="flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
+          <span className="flow-mono flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] text-sm text-[var(--fc-accent)]">
             {index + 1}
           </span>
           <p className="text-sm font-bold text-[var(--fc-text-muted)]">{item}</p>

@@ -3,9 +3,13 @@ import { LanguageProvider } from "@/components/LanguageProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FlowCrew | AI crew per il caos clienti",
+  metadataBase: new URL("https://flowcrew.vercel.app"),
+  title: {
+    default: "FlowCrew",
+    template: "%s | FlowCrew",
+  },
   description:
-    "FlowCrew trasforma messaggi, email e richieste clienti in riassunti, priorita, tag, task e risposte pronte.",
+    "Turn messy client messages into structured leads, next actions, follow-ups, and proposal notes with FlowCrew.",
 };
 
 export default function RootLayout({
@@ -14,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className="h-full antialiased" data-scroll-behavior="smooth">
+    <html lang="en" className="h-full antialiased" data-scroll-behavior="smooth">
       <body className="min-h-full bg-[var(--fc-bg)] text-[var(--fc-text)]">
         <a className="skip-link" href="#main-content">
           Skip to main content

@@ -430,7 +430,7 @@ export function createRecoveredAgentReview(
           "Mossa successiva: chiedere dettagli essenziali e proporre una breve call o mini-brief.",
           ...signals,
         ].slice(0, 5),
-        degraded: options.degraded ?? false,
+        degraded: options.degraded ?? warnings.length > 0,
         fallbackReason,
         warnings,
       };
@@ -447,7 +447,7 @@ export function createRecoveredAgentReview(
           "Preparare una stima solo dopo i dettagli minimi di scope.",
           ...signals,
         ].slice(0, 5),
-        degraded: options.degraded ?? false,
+        degraded: options.degraded ?? warnings.length > 0,
         fallbackReason,
         warnings,
       };
@@ -457,7 +457,7 @@ export function createRecoveredAgentReview(
       message:
         "Jackie ha isolato richiesta, dettagli disponibili e informazioni mancanti dal messaggio.",
       findings: signals,
-      degraded: options.degraded ?? false,
+      degraded: options.degraded ?? warnings.length > 0,
       fallbackReason,
       warnings,
     };
@@ -474,7 +474,7 @@ export function createRecoveredAgentReview(
         "Next move: ask for essential details and suggest a short call or mini brief.",
         ...signals,
       ].slice(0, 5),
-      degraded: options.degraded ?? false,
+      degraded: options.degraded ?? warnings.length > 0,
       fallbackReason,
       warnings,
     };
@@ -491,7 +491,7 @@ export function createRecoveredAgentReview(
         "Prepare an estimate only after the minimum scope details are clear.",
         ...signals,
       ].slice(0, 5),
-      degraded: options.degraded ?? false,
+      degraded: options.degraded ?? warnings.length > 0,
       fallbackReason,
       warnings,
     };
@@ -501,7 +501,7 @@ export function createRecoveredAgentReview(
     message:
       "Jackie isolated the request, available details, and missing information from the message.",
     findings: signals,
-    degraded: options.degraded ?? false,
+    degraded: options.degraded ?? warnings.length > 0,
     fallbackReason,
     warnings,
   };
@@ -539,7 +539,7 @@ export function createRecoveredDexReview(
           ? "Ciao, grazie per la richiesta. Prima di indicare costo e tempi ho bisogno di confermare scope, materiali disponibili e scadenza. Con questi dettagli posso prepararti una stima seria e realistica."
           : "Hi, thanks for the request. Before giving cost and timing, I need to confirm scope, available materials, and deadline. With those details I can prepare a serious, realistic estimate.",
     },
-    degraded: options.degraded ?? false,
+    degraded: options.degraded ?? warnings.length > 0,
     fallbackReason,
     warnings,
   };

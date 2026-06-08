@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getAuthContext } from "@/lib/auth";
 import { getPlanLimits, getUserPlan } from "@/lib/billing";
 import { getUserLeadCount } from "@/lib/leads";
 import { isSupabaseAuthConfigured } from "@/lib/supabase/env";
@@ -8,29 +8,32 @@ function jsonError(code: string, error: string, status: number) {
   return NextResponse.json({ error, code }, { status });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (!isSupabaseAuthConfigured()) {
       return jsonError(
         "supabase_unconfigured",
-        "Supabase non e configurato: utilizzo non disponibile.",
+        "Supabase is not configured: usage is unavailable.",
         503,
       );
     }
 
-    const user = await getSessionUser();
+    const auth = await getAuthContext(request);
 
-    if (!user) {
+    if (!auth) {
       return jsonError(
         "auth_required",
-        "Accedi per vedere il tuo utilizzo.",
+        "Sign in to view your usage.",
         401,
       );
     }
 
-    const plan = getUserPlan(user.id);
+    const plan = getUserPlan({
+      userId: auth.user.id,
+      email: auth.user.email ?? null,
+    });
     const limits = getPlanLimits(plan);
-    const used = await getUserLeadCount(user.id);
+    const used = await getUserLeadCount(auth);
 
     return NextResponse.json({
       plan,
@@ -46,7 +49,7 @@ export async function GET() {
 
     return jsonError(
       "usage_unavailable",
-      "Non riesco a recuperare l'utilizzo in questo momento.",
+      "Usage cannot be retrieved right now.",
       500,
     );
   }

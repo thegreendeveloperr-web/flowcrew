@@ -1,5 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseAuthConfigured } from "@/lib/supabase/env";
+import type { PostgrestError } from "@supabase/supabase-js";
+import type { AuthContext } from "@/lib/auth";
 import type { ConversationAnalysis, ConversationInput } from "@/lib/flowcrew-types";
 
 export type StoredLead = {
@@ -24,7 +24,18 @@ export type StoredLead = {
 type NewLeadRow = Omit<StoredLead, "id" | "created_at">;
 
 function compactText(values: Array<string | undefined>) {
-  return values.map((value) => value?.trim()).filter(Boolean).join(" · ");
+  return values.map((value) => value?.trim()).filter(Boolean).join(" / ");
+}
+
+function throwLeadDataError(operation: string, error: PostgrestError): never {
+  console.error(`FlowCrew lead ${operation} failed`, {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
+
+  throw new Error(`Could not ${operation} leads in Supabase.`);
 }
 
 export function analysisToLeadRow(
@@ -43,12 +54,13 @@ export function analysisToLeadRow(
     analysis.jackie.missingInfo.at(0) ||
     "Review lead";
 
-  const followUp = analysis.milo.followUp || compactText(analysis.nora.nextSteps.slice(1));
+  const followUp =
+    analysis.milo.followUp || compactText(analysis.nora.nextSteps.slice(1));
 
   return {
     user_id: userId,
     source: input.sourceType,
-    sender_name: input.clientName || "Unknown lead",
+    sender_name: input.clientName || "Lead senza nome",
     sender_contact: null,
     raw_message: input.messyMessage,
     summary: analysis.jackie.cleanSummary,
@@ -63,24 +75,14 @@ export function analysisToLeadRow(
   };
 }
 
-export async function getUserLeadCount(userId: string) {
-  if (!isSupabaseAuthConfigured()) return 0;
-
-  const supabase = await createClient();
-
+export async function getUserLeadCount({ user, supabase }: AuthContext) {
   const { count, error } = await supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .eq("user_id", user.id);
 
   if (error) {
-    console.error("FlowCrew lead count failed", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-
-    throw new Error("Could not check lead usage.");
+    throwLeadDataError("count", error);
   }
 
   return count ?? 0;
@@ -89,41 +91,27 @@ export async function getUserLeadCount(userId: string) {
 export async function createLeadFromAnalysis(
   input: ConversationInput,
   analysis: ConversationAnalysis,
-  userId: string,
+  auth: AuthContext,
 ) {
-  const row = analysisToLeadRow(input, analysis, userId);
-  const supabase = await createClient();
+  const row = analysisToLeadRow(input, analysis, auth.user.id);
 
-  const { data, error } = await supabase
+  const { data, error } = await auth.supabase
     .from("leads")
     .insert(row)
     .select("*")
     .single<StoredLead>();
 
   if (error) {
-    console.error("FlowCrew lead insert failed", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-
-    throw new Error("Could not save lead in Supabase.");
+    throwLeadDataError("save", error);
   }
 
   return data;
 }
 
-export async function getStoredLeads(limit = 30) {
-  if (!isSupabaseAuthConfigured()) return [] as StoredLead[];
-
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return [] as StoredLead[];
-
+export async function getStoredLeads(
+  { user, supabase }: AuthContext,
+  limit = 30,
+) {
   const { data, error } = await supabase
     .from("leads")
     .select("*")
@@ -133,29 +121,99 @@ export async function getStoredLeads(limit = 30) {
     .returns<StoredLead[]>();
 
   if (error) {
-    console.error("FlowCrew lead read failed", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-    });
-
-    return [] as StoredLead[];
+    throwLeadDataError("read", error);
   }
 
   return data ?? [];
 }
 
-export function scoreLead(lead: Pick<StoredLead, "urgency" | "tags" | "summary">) {
-  const text = `${lead.urgency ?? ""} ${(lead.tags ?? []).join(" ")} ${lead.summary ?? ""}`.toLowerCase();
+export async function getStoredLeadById(
+  { user, supabase }: AuthContext,
+  leadId: string,
+) {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("id", leadId)
+    .maybeSingle<StoredLead>();
+
+  if (error) {
+    throwLeadDataError("read", error);
+  }
+
+  return data;
+}
+
+export async function getLeadDashboardMetrics({
+  user,
+  supabase,
+}: AuthContext) {
+  const baseCount = () =>
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+  const [totalResult, repliesResult, followUpsResult, urgentResult] =
+    await Promise.all([
+      baseCount(),
+      baseCount().not("suggested_reply", "is", null),
+      baseCount().or("next_action.not.is.null,follow_up.not.is.null"),
+      baseCount().in("urgency", ["high", "alta", "urgent", "urgente"]),
+    ]);
+
+  for (const result of [
+    totalResult,
+    repliesResult,
+    followUpsResult,
+    urgentResult,
+  ]) {
+    if (result.error) {
+      throwLeadDataError("count", result.error);
+    }
+  }
+
+  return {
+    total: totalResult.count ?? 0,
+    replies: repliesResult.count ?? 0,
+    followUps: followUpsResult.count ?? 0,
+    urgent: urgentResult.count ?? 0,
+  };
+}
+
+export function scoreLead(
+  lead: Pick<StoredLead, "urgency" | "tags" | "summary">,
+) {
+  const text =
+    `${lead.urgency ?? ""} ${(lead.tags ?? []).join(" ")} ${lead.summary ?? ""}`.toLowerCase();
   let score = 62;
 
-  if (text.includes("alta") || text.includes("high") || text.includes("urgent")) score += 22;
-  if (text.includes("budget") || text.includes("preventivo") || text.includes("quote")) score += 8;
-  if (text.includes("call") || text.includes("domani") || text.includes("tomorrow")) score += 6;
+  if (
+    text.includes("alta") ||
+    text.includes("high") ||
+    text.includes("urgent")
+  ) {
+    score += 22;
+  }
+  if (
+    text.includes("budget") ||
+    text.includes("preventivo") ||
+    text.includes("quote")
+  ) {
+    score += 8;
+  }
+  if (
+    text.includes("call") ||
+    text.includes("domani") ||
+    text.includes("tomorrow")
+  ) {
+    score += 6;
+  }
 
   return Math.min(score, 98);
 }
 
 export function getLeadDisplayName(lead: StoredLead) {
-  return lead.sender_name || lead.sender_contact || "Unknown lead";
+  return lead.sender_name || lead.sender_contact || "Lead senza nome";
 }

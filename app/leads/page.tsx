@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
 import AppShell from "@/components/AppShell";
 import { LeadsProStatusLine } from "@/components/UsageWorkspaceStatus";
 import { agentRoles } from "@/lib/agent-roles";
+import { getAuthContext } from "@/lib/auth";
 import { getLeadDisplayName, getStoredLeads, scoreLead, type StoredLead } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +84,16 @@ export default async function LeadsPage({
 }: {
   searchParams: Promise<{ lead?: string | string[]; q?: string | string[]; filter?: string | string[] }>;
 }) {
-  const [allLeads, query] = await Promise.all([getStoredLeads(40), searchParams]);
+  const auth = await getAuthContext();
+
+  if (!auth) {
+    redirect("/login?next=/leads");
+  }
+
+  const [allLeads, query] = await Promise.all([
+    getStoredLeads(auth, 40),
+    searchParams,
+  ]);
 
   const selectedId = typeof query.lead === "string" ? query.lead : undefined;
   const searchQuery = typeof query.q === "string" ? query.q : "";
@@ -251,7 +262,11 @@ function LeadList({
       {leads.length ? (
         <div className="max-h-[calc(100vh-18rem)] overflow-y-auto">
           {leads.map((lead) => (
-            <LeadListItem isSelected={lead.id === selectedId} key={lead.id} lead={lead} q={q} activeFilter={activeFilter} />
+            <LeadListItem
+              isSelected={lead.id === selectedId}
+              key={lead.id}
+              lead={lead}
+            />
           ))}
         </div>
       ) : (
@@ -264,13 +279,9 @@ function LeadList({
 function LeadListItem({
   lead,
   isSelected,
-  q,
-  activeFilter,
 }: {
   lead: StoredLead;
   isSelected: boolean;
-  q: string;
-  activeFilter: string;
 }) {
   const score = scoreLead(lead);
   const displayName = getLeadDisplayName(lead);
@@ -279,7 +290,7 @@ function LeadListItem({
   return (
     <Link
       aria-current={isSelected ? "page" : undefined}
-      href={{ pathname: "/leads", query: { lead: lead.id, ...(q ? { q } : {}), ...(activeFilter !== "all" ? { filter: activeFilter } : {}) } }}
+      href={`/leads/${lead.id}`}
       className={`block border-b border-white/[0.05] px-4 py-4 transition hover:bg-white/[0.035] ${
         isSelected ? "bg-[rgba(200,245,66,0.07)]" : ""
       }`}

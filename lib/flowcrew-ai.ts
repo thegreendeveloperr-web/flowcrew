@@ -275,6 +275,7 @@ function readAgentReviewPayload(
     return createRecoveredAgentReview(agentName, input, {
       fallbackReason: "recovered_agent_json",
       warnings: compactWarnings(["recovered_agent_json", parsed.error]),
+      degraded: true,
     });
   }
 
@@ -294,7 +295,7 @@ function readAgentReviewPayload(
   return {
     message,
     findings,
-    degraded: false,
+    degraded: warnings.length > 0,
     fallbackReason: warnings.length ? "partial_agent_json" : undefined,
     warnings,
   };
@@ -311,6 +312,7 @@ function readDexReviewPayload(text: string, input: ConversationInput): DexReview
     return createRecoveredDexReview(input, {
       fallbackReason: "recovered_dex_json",
       warnings: compactWarnings(["recovered_dex_json", parsed.error]),
+      degraded: true,
     });
   }
 
@@ -340,7 +342,7 @@ function readDexReviewPayload(text: string, input: ConversationInput): DexReview
         suggestedReply,
       ),
     },
-    degraded: false,
+    degraded: warnings.length > 0,
     fallbackReason: warnings.length ? "partial_dex_json" : undefined,
     warnings,
   };
@@ -432,6 +434,7 @@ async function runAgentReviewSafely(request: AgentReviewRequest) {
     return createRecoveredAgentReview(request.agentName, request.input, {
       fallbackReason: normalized.code,
       warnings: [normalized.publicMessage],
+      degraded: true,
     });
   }
 }
@@ -514,6 +517,7 @@ async function runDexReviewSafely(input: ConversationInput) {
     return createRecoveredDexReview(input, {
       fallbackReason: normalized.code,
       warnings: [normalized.publicMessage],
+      degraded: true,
     });
   }
 }
@@ -614,7 +618,7 @@ Rules:
     if (!response.text?.trim()) {
       return {
         ...fallback,
-        degraded: false,
+        degraded: true,
         fallbackReason: "recovered_summary_empty",
         warnings: ["recovered_summary_empty"],
       };
@@ -625,7 +629,7 @@ Rules:
     if (!parsed.object) {
       return {
         ...fallback,
-        degraded: false,
+        degraded: true,
         fallbackReason: "recovered_summary_json",
         warnings: compactWarnings(["recovered_summary_json", parsed.error]),
       };
@@ -672,7 +676,7 @@ Rules:
         fallback.detectedTopics,
         { maxItems: 5 },
       ),
-      degraded: false,
+      degraded: warnings.length > 0,
       fallbackReason: warnings.length ? "partial_summary_json" : undefined,
       warnings,
     };
@@ -686,7 +690,7 @@ Rules:
 
     return {
       ...fallback,
-      degraded: false,
+      degraded: true,
       fallbackReason: normalized.code,
       warnings: [normalized.publicMessage],
     };

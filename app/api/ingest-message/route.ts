@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+import { getAuthContext } from "@/lib/auth";
 import { getPlanLimits, getUserPlan } from "@/lib/billing";
 import {
   analyzeConversation,
@@ -26,7 +27,7 @@ async function readJsonBody(request: Request) {
     throw new FlowCrewAIError(
       "invalid_json",
       400,
-      "Richiesta JSON non valida. Controlla il body inviato.",
+      "Invalid JSON request. Check the submitted body.",
     );
   }
 }
@@ -36,33 +37,36 @@ export async function POST(request: Request) {
     if (!isSupabaseAuthConfigured()) {
       return jsonError(
         "supabase_unconfigured",
-        "Supabase non e configurato: non posso autenticare o salvare lead.",
+        "Supabase is not configured, so FlowCrew cannot authenticate or save leads.",
         503,
       );
     }
 
-    const user = await getSessionUser();
+    const auth = await getAuthContext(request);
 
-    if (!user) {
+    if (!auth) {
       return jsonError(
         "auth_required",
-        "Accedi per analizzare il tuo lead gratuito.",
+        "Sign in or send a valid Supabase token to analyze a lead.",
         401,
       );
     }
 
     const input = parseConversationInput(await readJsonBody(request));
 
-    const plan = getUserPlan(user.id);
+    const plan = getUserPlan({
+      userId: auth.user.id,
+      email: auth.user.email ?? null,
+    });
     const limits = getPlanLimits(plan);
-    const existingLeadCount = await getUserLeadCount(user.id);
+    const existingLeadCount = await getUserLeadCount(auth);
 
     if (existingLeadCount >= limits.maxLeads) {
       return jsonError(
         "plan_limit_reached",
         plan === "free"
-          ? "Hai gia usato il lead gratuito. Richiedi accesso Pro per analizzare altri lead e salvare lo storico clienti."
-          : "Hai raggiunto il limite del tuo piano. Contattaci per aumentare il limite.",
+          ? "Your free lead has already been used. Request Pro access to keep analyzing client messages and saving lead history."
+          : "Your workspace has reached this plan's lead limit. Contact FlowCrew to increase the limit.",
         403,
         {
           plan,
@@ -75,20 +79,33 @@ export async function POST(request: Request) {
     }
 
     const analysis = await analyzeConversation(input);
-    const lead = await createLeadFromAnalysis(input, analysis, user.id);
+    const lead = await createLeadFromAnalysis(input, analysis, auth);
     const usedLeadCount = existingLeadCount + 1;
+    const leadUrl = `/leads/${lead.id}`;
 
-    return NextResponse.json({
-      analysis,
-      lead,
-      usage: {
-        plan,
-        used: usedLeadCount,
-        limit: limits.maxLeads,
-        remaining: Math.max(limits.maxLeads - usedLeadCount, 0),
-        label: limits.label,
+    revalidatePath("/dashboard");
+    revalidatePath("/leads");
+
+    return NextResponse.json(
+      {
+        analysis,
+        lead,
+        leadUrl,
+        usage: {
+          plan,
+          used: usedLeadCount,
+          limit: limits.maxLeads,
+          remaining: Math.max(limits.maxLeads - usedLeadCount, 0),
+          label: limits.label,
+        },
       },
-    });
+      {
+        status: 201,
+        headers: {
+          Location: leadUrl,
+        },
+      },
+    );
   } catch (error) {
     const normalized =
       error instanceof FlowCrewAIError
@@ -96,7 +113,7 @@ export async function POST(request: Request) {
         : new FlowCrewAIError(
             "ingest_failed",
             500,
-            "Non riesco ad analizzare e salvare il lead in questo momento.",
+            "FlowCrew cannot analyze and save the lead right now.",
           );
 
     if (normalized.status >= 500) logAIError(error);

@@ -25,7 +25,7 @@ import type { ConversationAnalysis, ConversationSource } from "@/lib/flowcrew-ty
 import type { StoredLead } from "@/lib/leads";
 import { trialDraftStorageKey } from "@/lib/trial-draft";
 
-const manualProHref = "mailto:hello@flowcrew.ai?subject=Richiesta%20accesso%20FlowCrew%20Pro";
+const manualProHref = "mailto:hello@flowcrew.ai?subject=FlowCrew%20Pro%20access%20request";
 
 const sourceChips: Array<{ value: ConversationSource; label: string }> = [
   { value: "whatsapp", label: "WhatsApp" },
@@ -36,16 +36,16 @@ const sourceChips: Array<{ value: ConversationSource; label: string }> = [
 const trialCopy = {
   it: {
     defaultBusinessType: "Freelance / piccolo team",
-    defaultGoal: "Richiesta cliente, priorità, proposta, follow-up e task.",
-    emptyResponse: "La risposta del server è vuota.",
-    invalidResponse: "La risposta del server non è leggibile.",
+    defaultGoal: "Richiesta cliente, prioritÃ , proposta, follow-up e task.",
+    emptyResponse: "La risposta del server Ã¨ vuota.",
+    invalidResponse: "La risposta del server non Ã¨ leggibile.",
     usageUnavailable: "Non riesco a leggere il tuo piano in questo momento.",
     priorityFallback: "Da qualificare",
     urgencyFallback: "Da qualificare",
     qualityFallback: "Da qualificare",
-    proposalFallback: "Nora segnalerà qui scope, rischio e dettagli mancanti.",
-    followUpFallback: "Milo suggerirà qui il prossimo momento di risposta.",
-    handoffFallback: "Dex trasformerà il risultato nel prossimo passo operativo.",
+    proposalFallback: "Nora segnalerÃ  qui scope, rischio e dettagli mancanti.",
+    followUpFallback: "Milo suggerirÃ  qui il prossimo momento di risposta.",
+    handoffFallback: "Dex trasformerÃ  il risultato nel prossimo passo operativo.",
     pending: "In attesa",
     notDetected: "Non rilevato",
     aroundBudget: "Circa",
@@ -72,7 +72,7 @@ const trialCopy = {
     usageFreeLeft: "gratis rimasti",
     usagePlanUnavailable: "Piano non disponibile",
     usageAccountRequired: "Account richiesto",
-    activityLabel: "Attività agenti",
+    activityLabel: "AttivitÃ  agenti",
     activityTitle: "Costruisco il workspace",
     loadingSteps: [
       "Jackie sta estraendo la richiesta",
@@ -82,11 +82,11 @@ const trialCopy = {
     ],
     resultLeadSummary: "Riepilogo lead",
     noSummary: "Nessun riepilogo restituito.",
-    tagsPriority: "Tag / priorità",
-    priority: "Priorità",
+    tagsPriority: "Tag / prioritÃ ",
+    priority: "PrioritÃ ",
     urgency: "Urgenza",
     status: "Stato",
-    quality: "Qualità",
+    quality: "QualitÃ ",
     noTags: "Nessun tag",
     suggestedReply: "Risposta suggerita",
     noReply: "Nessuna risposta restituita.",
@@ -108,7 +108,7 @@ const trialCopy = {
     dashboard: "Dashboard",
     proAccess: "Accesso Pro",
     periodDone: "Periodo esaurito",
-    freeUsed: "Lead gratuito già usato",
+    freeUsed: "Lead gratuito giÃ  usato",
     periodLimitBody: "Il workspace ha raggiunto il limite del periodo.",
     upgradeBody: "Passa a Pro per continuare ad analizzare conversazioni.",
     requestPro: "Richiedi accesso Pro",
@@ -116,47 +116,47 @@ const trialCopy = {
     retry: "Riprova",
     partialTitle: "Analisi parziale",
     partialBody:
-      "FlowCrew ha salvato il miglior risultato disponibile, ma una parte dell'analisi è stata ricostruita.",
+      "FlowCrew ha salvato il miglior risultato disponibile, ma una parte dell'analisi Ã¨ stata ricostruita.",
     errors: {
       auth_required: {
-        title: "Accedi per analizzare il lead",
-        message: "FlowCrew deve collegare il risultato al tuo workspace prima di salvarlo.",
+        title: "Sign in to analyze the lead",
+        message: "FlowCrew needs to connect the result to your workspace before saving it.",
       },
       usage_unavailable: {
-        title: "Non riesco a verificare il piano",
-        message: "Riprova tra poco: non voglio consumare o salvare un lead senza conoscere il tuo limite.",
+        title: "I can't verify the plan",
+        message: "Try again shortly: I don't want to consume or save a lead without knowing your limit.",
       },
       quota_exceeded: {
-        title: "Hai usato il tuo lead gratuito",
-        message: "Passa a Pro per continuare ad analizzare messaggi cliente e mantenere lo storico.",
+        title: "You used your free lead",
+        message: "Upgrade to Pro to keep analyzing client messages and preserve history.",
       },
       supabase_unconfigured: {
-        title: "Workspace non disponibile",
-        message: "In questo ambiente l'area account non è pronta. Puoi riprovare quando il workspace è configurato.",
+        title: "Workspace unavailable",
+        message: "In questo ambiente l'area account non Ã¨ pronta. Puoi riprovare quando il workspace Ã¨ configurato.",
       },
       invalid_input_short: {
-        title: "Messaggio troppo breve",
-        message: "Incolla qualche dettaglio in più: richiesta, obiettivo, budget, deadline o contesto cliente.",
+        title: "Message too short",
+        message: "Incolla qualche dettaglio in piÃ¹: richiesta, obiettivo, budget, deadline o contesto cliente.",
       },
       invalid_input: {
-        title: "Aggiungi un messaggio cliente",
+        title: "Add a client message",
         message: "Incolla una chat, una mail o un DM reale prima di avviare l'analisi.",
       },
       rate_limited: {
-        title: "Analisi temporaneamente non disponibile",
-        message: "Il motore AI è sotto carico. Aspetta qualche secondo e riprova.",
+        title: "Analysis temporarily unavailable",
+        message: "Il motore AI Ã¨ sotto carico. Aspetta qualche secondo e riprova.",
       },
       ai_unavailable: {
         title: "Non sono riuscito a completare l'analisi",
-        message: "Il messaggio non è stato salvato come risultato valido. Riprova tra poco.",
+        message: "Il messaggio non Ã¨ stato salvato come risultato valido. Riprova tra poco.",
       },
       copy_failed: {
-        title: "Copia non riuscita",
-        message: "Puoi selezionare manualmente la risposta dalla card Milo.",
+        title: "Copy failed",
+        message: "You can manually select the reply from Milo\'s card.",
       },
       generic: {
-        title: "Qualcosa non ha funzionato",
-        message: "Riprova tra poco. Se il problema continua, richiedi supporto Pro.",
+        title: "Something went wrong",
+        message: "Try again shortly. If the problem continues, request Pro support.",
       },
     },
   },
@@ -333,7 +333,7 @@ async function readApiPayload(response: Response) {
   if (!trimmed) {
     return {
       code: "empty_response",
-      error: "La risposta del server e vuota.",
+      error: "The server response is empty.",
     } satisfies ErrorPayload;
   }
 
@@ -343,14 +343,14 @@ async function readApiPayload(response: Response) {
     } catch {
       return {
         code: "invalid_response",
-        error: "La risposta del server non e leggibile.",
+        error: "The server response is not readable.",
       } satisfies ErrorPayload;
     }
   }
 
   return {
     code: "invalid_response",
-    error: "La risposta del server non e leggibile.",
+    error: "The server response is not readable.",
   } satisfies ErrorPayload;
 }
 
@@ -424,8 +424,8 @@ export default function TrialPage() {
 
   const generated = Boolean(result);
   const workspaceOpen = hasSubmitted || isLoading || generated;
-  const hasReachedLimit = Boolean(usage && usage.remaining <= 0);
   const isWorkspacePlan = Boolean(usage && isPaidWorkspacePlan(usage.plan));
+  const hasReachedLimit = Boolean(usage && usage.remaining <= 0 && !isWorkspacePlan);
   const workspaceLabel = usage ? getWorkspacePlanLabel(usage.plan) : "Pro";
   const analysis = result?.analysis;
   const lead = result?.lead;
@@ -452,7 +452,7 @@ export default function TrialPage() {
   const detectedTags = useMemo(() => {
     if (analysis?.dex.tags.length) return analysis.dex.tags;
     if (lead?.tags?.length) return lead.tags;
-    return generated ? ["lead", "da-qualificare"] : [];
+    return generated ? ["lead", "needs-qualification"] : [];
   }, [analysis, generated, lead?.tags]);
 
   const detectedBudget = useMemo(() => {
@@ -469,9 +469,9 @@ export default function TrialPage() {
     const text = `${message} ${lead?.summary ?? ""}`.toLowerCase();
 
     if (!generated) return copy.pending;
-    if (text.includes("fine mese")) return copy.deadlineEndMonth;
-    if (text.includes("domani")) return copy.deadlineTomorrow;
-    if (text.includes("settimana")) return copy.deadlineThisWeek;
+    if (text.includes("fine mese") || text.includes("end of month") || text.includes("end-of-month")) return copy.deadlineEndMonth;
+    if (text.includes("domani") || text.includes("tomorrow")) return copy.deadlineTomorrow;
+    if (text.includes("settimana") || text.includes("this week") || text.includes("weekly")) return copy.deadlineThisWeek;
 
     return copy.deadlineClarify;
   }, [copy.deadlineClarify, copy.deadlineEndMonth, copy.deadlineThisWeek, copy.deadlineTomorrow, copy.pending, generated, lead?.summary, message]);
@@ -1395,47 +1395,47 @@ function createTrialError(code: string): TrialError {
     case "auth_required":
       return {
         code,
-        title: "Accedi per analizzare il lead",
-        message: "FlowCrew deve collegare il risultato al tuo workspace prima di salvarlo.",
+        title: "Sign in to analyze the lead",
+        message: "FlowCrew needs to connect the result to your workspace before saving it.",
         action: "login",
       };
     case "usage_unavailable":
       return {
         code,
-        title: "Non riesco a verificare il piano",
-        message: "Riprova tra poco: non voglio consumare o salvare un lead senza conoscere il tuo limite.",
+        title: "I can't verify the plan",
+        message: "Try again shortly: I don't want to consume or save a lead without knowing your limit.",
         action: "retry",
       };
     case "quota_exceeded":
       return {
         code,
-        title: "Hai usato il tuo lead gratuito",
-        message: "Passa a Pro per continuare ad analizzare messaggi cliente e mantenere lo storico.",
+        title: "You used your free lead",
+        message: "Upgrade to Pro to keep analyzing client messages and preserve history.",
         action: "pro",
       };
     case "supabase_unconfigured":
       return {
         code,
-        title: "Workspace non disponibile",
-        message: "In questo ambiente l area account non e pronta. Puoi riprovare quando il workspace e configurato.",
+        title: "Workspace unavailable",
+        message: "The account area is not ready in this environment. Try again when the workspace is configured.",
       };
     case "invalid_input_short":
       return {
         code,
-        title: "Messaggio troppo breve",
-        message: "Incolla qualche dettaglio in piu: richiesta, obiettivo, budget, deadline o contesto cliente.",
+        title: "Message too short",
+        message: "Paste a little more detail: request, goal, budget, deadline, or client context.",
       };
     case "invalid_input":
       return {
         code,
-        title: "Aggiungi un messaggio cliente",
+        title: "Add a client message",
         message: "Incolla una chat, una mail o un DM reale prima di avviare l'analisi.",
       };
     case "rate_limited":
       return {
         code,
-        title: "Analisi temporaneamente non disponibile",
-        message: "Il motore AI e sotto carico. Aspetta qualche secondo e riprova.",
+        title: "Analysis temporarily unavailable",
+        message: "The AI engine is under load. Wait a few seconds and try again.",
         action: "retry",
       };
     case "ai_unavailable":
@@ -1444,20 +1444,20 @@ function createTrialError(code: string): TrialError {
       return {
         code,
         title: "Non sono riuscito a completare l'analisi",
-        message: "Il messaggio non e stato salvato come risultato valido. Riprova tra poco.",
+        message: "The message was not saved as a valid result. Try again shortly.",
         action: "retry",
       };
     case "copy_failed":
       return {
         code,
-        title: "Copia non riuscita",
-        message: "Puoi selezionare manualmente la risposta dalla card Milo.",
+        title: "Copy failed",
+        message: "You can manually select the reply from Milo\'s card.",
       };
     default:
       return {
         code: "generic",
-        title: "Qualcosa non ha funzionato",
-        message: "Riprova tra poco. Se il problema continua, richiedi supporto Pro.",
+        title: "Something went wrong",
+        message: "Try again shortly. If the problem continues, request Pro support.",
         action: "retry",
       };
   }
@@ -1469,18 +1469,18 @@ function formatSignal(value: string | null | undefined, fallback: string) {
 
   const lower = normalized.toLowerCase();
   const labels: Record<string, string> = {
-    high: "Alta",
-    medium: "Media",
-    low: "Bassa",
-    hot: "Caldo",
-    warm: "Tiepido",
-    cold: "Freddo",
-    urgent: "Urgente",
-    unclear: "Da chiarire",
-    clear: "Chiaro",
-    qualified: "Qualificato",
-    "needs-qualification": "Da qualificare",
-    needs_qualification: "Da qualificare",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+    hot: "Hot",
+    warm: "Warm",
+    cold: "Cold",
+    urgent: "Urgent",
+    unclear: "Needs clarification",
+    clear: "Clear",
+    qualified: "Qualified",
+    "needs-qualification": "Needs qualification",
+    needs_qualification: "Needs qualification",
   };
 
   return labels[lower] ?? toDisplayLabel(normalized);
